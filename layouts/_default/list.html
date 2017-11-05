@@ -1,0 +1,17 @@
+{{ partial "header" . }}
+
+<main>
+
+    <h2>{{ .Title }}</h2>
+
+    {{ range .Pages }} {{ partial "list-item" . }}
+        {{ if eq "Posts" $.Title }}
+            {{ .ReadingTime}} minutes
+        {{end}}
+    
+    {{ end }}
+
+</main>
+
+
+{{ partial "footer" . }}
