@@ -92,8 +92,9 @@ a:hover {
 }
 
 footer {
-    /*border-bottom: "black;
-    border-bottom: var(--border-width) solid var(--accent);"
+    background: #f8f8f8;
+    color:"white";
+    border-bottom: var(--border-width) solid var(--accent);
 }
 
 img {
