@@ -137,4 +137,9 @@ img {
 .night-mode-toggle {
     padding:5px;
     display: inline-block !important;
+    /* http://www.bootstraptoggle.com/ Custom Style .ios */
+    border-radius: 20px;
+    border-radius: 20px;
 }
+.toggle.ios, .toggle-on.ios, .toggle-off.ios { border-radius: 20px; }
+.toggle.ios .toggle-handle { border-radius: 20px; }
