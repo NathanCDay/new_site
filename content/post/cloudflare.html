@@ -1,0 +1,157 @@
+---
+title: "HTTPS via CloudFlare for GitHub Pages"
+date: 2017-08-19
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: false
+categories: ["packages"]
+tags: ["github pages", "https", "custom domains"]
+---
+
+
+
+<div id="time-to-get-secure" class="section level4">
+<h4><img src="www/cloudflare/gloves.gif" alt="Time to get secure" /></h4>
+<p>This tutorial assumes that you already have a GitHub site, but if you don’t, <a href="https://www.rstudio.com/">Rstudio</a> has published a getting started guide <a href="http://rmarkdown.rstudio.com/rmarkdown_websites.html">here</a> (which ironically is not being served via <code>https</code> at present). I also want to point out that GitHub pages serves all of it’s content via <code>https</code> by default, as long as you use the stock URL <code>username.github.io</code>. But if you wanted to use a custom domain, you were left out of the security party, until Cloud Flare came to town.</p>
+<p>Besides buying the domain, everything you are about to see is free and fast!</p>
+</div>
+<div id="anchor" class="section level2">
+<h2>Custom domains</h2>
+<p>The first step (and only one that costs $$$) is to register a domain with a domain registrar service. There are a lot of companies that do this, I chose to use <a href="www/cloudflare.namecheap.com/Domain_Name">NameCheap</a>. While this is the first and only DNS I have ever registered, I am impressed with how easy to use NameCheap’s interface is.</p>
+<p>The prices for a domain name vary depending on the extension and wording, and you will find roughly equivalent prices across vendors. Typically you will be paying between $2 and $15 for a year long registration.</p>
+<p>Once you’ve settled on a good domain for your website, this is by far the most time consuming part I promise :), you can track your currently registered domains on your Dashboard, which can be found in the Account drop down menu.</p>
+<hr />
+<div class="figure">
+<img src="www/namecheap_dashboard.png" />
+
+</div>
+<hr />
+<div id="update-github" class="section level3">
+<h3>Update GitHub</h3>
+<p>Now that you have an active domain, you can return to your GitHub pages repository and head into the Settings page. In the Options section scroll down to the GitHub Pages block (fourth section down) which should look like very similar to this:</p>
+<hr />
+<div class="figure">
+<img src="www/cloudflare/github_initial.png" />
+
+</div>
+<hr />
+<p>Simply type your new custom domain with the “WWW” prefix into the Custom domain field and click Save. Now the GitHub Pages block should look like this:</p>
+<hr />
+<div class="figure">
+<img src="www/cloudflare/github_post.png" />
+
+</div>
+<hr />
+<p>Notice that the check box to “Enforce HTTPS” has become grayed out and a message let’s us know it is “unavailable for your site because you have a custom domain configured”. Now let’s click on our new custom URL and be whisked away to our fancy new internet address.</p>
+<p>Note: As soon as you click Save, to either add or remove a custom domain, GitHub will automatically make a commit adding or removing a file called “CNAME”. This is just the method GitHub uses for detecting where to forward any incoming web traffic and you should really never edit this file by hand.</p>
+</div>
+</div>
+<div id="a2" class="section level2">
+<h2>Security with https</h2>
+<p>While your new URL will work, you may be met with a scary warning message by your browser when you first try to visit. Perhaps something like this:</p>
+<hr />
+<div class="figure">
+<img src="www/cloudflare/chrom_warning.png" />
+
+</div>
+<hr />
+<p>Yikes! That’s not a nice way to great people and your visitor with be reminted by this nasty red unsecured prefix in their browser’s address bar for the duration of their stay, not a good look!</p>
+<hr />
+<div class="figure">
+<img src="www/cloudflare/https_red.png" />
+
+</div>
+<hr />
+<p>On top of the bad security vibes your site is sending out, you are also taking a perfomance hit in terms of SEO. Since Google is a big HTTPS <a href="https://developers.google.com/web/fundamentals/security/encrypt-in-transit/why-https">believer</a> and whether or not a site is served securely with HTTPS is now being factored into their page ranking algorithms.</p>
+<p>To sum it up, HTTPS is the future of the web. So even though your site may not be transmitting sensitive user information (like credit cards or addresses) it is still good practice to use an encrypted connection.</p>
+<div id="set-up-cloudflare" class="section level3">
+<h3>Set up CloudFlare</h3>
+<p>Fortunately, CloudFlare is here to lead us into HTTPS safety, so let’s head on over <a href="cloudflare.com">there</a> and create an account. Once you’re logged in, you will be dropped onto this page:</p>
+<hr />
+<div class="figure">
+<img src="www/cloudflare/cloudflare_init.png" />
+
+</div>
+<hr />
+<p>Just type your bare domain “nateday.me” into the search bar at the bottom and start your DNS scan. This countdown page will appear for 60 seconds, while Cloud Flare’s code minions comb through your DNS records.</p>
+<hr />
+<div class="figure">
+<img src="www/cloudflare/cloudflare_auto.png" />
+
+</div>
+<hr />
+<p>Relax even though the count down time is intense, this is automated, easy and pain free. After the scan is complete, you will be shown a results page similar to this one:</p>
+<hr />
+<div class="figure">
+<img src="www/cloudflare/cloudflare_result.png" />
+
+</div>
+<hr />
+<p>If I was a web developer I could give you the run down of what these difference types are and why they are important, but instead I will simply remind you that CloudFlare are experts in internet traffic security and they know what they are doing. So for starters we are just going with what they think is best clicking “Continue”.</p>
+<p>On the next screen CloudFlare will try and up-sell you a paid plan option, but unless you need to handle multiple sites or complex page rules, you can get by with the “Free” option.</p>
+<hr />
+<div class="figure">
+<img src="www/cloudflare/cloudflare_free.png" alt="free" />
+<p class="caption">free</p>
+</div>
+<hr />
+<p>And that’s it! On the wrap up screen, you are instructed to visit your registrar’s dashboard. You are also given two name server addresses to use.</p>
+<hr />
+<div class="figure">
+<img src="www/cloudflare/cloudflare_finish.png" />
+
+</div>
+<hr />
+</div>
+<div id="assign-nameservers" class="section level3">
+<h3>Assign nameservers</h3>
+<p>Return to Name Cheap (I recommend opening a new tab) and <a href="#anchor">again head into you account Dashboard</a>. Now all you have to do is scroll down to “Nameserves” and select “Custom DNS” from the options. Copy and paste the nameserves addresses you were given by Cloud Flare and click the green check mark to save the information.</p>
+<hr />
+<div class="figure">
+<img src="www/cloudflare/namecheap_customdns.png" />
+
+</div>
+<hr />
+<p>It may take a second or two of the spinning wheel, but you should eventually see a push notification at the top your screen confirming the successful add of you your custom nameserves. The same notification will say it “may take 48 hours to update DNS records”, but it seems to only take a few minutes for me.</p>
+<p>Now when you head back into your Cloud Flare Overview, you should be greeted with the following page.</p>
+<hr />
+<div class="figure">
+<img src="www/cloudflare/cloudflare_success.png" />
+
+</div>
+<hr />
+<p>If you don’t see this, make sure you updated your custom nameservers on Name Cheap, it’s easy to forget to click that little green check mark.</p>
+</div>
+<div id="polish-with-page-rules" class="section level3">
+<h3>Polish with page rules</h3>
+<p>The final thing to do is create two “Page Rules”. Cloud Flare’s own, <a href="https://blog.cloudflare.com/secure-and-fast-github-pages-with-cloudflare/">Juande Ali</a> recommend setting these in his tutorial.</p>
+<p>The first rule recommended is:</p>
+<hr />
+<div class="figure">
+<img src="www/cloudflare/cloudflare_rule1.png" />
+
+</div>
+<hr />
+<p>This rule enforces that all content on your site is served via secured HTTPS. Without it, it would be possible for a page in your site to be served via unsecured traditional HTTP and that would lead to the <a href="#a2">safety warnings</a> we encountered earlier.</p>
+<p>The second rule is:</p>
+<hr />
+<div class="figure">
+<img src="www/cloudflare/cloudflare_rule2.png" />
+
+</div>
+<hr />
+<p>This rule is critical if you want people to be able to access your site without always using the “WWW” prefix. And let’s face it most people don’t actually type that out these days. But once you have this rule enforced anyone that tried goes to “nateday.me” will automatically be redirected to “<a href="https:://www.nateday.com" class="uri">https:://www.nateday.com</a>”.</p>
+<p>Well that’s it for this write-up. I hope you enjoy your new secure custom domain webpage. Doesn’t that green lock look good !?!</p>
+<hr />
+<div class="figure">
+<img src="www/cloudflare/green_lock.png" />
+
+</div>
+<hr />
+<p>I’d like to thank <a href="https://www.linkedin.com/in/junade/?ppe=1">Juandre Ali</a> for his very thorough tutorial on how to get up and running with Cloud Flare.</p>
+</div>
+</div>

@@ -20,3 +20,19 @@
 
 <!-- dismiss expanded navigation bar with click -->
 <script>$(document).on('click', function() { $('.collapse').collapse('hide'); })</script>
+
+<!-- nightmode toggle -->
+<script>
+$(document).ready(function(){
+  var input = $('.night-mode-toggle');
+  var container = $('.content-box');
+
+  input.change(function() {
+      container.toggleClass('-nightmode');
+  })
+});
+</script>
+
+<!-- boostrap toggle -->
+<link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+<script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>

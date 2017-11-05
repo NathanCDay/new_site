@@ -1,6 +1,7 @@
 baseURL = "/"
 languageCode = "en-us"
 title = "NateDay-ta"
+description = "R focused data docs"
 theme = "minimal"
 disqusShortname = ""#"nateday-me" # delete this to disable disqus comments
 googleAnalytics = ""

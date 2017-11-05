@@ -69,10 +69,8 @@ a:hover {
     padding: 10px 0;
 }
 
-
 .item-cat {
     background-color: #757575;
-    
     margin:1px;
 }
 
@@ -95,7 +93,6 @@ a:hover {
 }
 
 /*coloured borders at top and bottom of the page*/
-
 .navbar.navbar-default {
     border-top: var(--border-width) solid var(--accent);
 }
@@ -110,4 +107,34 @@ footer {
 
 img {
     max-width: 100%;
+}
+
+/** Intvert colors
+ * Wonderful CSS filter trick by Leo Nikkilä
+ * @link https://lnikki.la/articles/night-mode-css-filter/
+ */
+.content-box.-nightmode {
+    /* Ensures that night mode colors are black and white */
+    background: #000 !important;
+    color: #333 !important;    
+}
+
+.content-box.-nightmode {
+  & {
+    // Ensures that night mode colors are black and white
+    background: #000 !important;
+    color: #333 !important;    
+  }  
+  .content-inner {
+    &, img, video {
+      -webkit-filter: invert(1) hue-rotate(180deg);
+      filter: invert(1) hue-rotate(180deg);    
+    }    
+  }
+}
+
+/* slider attributes match navbar elements */
+.night-mode-toggle {
+    padding:5px;
+    display: inline-block !important;
 }
