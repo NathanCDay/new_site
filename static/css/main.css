@@ -92,7 +92,9 @@ a:hover {
 }
 
 footer {
-    background: #f8f8f8;
+    background-color: #f8f8f8;
+    border-top: #e7e7e7 solid;
+    border-top-width: 1px;
     color:"white";
     border-bottom: var(--border-width) solid var(--accent);
 }
