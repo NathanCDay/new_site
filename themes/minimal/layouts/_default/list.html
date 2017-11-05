@@ -4,7 +4,8 @@
 
     <h2>{{ .Title }}</h2>
 
-    {{ range (.Paginator 5).Pages }} {{ partial "list-item" . }} 
+    {{ range (.Paginator 5).Pages }} {{ partial "list-item" . }}
+    
     {{ .ReadingTime}} minutes
     {{ end }}
 

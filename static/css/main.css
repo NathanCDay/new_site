@@ -49,6 +49,7 @@ a.icon:hover {
 }
 
 a:hover {
+    text-decoration: none;
     color: var(--accent) !important;
 }
 
@@ -68,8 +69,16 @@ a:hover {
     padding: 10px 0;
 }
 
+
+.item-cat {
+    background-color: #757575;
+    
+    margin:1px;
+}
+
 .item-tag {
     background-color: var(--accent);
+    margin:1px;
 }
 
 .terms {
