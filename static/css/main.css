@@ -97,6 +97,7 @@ a:hover {
     border-top: var(--border-width) solid var(--accent);
 }
 
+/* custome footer */
 footer {
     background-color: #f8f8f8;
     border-top: #e7e7e7 solid;
@@ -113,23 +114,20 @@ img {
  * Wonderful CSS filter trick by Leo Nikkilä
  * @link https://lnikki.la/articles/night-mode-css-filter/
  */
-body.-nightmode {
+#bigbody.-nightmode {
     /* Ensures that night mode colors are black and white */
     background: var(--accent)!important;
     color: #eeeeee !important;
     -webkit-filter: invert(1) hue-rotate(180deg);
     filter: invert(1) hue-rotate(180deg)
 }
-body.-nightmode {}
 
 
 /* slider attributes match navbar elements */
-.night-mode-toggle {
-    padding:5px;
+#night-mode-toggle {
     display: inline-block !important;
-    /* http://www.bootstraptoggle.com/ Custom Style .ios */
-    border-radius: 20px;
-    border-radius: 20px;
+    padding-top:7px;
 }
+/* http://www.bootstraptoggle.com/ Custom Style .ios */
 .toggle.ios, .toggle-on.ios, .toggle-off.ios { border-radius: 20px; }
 .toggle.ios .toggle-handle { border-radius: 20px; }
