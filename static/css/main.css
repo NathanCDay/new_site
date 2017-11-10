@@ -126,8 +126,10 @@ img {
 /* slider attributes match navbar elements */
 #night-mode-toggle {
     display: inline-block !important;
-    padding-top:7px;
+    padding-top:10px;
+    font-size: 125%;
 }
 /* http://www.bootstraptoggle.com/ Custom Style .ios */
 .toggle.ios, .toggle-on.ios, .toggle-off.ios { border-radius: 20px; }
-.toggle.ios .toggle-handle { border-radius: 20px; }
+.toggle.ios .toggle-handle { border-radius: 20px;}
+.toggle.ios .toggle-group { transition: none; -webkit-transition: none; }
