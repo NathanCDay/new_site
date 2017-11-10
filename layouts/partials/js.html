@@ -31,25 +31,25 @@ $(document).ready(function(){
     
   var input = $('#night-mode-toggle');
   var container = $('#bigbody');
+  var stat = $('#button-status');
   
-  container.toggleClass(sessionStorage.toggled)
+  container.toggleClass(sessionStorage.toggled);
+  stat.bootstrapToggle(sessionStorage.button).change();
+  
   
   input.on('click', function() {
-      
       if (sessionStorage.toggled != "-nightmode" ) {
           container.toggleClass("-nightmode", true );
           sessionStorage.toggled = "-nightmode";
+          sessionStorage.button = "on";
        } else {
           container.toggleClass("-nightmode", false );
           sessionStorage.toggled = "";
+          sessionStorage.button = "off"
        }
   })
-
-  
-  
 });
 </script>
-
 
 
 
