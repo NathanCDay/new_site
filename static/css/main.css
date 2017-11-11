@@ -130,6 +130,14 @@ img {
     font-size: 125%;
 }
 /* http://www.bootstraptoggle.com/ Custom Style .ios */
-.toggle.ios, .toggle-on.ios, .toggle-off.ios { border-radius: 20px; }
+.toggle.ios, .toggle-on.ios, .toggle-off.ios { border-radius: 20px}
 .toggle.ios .toggle-handle { border-radius: 20px;}
-.toggle.ios .toggle-group { transition: none; -webkit-transition: none; }
+.toggle.ios .toggle-group {transition: none;-webkit-transition: none;}
+
+.toggle-on {
+    background-color: var(--accent) !important;
+    border-color: var(--accent) !important;
+}
+.toggle-off:hover {
+    background-color: var(--accent) !important;
+}
