@@ -1,6 +1,6 @@
 ---
 title: "Accessing the Cville Open Data Portal via API"
-date: 2017-08-19
+date: 2017-10-01
 output:
   html_document:
     toc: true

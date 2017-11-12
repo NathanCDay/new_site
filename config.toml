@@ -19,7 +19,7 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files/", "_cache$"]
     backgroundColor = "#f5f5f5"
     font = "Raleway" # should match the name on Google Fonts!
     highlight = true
-    highlightStyle = "paraiso-dark"
+    highlightStyle = "atelier-seaside-light"
     highlightLanguages = ["R"]
 
 [[menu.main]]
