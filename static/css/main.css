@@ -30,6 +30,7 @@ main {
 
 .intro > h1 {
     font-size: 12vh;
+    color: var(--accent);
 }
 
 .intro > h2 {
@@ -118,6 +119,10 @@ img {
 #bigbody.-nightmode {
     background: var(--accent)!important;
     color: #333333 !important;
+    -webkit-filter: invert(1) hue-rotate(180deg);
+    filter: invert(1) hue-rotate(180deg)
+}
+#bigbody.-nightmode img {
     -webkit-filter: invert(1) hue-rotate(180deg);
     filter: invert(1) hue-rotate(180deg)
 }
