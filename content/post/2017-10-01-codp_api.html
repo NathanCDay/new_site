@@ -1,0 +1,131 @@
+---
+title: "Accessing the Cville Open Data Portal via API"
+date: 2017-08-19
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: false
+categories: ["packages"]
+tags: ["github pages", "https", "custom domains"]
+---
+
+<script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
+<script src="/rmarkdown-libs/blazy/blazy.min.js"></script>
+<script src="/rmarkdown-libs/pymjs/pym.v1.js"></script>
+<script src="/rmarkdown-libs/widgetframe-binding/widgetframe.js"></script>
+
+
+<div id="intro" class="section level1">
+<h1>Intro</h1>
+<p>API stands for “Application Program Interface”, which is just fancy speak for the framwork allowing data access via code. APIs are designed to make working with data easier for coders, and most major companies offer one. Twitter, Google, and Dropbox all have their own API, and the <a href="https://opendata.arcgis.com/datasets/d1877e350fad45d192d233d2b2600156_78.geojson">Charlottesville Open Data Portal</a> (ODP) does too. APIs can vary widely in the interactions they perfrom, but since the ODP is designed as a data source, its API only has download functionality.</p>
+<p>There are a couple of good reasons to use an API:</p>
+<ul>
+<li>Reproducibility
+<ul>
+<li>No more local file paths</li>
+<li>Anyone with API access can pick up the same data</li>
+</ul></li>
+<li>Durability
+<ul>
+<li>Don’t have to download lastet versions by hand</li>
+<li>Consistant interface with web links (RestAPI)</li>
+</ul></li>
+</ul>
+<p>For the ODP API you have two download options, ‘GeoService’ and ‘GeoJSON’. I recommend using ‘GeoJSON’ because it is the only https option and we want to be sure we are secure when transmitting data. <a href="http://www.json.org/">JSON</a> stands for JavaScript Object Notation, which “is a lightweight data-interchange format” that is applied across the web. JSON is deisnged to be easily readable for humans and easily parsable by machines. Also JSON is language agnostic, so you can read and write JSON formatted data with any language.</p>
+</div>
+<div id="tabular-data" class="section level1">
+<h1>Tabular Data</h1>
+<p>To acccess the API, all we need to do is copy the link found in the API menu in the right side bar.</p>
+<div id="api-link-location" class="section level4">
+<h4><img src="/images/codp_api/api_link.png" alt="API link location" /></h4>
+<p>And then let our our new best friend <a href="https://github.com/ropensci/geojsonio"><code>library(geojsonio)</code></a> do the heavy lifting. The <code>library(geojsonio)</code> is designed to handle geographic data in the GeoJSON and TopoJSON formats. It contains the function <code>geojson_read()</code> for accessing data via url or local file path. We will use it on the link stored in our clipboard.</p>
+<pre class="r"><code>library(geojsonio) #v_0.4.2
+crime_json &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/d1877e350fad45d192d233d2b2600156_7.geojson&quot;,
+                           parse = TRUE) # ~1-5 minutes
+# parse = TRUE attempts to parse to data.frame like structures; default is FALSE</code></pre>
+<p>Our read-in returned a large list (4.3 Mb) with two elements, <code>$type</code> and <code>$features</code>. If you are using RStudio the newest development version (v1.1.379) offers enhanced views for lists and other objects:</p>
+<pre class="r"><code>View(crime_json) # we could also click on the object in the &#39;Environment&#39; tab</code></pre>
+</div>
+<div id="rstudio-viewer" class="section level4">
+<h4><img src="/images/codp_api/list_view.png" alt="Rstudio Viewer" /></h4>
+<p>There are some other nice perks in the preview, including an intergrated console and the modern dark theme! You can download the <a href="https://www.rstudio.com/products/rstudio/download/preview/">preview here</a>.</p>
+<p>The data that we are after is in the second element <code>.$features</code>, but we can see from our <code>View()</code> look-in that it is formatted slightly weird. Let’s look at the top rows:</p>
+<pre class="r"><code>crime_df &lt;- crime_json[[&quot;features&quot;]]
+head(crime_df)</code></pre>
+<pre><code>##      type properties.RecordID                       properties.Offense
+## 1 Feature                1001     COMMUNITY RELATIONS INITIATIVE (CRI)
+## 2 Feature                1002        CRIME PREVENTION INITIATIVE (CPI)
+## 3 Feature                1003                      TRAFFIC-HIT AND RUN
+## 4 Feature                1004                LARCENY-ALL OTHER LARCENY
+## 5 Feature                1005         LARCENY-THEFT FROM MOTOR VEHICLE
+## 6 Feature                1006 VANDALISM/DAMAGE/DESTRUCTION OF PROPERTY
+##   properties.IncidentID properties.BlockNumber properties.StreetName
+## 1             201300259                    400            CHERRY AVE
+## 2             201300260                    200     RIDGE MCINTIRE RD
+## 3             201300261                    400           BRANDON AVE
+## 4             201300262                   1400          MELBOURNE RD
+## 5             201300263                    700           BELMONT AVE
+## 6             201300264                    100      UNIVERSITY MANOR
+##   properties.Agency properties.DateReported properties.HourReported
+## 1              CPD   2013/01/14 00:00:00+00                    0537
+## 2              CPD   2013/01/14 00:00:00+00                    0538
+## 3              CPD   2013/01/14 00:00:00+00                    0830
+## 4              CPD   2013/01/14 00:00:00+00                    0830
+## 5              CPD   2013/01/14 00:00:00+00                    0938
+## 6              CPD   2013/01/14 00:00:00+00                    0939
+##   geometry
+## 1       NA
+## 2       NA
+## 3       NA
+## 4       NA
+## 5       NA
+## 6       NA</code></pre>
+<p>If you are really paying attention you might realize that the dimensions of <code>crime_df</code> are 32000x3, and the second column <code>properties</code> is a bunch of 8X1 dataframes. <code>head()</code> silently “unnested” <code>properties</code> and printed it as if it were a real 32000x11 dataframe. The last column <code>geometry</code> is all <code>NAs</code> for this data set because it is just a table of text information. In the next section we will see this change when accessing the API for shape files.</p>
+<p>All that’s left to do is to extract just the <code>properties</code> column and we will have a nice dataframe ready to start analyzing!</p>
+<pre class="r"><code>crime_df &lt;-  crime_df[[2]]</code></pre>
+<p>With only a couple of lines of code, we have accessed all of the Crime Data released by the Charlottesville Police Department to date on the ODP. This is exactly the same data we would have if we downloaded the ‘csv’ file by hand and read it in using <code>readr::read_csv()</code>, but now we did it all with reproducible code!</p>
+<p>If you want to keep going with this data and start cleaning it up for your analysis check out the begining of my <a href="./tow_forcast.html">towing forcast</a>.</p>
+</div>
+</div>
+<div id="spatial-data" class="section level1">
+<h1>Spatial Data</h1>
+<p>Most of the datasets on the ODP are actually shape files and not information tables. The only difference between working with shape files compared to tables are some small tweaks to the arguments we pass in to <code>geojson_read()</code>. Let’s access the files that represent the city’s police beats, or sub-regions. The data we grab here is available on the <a href="http://opendata.charlottesville.org/datasets/police-neighborhood-area">Police Neighborhood Area</a> page, using the same API drop down menu as we used before.</p>
+<pre class="r"><code>police_areas_sp &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/ceaf5bd3321d4ae8a0c1a2b21991e6f8_9.geojson&quot;,
+                                  what = &quot;sp&quot;) # skips the default &quot;list&quot; object and goes straight to spacial</code></pre>
+<p>We can see that the object we are returned is a little more complex than earlier. It is of the class ‘SpatialPolygonsDataFrame’ which is from the <a href="https://github.com/edzer/sp/"><code>library(sp)</code></a> that defines classes and methods for spatial data in R. Let’s see what that class looks like with <code>View()</code> agian:</p>
+<pre class="r"><code>View(police_areas_sp)</code></pre>
+<div id="police_view" class="section level4">
+<h4><img src="/images/codp_api/police_beats.png" alt="police_view" /></h4>
+<p>The <code>data</code> and <code>polygons</code> elements are the key components of a <code>SpatialPolygonDataFrame</code>. <code>data</code> is a list of information tables and <code>polygons</code> is list of <code>sp::Polygons</code> that contain the latitude and longitude cordinates necesary for mapping the region outlines. Indexing a <code>SpatialPolygonDataFrame</code> uses a special <code>@</code> syntax to get to specific elements by name, so we would use <code>police_areas_sp@data</code> to look at just that section.</p>
+<p>Notice both elements are the same length, Charlottesville is broken down into 33 police beats, so there is table information to accompany each map region. This means that a single <code>SpatialPolygonDataFrame</code> can be used to group the mapping information with accesory information, like population, crime rate, or real estate assesments.</p>
+<pre class="r"><code>head(police_areas_sp@data)</code></pre>
+<pre><code>##   OBJECTID AGENCY BEAT_NO                 NAME POPULATION DISTRICT
+## 0        1     CP      10              Belmont       4327        2
+## 1        2     CP      20         Woolen Mills        903        3
+## 2        3     CP      09          Little High        654        3
+## 3        4     CP      08     Martha Jefferson       1167        3
+## 4        5     CP      07       North Downtown       1634        3
+## 5        6     CP      28 Charlottesville High        998        5</code></pre>
+<p>We could use a variety of map tools to plot a this type of SpatialPolygonDataFrame, including <code>library(ggplot2)</code>, <code>library(lattice)</code> and <code>library(mapview)</code>. Here we use <a href="http://leafletjs.com/"><code>library(leaflet)</code></a> to plot the police beats and use the <code>POPULATION</code> data to color the regions. Leaflet is origially a JavaScript library for building interactive maps, which was <a href="https://rstudio.github.io/leaflet/">ported to <code>R</code></a> and is pretty great, even ESRI (the ODP’s commercial partner) build a package with it.</p>
+<pre class="r"><code>library(leaflet) #v1.1.0
+pal &lt;- colorNumeric(&quot;viridis&quot;, NULL)
+
+leaflet(police_areas_sp,
+        options = leafletOptions(minZoom = 13, maxZoom = 15)) %&gt;%
+    addProviderTiles(&quot;OpenStreetMap.Mapnik&quot;) %&gt;% # should look familiar
+    addPolygons(color = &quot;#a5a597&quot;, smoothFactor = 0.3, fillOpacity = .5,
+                fillColor = ~pal(POPULATION),
+                label = ~paste0(NAME, &quot;: &quot;, formatC(POPULATION, big.mark = &quot;,&quot;))) %&gt;%
+    frameWidget(height = &#39;400&#39;)</code></pre>
+<div id="htmlwidget-1" style="width:100%;height:400px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"url":"/post/2017-10-01-codp_api_files/figure-html//widgets/widget_leaflet.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+<p>I’m not going to dive into the syntax of the leaflet code here, but the <a href="https://rstudio.github.io/leaflet/">Leaflet for R website</a> has great write ups for a variety of mapping options.</p>
+</div>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>I hope you feel good about working with the ODP’s API now. It is fairly straight forward to do with <code>library(geojsonio)</code>, a big thank you to the <a href="https://ropensci.org/">rOpenSci</a> for supporting this package and a bunch of others! If you have any questions or issues working with other dataset in the portal, feel free to send me an <a href="mailto:nathancday@gmail.com">email</a>. I’m always happy to help with <code>R</code> questions and I’m really excited about using the ODP to make life in Charlottesville even better!</p>
+</div>
