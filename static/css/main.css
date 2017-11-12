@@ -118,11 +118,11 @@ img {
  */
 #bigbody.-nightmode {
     background: var(--accent)!important;
-    color: #333333 !important;
+    //color: #333333 !important;
     -webkit-filter: invert(1) hue-rotate(180deg);
     filter: invert(1) hue-rotate(180deg)
 }
-#bigbody.-nightmode img {
+#bigbody.-nightmode img, video{
     -webkit-filter: invert(1) hue-rotate(180deg);
     filter: invert(1) hue-rotate(180deg)
 }
