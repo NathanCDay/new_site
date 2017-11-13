@@ -1,0 +1,15 @@
+---
+title: Orange Approval
+author: Nate Day
+date: 2017-02-19
+description: "An interactive look at just how historic the 43rd president really is."
+repo: "Orange_Approval_App"
+slug: orange-approval
+categories:
+  - presidential approval
+tags:
+  - shiny
+  - ggplot2
+  - rest
+---
+

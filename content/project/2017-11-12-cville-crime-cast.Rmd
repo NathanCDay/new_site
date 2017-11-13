@@ -1,0 +1,15 @@
+---
+title: Cville Crime Cast
+author: Nate Day
+date: '2017-11-12'
+categories:
+  - Cville Open Data
+tags:
+  - ggmap
+  - shiny
+  - tidyverse
+description: A block level look at reported crime in Cville.
+repo: CvilleTowing
+slug: cville-crime-cast
+---
+

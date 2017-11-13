@@ -1,0 +1,319 @@
+---
+title: Cville's Towing Forecast
+author: Nate Day
+date: '2017-11-12'
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: false
+description: "An exploratory analysis of Cville's open crime data, with an introduction to time series modeling for prediction"
+slug: codp-towing-forecast
+categories:
+  - Cville Open Data
+tags:
+  - forecast
+  - tidyverse
+  - time series
+---
+
+
+
+<div id="intro" class="section level1">
+<h1>Intro</h1>
+<p>I attended my first <a href="%22https://www.meetup.com/CharlottesvilleDataScience/events/242006576/%22">Charlottesville Data Science Meetup</a> last month, for the launch of the city’s <a href="%22http://opendata.charlottesville.org/%22">Open Data Portal</a>. The meeting unveiled the new ODP, which consolidates a bunch of Charlottesville city records in one place, including Census, assessment, development, traffic and public safety data. The meetup featured a nice introduction to the portal and <a href="http://opensourceconnections.com/">OpenSource Connections</a> provided free craft beer and free Papa Johns!!!</p>
+<p>I love the OPD concept and believe that data can help drive better decisions for Charlottesville. So I used my long Labor day weekend to write up an analysis, using the ODP to do some time-series forecasting with <code>R</code>.</p>
+<p>The portal had a good layout and all of the data I have touched has been well formatted (thank you so much). So let’s dive into the analysis and I apologize for the typos, but not for the bad puns.</p>
+<div id="open-up-already" class="section level4">
+<h4><img src="/images/codp_towing/open_up.gif" alt="Open up already!" /></h4>
+</div>
+</div>
+<div id="import" class="section level1">
+<h1>Import</h1>
+<p>I am a big user/believer of the R packages <a href="https://cran.r-project.org/web/packages/magrittr/vignettes/magrittr.html"><code>magrittr</code></a> and <a href="https://www.tidyverse.org/"><code>tidyverse</code></a>, so fair warning, this analysis is pipe-heavy. I think this is a better way to code</p>
+<pre class="r"><code>library(forecast) # time-series modeling
+library(ggsci) # d3 color pallettes
+library(forcats) # fct tools
+library(lubridate) # date tools
+library(magrittr) # piping
+library(tidyverse) # data wranglin&#39;
+
+## ggplot set up block
+
+# only theme once
+theme_set(theme_minimal())
+
+# custom fxns to aid with axis over-plotting and assist consistant intervals
+brks &lt;- seq(date(&quot;2012-07-01&quot;), date(&quot;2018-10-01&quot;), &quot;3 months&quot;)
+
+nicely &lt;- function(breaks) {
+    values &lt;- as.character(breaks) %&gt;% strsplit(&quot;-&quot;)
+    m &lt;- map(values, ~ as.numeric(.[2]) %&gt;% month.abb[.])
+    y &lt;- map(values, ~ gsub(&quot;20&quot;, &quot;&quot;, .[1]))
+    labels &lt;- map2(m, y, ~ paste0(., &quot;\n&quot;, ifelse(. == &quot;Jan&quot;, .y, &quot;&quot;)))
+    return(labels) }</code></pre>
+<p>I decided to start my OPD journey exploring the <a href="http://opendata.charlottesville.org/datasets/crime-data">Public Safety &gt; Crime Data</a>, mainly because I’ve worked with crime data in the <a href="./dc_crime.html">past</a>. So I manually downloaded the csv from the link above and started a GitHub repository. I have yet to use the API, perhaps another day.</p>
+<pre class="r"><code>tib &lt;- read_csv(&quot;~/future/CvilleTowing/Crime_Data.csv&quot;)
+names(tib) %&lt;&gt;% tolower()
+
+# these don&#39;t jive well with markdown
+# head(tib)
+str(tib, max.level = 1)</code></pre>
+<pre><code>## Classes &#39;tbl_df&#39;, &#39;tbl&#39; and &#39;data.frame&#39;:    32128 obs. of  8 variables:
+##  $ recordid    : int  1001 1002 1003 1004 1005 1006 1007 1008 1009 1010 ...
+##  $ offense     : chr  &quot;LARCENY-ALL OTHER LARCENY&quot; &quot;FAMILY OFFENSE-NON-VIOLENT&quot; &quot;LARCENY-THEFT OF MOTOR VEHICLE PARTS/ACCESSORIES&quot; &quot;PROPERTY-LOST&quot; ...
+##  $ incidentid  : int  201206429 201206430 201206431 201206432 201206433 201206434 201206435 201206436 201206437 201206438 ...
+##  $ blocknumber : int  100 2000 900 1500 1000 700 100 600 100 100 ...
+##  $ streetname  : chr  &quot;14TH ST NW&quot; &quot;STADIUM RD&quot; &quot;HENRY AVE&quot; &quot;UNIVERSITY AVE&quot; ...
+##  $ agency      : chr  &quot;CPD&quot; &quot;CPD&quot; &quot;CPD&quot; &quot;CPD&quot; ...
+##  $ datereported: POSIXct, format: &quot;2012-10-14 00:00:00&quot; &quot;2012-10-14 00:00:00&quot; ...
+##  $ hourreported: chr  &quot;1042&quot; &quot;1350&quot; &quot;1203&quot; &quot;1348&quot; ...
+##  - attr(*, &quot;problems&quot;)=Classes &#39;tbl_df&#39;, &#39;tbl&#39; and &#39;data.frame&#39;: 1 obs. of  5 variables:
+##  - attr(*, &quot;spec&quot;)=List of 2
+##   ..- attr(*, &quot;class&quot;)= chr &quot;col_spec&quot;</code></pre>
+<p>The function <code>read_csv</code> imputes the column types from the first 1000 rows and never coherces <code>chr</code>s as <code>fct</code>s, both are nice upgrades from the base R <code>read.csv</code>. We can see in this case it correctly guessed <code>datereported</code> as <code>POSIXct</code>, but it didn’t call <code>hourreported</code> as <code>POSIXct</code>, so it’s not magic but the <code>read_file</code> family of functions definitely save some tidying time.</p>
+<p>While the data comes off the shelf nicely formatted I still wanted to make some minor adjustments before I got into exploring.</p>
+<pre class="r"><code>tib %&lt;&gt;% select(-recordid) %&gt;%
+    unite(address, blocknumber, streetname) %&gt;%
+    rename_at(vars(contains(&quot;reported&quot;)), funs(gsub(&quot;reported&quot;, &quot;&quot;, .))) %&gt;%
+    mutate(hour = parse_time(hour, format = &quot;%H%M&quot;),
+           date = as.Date(date),
+           year = year(date),
+           month = month(date))</code></pre>
+</div>
+<div id="explore" class="section level1">
+<h1>Explore</h1>
+<p>Now that our data has been shaped up into something tidy, let’s start looking at the data visually and see juse what we have here.</p>
+<pre class="r"><code>ggplot(tib, aes(date)) +
+    geom_freqpoly(bins = 60) + # 60 months in 5 years
+    scale_x_date(breaks = brks, date_minor_breaks = &quot;1 month&quot;,
+                 labels = nicely, expand = c(0,0)) +
+    labs(title = &quot;Charlottesville police reports&quot;,
+         y = &quot;# reports&quot;,
+         x = NULL,
+         caption = &quot;Data[2012-08-30:2017-08-27] &quot;)</code></pre>
+<p><img src="/post/2017-11-12-cville-s-towing-forecast_files/figure-html/range-1.png" width="672" /></p>
+<p>Looks like we have five years of continuous police reporting data going back to September 2012, not too shabby for a single csv. First glance tells us the total number of cases reported has been steady, maybe even decreasing slightly each year, which is good news for any community. It also looks like there is a consistent spike in the number of police reports each year around September and October, I wonder if we can figure out hoo/what is responsible for that fall spike in crime reports?</p>
+<div id="hoo-dunnit" class="section level2">
+<h2>Hoo dunnit?</h2>
+<p>I don’t work with date or time data very often but when I do I always use the <a href="https://cran.r-project.org/web/packages/lubridate/vignettes/lubridate.html"><code>lubridate</code></a> package. It maintains the tidy syntax and allows for easy manipulation (adding, subtracting, building sequence) of date and time period objects. Let’s use it here to build an series of annually reoccurring date ranges from mid-August to the end of October to feed in to <code>geom_rect()</code> highlight our window of interest.</p>
+<pre class="r"><code>students_back &lt;- tibble(date = seq(as.Date(&quot;2012-09-01&quot;), as.Date(&quot;2017-9-01&quot;), length.out = 6),
+                        date_min = date - ddays(16), # ~ Aug16
+                        date_max = date %m+% months(2) ) # add to month
+
+ggplot(tib, aes(date)) +
+    geom_rect(data = students_back, aes(xmin = date_min, xmax = date_max),
+              ymin = 0, ymax = Inf, fill = &quot;#f64617&quot;) +
+    geom_freqpoly(bins = 60, color = &quot;#0c2345&quot;, size = 1) + # 60 months in 5 years
+    scale_x_date(breaks = brks, date_minor_breaks = &quot;1 month&quot;,
+                 labels = nicely, expand = c(0,0),
+                 limits = c(date(&quot;2012-08-16&quot;), date(&quot;2017-07-31&quot;))) +
+    labs(title = &quot;Charlottesville police reports&quot;,
+         subtitle = &quot;Rectangles highlight Aug 16th - Oct 31st&quot;,
+         x = NULL, y = NULL,
+         caption = expression(paste(italic(&quot;Hoo&quot;), &quot;&#39;s causing that uptick?&quot;, &quot; Data[2012-08-16:2017-07-31]&quot;)))</code></pre>
+<p><img src="/post/2017-11-12-cville-s-towing-forecast_files/figure-html/students-1.png" width="672" /></p>
+<p>We all know correlation does not equal causation. But I would wager that this pattern is real and common for any community with a college (or transient population). Especially for Charlottesville, where the population swells by roughly 25% percent when the undergrads are in town, you would expect bump in all civic activity, including crime.</p>
+<p>While this annual pattern is interesting, looking at the total counts doesn’t really tell us anything specific. Perhaps we can pull apart the total values and find some specific trends within single offense tags.</p>
+</div>
+<div id="offense-frequency" class="section level2">
+<h2>Offense frequency</h2>
+<p>This data is tagged quite well, of course there are a few inconsistent spellings but I can live with that for 32K rows. Let’s dive into the tags now, using the factor focused <a href="http://forcats.tidyverse.org/"><code>library(forcats)</code></a> to help us arrange the offenses based on frequency. PS It really helps plot preparation :)</p>
+<pre class="r"><code># there is a single incident (# 201404995) that is NA for offense
+tib %&lt;&gt;% filter(!is.na(offense))
+
+forcats::fct_inorder(tib$offense) %&gt;% levels() %&gt;% .[1:25]</code></pre>
+<pre><code>##  [1] &quot;LARCENY-ALL OTHER LARCENY&quot;                        
+##  [2] &quot;FAMILY OFFENSE-NON-VIOLENT&quot;                       
+##  [3] &quot;LARCENY-THEFT OF MOTOR VEHICLE PARTS/ACCESSORIES&quot; 
+##  [4] &quot;PROPERTY-LOST&quot;                                    
+##  [5] &quot;VANDALISM/DAMAGE/DESTRUCTION OF PROPERTY&quot;         
+##  [6] &quot;ASSAULT-AGGRAVATED&quot;                               
+##  [7] &quot;PROPERTY-FOUND/RECOVERED&quot;                         
+##  [8] &quot;SUSPICIOUS CIRCUMSTANCES-SITUATION/PERSON/VEHICLE&quot;
+##  [9] &quot;PHONE CALLS-THREATENING OR OBSCENE&quot;               
+## [10] &quot;ASSAULT-SIMPLE&quot;                                   
+## [11] &quot;MOTOR VEHICLE THEFT/STOLEN AUTO&quot;                  
+## [12] &quot;TRAFFIC-HIT AND RUN&quot;                              
+## [13] &quot;BURGLARY/BREAKING AND ENTERING&quot;                   
+## [14] &quot;VIOLATE PROTECTIVE ORDER&quot;                         
+## [15] &quot;TRESPASS ON REAL PROPERTY&quot;                        
+## [16] &quot;LARCENY-THEFT FROM MOTOR VEHICLE&quot;                 
+## [17] &quot;LARCENY-THEFT FROM BUILDING&quot;                      
+## [18] &quot;DRUG/NARCOTIC VIOLATION&quot;                          
+## [19] &quot;COMMUNITY RELATIONS INITIATIVE (CRI)&quot;             
+## [20] &quot;TOWED VEHICLE&quot;                                    
+## [21] &quot;PERJURY&quot;                                          
+## [22] &quot;LARCENY-SHOPLIFTING&quot;                              
+## [23] &quot;FRAUD-FALSE PRETENSES/SWINDLE/CONFIDENCE GAME&quot;    
+## [24] &quot;ASSAULT-INTIMIDATION&quot;                             
+## [25] &quot;MISC CRIMINAL/STALKING&quot;</code></pre>
+<p>The list of the top 25 most frequent offense tags looks pretty consistent, all uppercase, with the “-” being consistently used to show sub-groups and the “/” being used to show aliases. To get a macro view of the type of crimes being committed I am going to collapse the subgroups moving forward. However I want to point out, this detailed naming system give us the ability to easily investigate subgroup differences, it’s a really nice surprise that it is formatted so well!</p>
+<p>Probably my favorite functions out of <code>library(forcats)</code> are <code>fct_infreq()</code> and <code>fct_inorder()</code> The first does the equivalent of <code>table() %&gt;% sort(descreasing = T) %&gt;% unique()</code> to define the the levels of a factor, with the most frequent assigned lowest levels by default. It’s counter-part <code>fct_inorder()</code> assigns levels based on current tibble order, and this can be equally useful when piped after <code>arrange()</code>. <code>arrange(mtcars, -cyl) %&gt;% mutate(cyl = fct_inorder(cyl))</code>. If you take one thing away from this write up hopefully these two are it, they are nice additions to R and big time savers for me.</p>
+<pre class="r"><code>tib$offense %&lt;&gt;% gsub(&quot;-.*&quot;, &quot;&quot;, .) %&gt;%
+    gsub(&quot;/.*&quot;, &quot;&quot;, .)
+
+# reset levels
+tib$offense %&lt;&gt;% as.factor() %&gt;%
+    forcats::fct_infreq()</code></pre>
+<p>Now we have our tags collapsed and ordered by frequency, let’s look at the distribution of reports across offenses. I’m using a little <code>as.numeric(any_factor)</code> hack here to help avoid too much axis text. Also since most time-series data follows an exponential distribution, I went ahead and simulated a random draw from an exponential distribution with a mean of 6. This distribution comparison serves as a visualize sanity check to make sure we’re on the right path.</p>
+<pre class="r"><code># simulated data
+sims_tib &lt;- tibble(offense = round(rexp(n = nrow(tib), rate = 1/6)))
+# rate is defined as 1 / mu for exponential distributions
+
+ggplot(tib, aes(as.numeric(offense), fill = &quot;real data&quot;)) +
+    geom_bar(alpha = .5) +
+    geom_bar(data = sims_tib, aes(fill = &quot;exponential sim&quot;), alpha = .5) +
+    scale_fill_brewer(palette = &quot;Set1&quot;, name = NULL) +
+    scale_x_continuous(breaks = seq(10,50,10), limits = c(0,50)) +
+    labs(title = &quot;Top 50 tags compared to expoential distribution (mu = 6)&quot;,
+         y = &quot;tag count&quot;, x = &quot;tag rank by count&quot;) +
+    theme(legend.position = c(.85, .85))</code></pre>
+<p><img src="/post/2017-11-12-cville-s-towing-forecast_files/figure-html/distribution-1.png" width="672" /></p>
+<p>The real data and the simulated data line up really well! I like doing these checks early on in an analysis, just to make sure I’m not missing any unexpected features or I’m not wasting my time on noise.</p>
+<p>Now we are starting to feel pretty good about our dataset…let’s take a closer look at the top 16 tags and see if we can detect any interesting patterns that might help explain the overall spikes we were seeing in total cases in September and October.</p>
+<pre class="r"><code>top16 &lt;- mutate(tib, offense = forcats::fct_infreq(offense)) %&gt;%
+    filter(offense %in% levels(offense)[1:16]) %&gt;%
+    droplevels()
+
+# decode to shorter names for plotting
+decode &lt;- c(&quot;Larceny&quot;, &quot;Assault&quot;, &quot;Towing&quot;, &quot;Traffic&quot;,
+            &quot;Vandalism&quot;, &quot;Property&quot;, &quot;Drugs&quot;, &quot;Assist Citizen&quot;,
+            &quot;Suspicious&quot;, &quot;Fraud&quot;, &quot;Burglary&quot;, &quot;Animal&quot;,
+            &quot;Runaway&quot;, &quot;DUI&quot;, &quot;Disorderly&quot;, &quot;Missing Person&quot;) %&gt;%
+    set_names(levels(top16$offense))
+
+# use forcats::fct_infreq() again
+top16$offense %&lt;&gt;% decode[.] %&gt;%
+    forcats::fct_infreq()
+
+ggplot(top16, aes(date, color = offense)) +
+    geom_rect(data = students_back, aes(xmin = date_min, xmax = date_max),
+              ymin = -0, ymax = Inf, color = NA, fill = &quot;grey&quot;, alpha = .5) +
+    geom_freqpoly(alpha = .75, bins = 60, size = 1) +
+    scale_x_date(breaks = seq(date(&quot;2013-01-01&quot;), date(&quot;2017-01-01&quot;), length.out = 5),
+                 date_labels = &quot;&#39;%y&quot;, limits = c(date(&quot;2012-08-15&quot;), date(&quot;2017-08-16&quot;))) +
+    scale_color_d3(palette = &quot;category20&quot;) +
+    facet_wrap(~offense, scales = &quot;free_y&quot;) +
+    theme(legend.position = &quot;none&quot;) +
+    labs(title = &quot;Top 16 most reported offenses (collapsed)&quot;,
+         caption = &quot;Data[2012-08-15:2017-08-01]&quot;,
+         y = NULL, x = NULL)</code></pre>
+<p><img src="/post/2017-11-12-cville-s-towing-forecast_files/figure-html/top16-1.png" width="672" /></p>
+<p>It looks like “Assault”, “Towing”, “Vandalism” and “Disorderly” all have yearly spikes during our August to November, interval of interest . “Towing” is the only one of those that looks like it has been increasing steadily over the last five years. I will be focusing on “Towing” only in the time-series modeling next, but remember that “Assault”, had sub-categories that we collapsed earlier, so that might be an interesting area to look into further if one where so inclined.</p>
+</div>
+<div id="forcast-calls-for-tow" class="section level2">
+<h2>Forcast calls for tow</h2>
+<p>To get start with “Towing”, first lets quantify that year over year increase, we saw in the spark lines and get a better handle on the seasonal distribution with a nice stacked histogram.</p>
+<pre class="r"><code>tow &lt;- filter(top16, offense == &quot;Towing&quot;)
+
+# drop 2012 and 2017 bc partial years
+tow %&lt;&gt;% filter(!(year %in% c(&quot;2012&quot;, &quot;2017&quot;)))
+
+ggplot(tow, aes(as.numeric(month), fill = as.factor(year))) +
+    geom_rect(xmin = 8, xmax = 10.5, ymax = Inf, ymin = 0, fill = &quot;grey&quot;, alpha = .5) +
+    geom_histogram(bins = 12) +
+    scale_x_continuous(breaks = 1:12, labels = month.abb, expand = c(0,0)) +
+    viridis::scale_fill_viridis(name = NULL, discrete = TRUE, direction = -1) +
+    labs(title = &quot;Monthly tow-tals&quot;,
+         x = NULL, y = NULL,
+         caption = &quot;Data[2013-01-01:2016-12-31]&quot;) +
+    theme(legend.position = c(.95, .9))</code></pre>
+<p><img src="/post/2017-11-12-cville-s-towing-forecast_files/figure-html/tow-1.png" width="672" /></p>
+<p>We can see that the big annual spike is peaking in Sept-Oct. There also is a small bump in March and April, which also coincides with students returning for semester. Perhaps there is something else lurking to better explain our towing report spikes? Football maybe?</p>
+<p>Regardless it’s clear that this data set has repeated annual patterns. So if we want to model it, a simple <code>lm()</code> won’t do for accurately projecting future monthly towing totals.</p>
+<p>This ia where the <code>library(forecast)</code> comes in to define a syntax for time series modeling. This wonderful package, built by <a href="https://github.com/robjhyndman">Rob Hyndman</a>, is on version 8.1 as of this typing and has long been the standard tool for time-series analysis with <code>R</code>. It comes loaded with a bunch of customization functions for smoothing and decomposing, but for now let’s stick to the basics to get going.</p>
+<p>The first step to working with <code>forecast()</code> is to create a <code>time.series</code> object, which is just the response variable values grouped by time series period. Don’t worry they are easy to create and print very well in the console :)</p>
+<pre class="r"><code># reset to all data
+tow &lt;- filter(top16, offense == &quot;Towing&quot;)
+
+month_tib &lt;- arrange(tow, year, month) %&gt;%
+    group_by(year, month) %&gt;%
+    tally() %&gt;%
+    ungroup() %&gt;%
+    slice(-1) # drop Aug 2012 (only 6 cases)
+
+month_vec &lt;- select(month_tib, n) %&gt;%
+    unlist()
+
+# build time-series object
+myts &lt;- ts(month_vec, start = c(2012, 9), frequency = 12)
+myts</code></pre>
+<pre><code>##      Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
+## 2012                                  54  54  60  27
+## 2013  16  25  31  49  27  34  35  40  64  66  50  51
+## 2014  35  33  43  38  53  39  44  49  53  61  63  29
+## 2015  31  31  48  67  39  23  36  68  85  67  53  36
+## 2016  71  50  70  51  49  49  45  54  82 104  53  28
+## 2017  60  65  76  81  56  44  46  48</code></pre>
+<p>Now that we have restructured our data for <code>forecast()</code>, we can take advantage of its really nice default model paramenters. To start with let’s peak at the underlying trends with the decomposition function <code>stl()</code>, which stands for Seasonal, Trend and Loess.</p>
+<pre class="r"><code>decomp_fit &lt;- stl(myts, s.window= &quot;periodic&quot;)
+
+plot(decomp_fit)</code></pre>
+<p><img src="/post/2017-11-12-cville-s-towing-forecast_files/figure-html/stl-1.png" width="672" /></p>
+<p>That is a quick way to look at the model components. We can see our raw data, the seasonal model, the loess trend model, its residuals to the raw data. The model has detected the strong seasonal spike we saw in September and Octorber as well as the steady annual increase of tows reported.</p>
+<p>Next let’s build a model that can combine the seasonal and trend components via <code>HoltWinters()</code>. This will allow us to project future towing report rates using all of the seasonal pattern information we have in our model to help us make more accurate predictions.</p>
+<pre class="r"><code>hw_fit &lt;- HoltWinters(myts)
+# plot(hw_fit)
+
+# make predictions 
+month_preds &lt;- forecast(hw_fit, 15) %&gt;% # 15 periods ahead; returns Sep17 : Oct18
+    as.tibble %&gt;%
+    .[[1]]</code></pre>
+<p>Using for the abilities of <code>forecast()</code> it is easy to use our model for future projections. The only thing we have to do now is tidy up those projections so we can plot them.</p>
+<pre class="r"><code># build a tidy tib for plotting
+next_tib &lt;- tibble(date = seq(date(&quot;2017-09-01&quot;), date(&quot;2018-11-01&quot;), &quot;1 month&quot;),
+                    y = month_preds)
+
+# format month_tib to match next_tib
+month_tib %&lt;&gt;% mutate(date = date(paste(year, month, &quot;01&quot;, sep = &quot;-&quot;))) %&gt;%
+    rename(y = n)
+
+# bind on AUG17 info for smoothness
+aug17 &lt;- month_tib[nrow(month_tib),]
+next_tib %&lt;&gt;% bind_rows(aug17, .)</code></pre>
+<p>Now we have built a data source ready to plug into <code>ggplot()</code> to show our model predictions for the next year.</p>
+<p>Just to really drive home the difference of between the seasonal and loess trend component of our model, let’s build out the loess model for the identical interval, for co-plotting.</p>
+<pre class="r"><code>trend_fit &lt;- HoltWinters(decomp_fit$time.series[,2])
+trend_preds &lt;- forecast(trend_fit, 15) %&gt;%
+    as.tibble %&gt;%
+    .[[1]]
+
+# bind in old data in model
+trend_past &lt;- as.numeric(decomp_fit$time.series[,2])
+trend_tib &lt;- tibble(date = seq(date(&quot;2012-09-01&quot;), date(&quot;2018-11-01&quot;), by = &quot;1 month&quot;),
+                     y = c(trend_past, trend_preds))</code></pre>
+<p>Now all we have to do is layer them together.</p>
+<pre class="r"><code># expand students_back for future
+students_back2 &lt;- tibble(date = seq(as.Date(&quot;2012-09-01&quot;), as.Date(&quot;2018-09-01&quot;), &quot;1 year&quot;),
+                        date_min = date - ddays(16), # ~ Aug16
+                        date_max = date %m+% months(2) )
+
+# format next_tib
+next_tib$year &lt;- year(next_tib$date)
+
+# projections plot
+ggplot(month_tib, aes(date, y, color = y)) +
+    geom_rect(data = students_back2, aes(xmin = date_min, xmax = date_max, y = NULL),
+              ymin = -0, ymax = Inf, color = NA, fill = &quot;grey&quot;, alpha = .5) +
+    geom_path(data = trend_tib, aes(x = date, y = y, color = NULL), linetype = 2) +
+    geom_path(size = 1) +
+    geom_path(data = next_tib, aes(y = y), size = 1, alpha = .5) +
+    annotate(geom = &quot;text&quot;, label = &quot;&lt;&lt;&lt; Historical | Projected &gt;&gt;&gt;&quot;, x = date(&quot;2017-08-01&quot;), y = 110, size = 3) +
+    viridis::scale_color_viridis(name = NULL, direction = -1) +
+    scale_x_date(breaks = brks, date_minor_breaks = &quot;1 month&quot;,
+                 labels = nicely, expand = c(0,0),
+                 limits = c(date(&quot;2012-08-16&quot;), date(&quot;2018-11-01&quot;))) +
+    labs(title = &quot;Forecasted monthly tow-tals&quot;,
+         subtitle = &quot;Mean trend as dashed line&quot;,
+         y = NULL,
+         x = NULL,
+         caption = &quot;Data[2012-08-16:2017-08-31]; Projections[2017-09-01:2018-10-31]&quot;) +
+    theme(legend.position = &quot;none&quot;)</code></pre>
+<p><img src="/post/2017-11-12-cville-s-towing-forecast_files/figure-html/fin_plot-1.png" width="672" /></p>
+<p>We see the loess (dashed) trend moving back down towards the historical average in our projection, while the our total seasonal plus trend model is still climbing upward.</p>
+<p>I hope this outline is a useful template for jumping into the ODP Crime Data with R. I know there a lot of trends in the Crime Data set that deserve more exploration, so time to get busy. Hopefully this portal can be used to have fun and build a more informed and engaged community. See you at the next Meetup!</p>
+</div>
+</div>
