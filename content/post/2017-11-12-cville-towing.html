@@ -1,7 +1,7 @@
 ---
 title: Cville's Towing Forecast
 author: Nate Day
-date: '2017-11-12'
+date: '2017-09-04'
 output:
   html_document:
     toc: true
@@ -94,7 +94,7 @@ str(tib, max.level = 1)</code></pre>
          y = &quot;# reports&quot;,
          x = NULL,
          caption = &quot;Data[2012-08-30:2017-08-27] &quot;)</code></pre>
-<p><img src="/post/2017-11-12-cville-s-towing-forecast_files/figure-html/range-1.png" width="672" /></p>
+<p><img src="/post/2017-11-12-cville-towing_files/figure-html/range-1.png" width="672" /></p>
 <p>Looks like we have five years of continuous police reporting data going back to September 2012, not too shabby for a single csv. First glance tells us the total number of cases reported has been steady, maybe even decreasing slightly each year, which is good news for any community. It also looks like there is a consistent spike in the number of police reports each year around September and October, I wonder if we can figure out hoo/what is responsible for that fall spike in crime reports?</p>
 <div id="hoo-dunnit" class="section level2">
 <h2>Hoo dunnit?</h2>
@@ -114,7 +114,7 @@ ggplot(tib, aes(date)) +
          subtitle = &quot;Rectangles highlight Aug 16th - Oct 31st&quot;,
          x = NULL, y = NULL,
          caption = expression(paste(italic(&quot;Hoo&quot;), &quot;&#39;s causing that uptick?&quot;, &quot; Data[2012-08-16:2017-07-31]&quot;)))</code></pre>
-<p><img src="/post/2017-11-12-cville-s-towing-forecast_files/figure-html/students-1.png" width="672" /></p>
+<p><img src="/post/2017-11-12-cville-towing_files/figure-html/students-1.png" width="672" /></p>
 <p>We all know correlation does not equal causation. But I would wager that this pattern is real and common for any community with a college (or transient population). Especially for Charlottesville, where the population swells by roughly 25% percent when the undergrads are in town, you would expect bump in all civic activity, including crime.</p>
 <p>While this annual pattern is interesting, looking at the total counts doesn’t really tell us anything specific. Perhaps we can pull apart the total values and find some specific trends within single offense tags.</p>
 </div>
@@ -171,7 +171,7 @@ ggplot(tib, aes(as.numeric(offense), fill = &quot;real data&quot;)) +
     labs(title = &quot;Top 50 tags compared to expoential distribution (mu = 6)&quot;,
          y = &quot;tag count&quot;, x = &quot;tag rank by count&quot;) +
     theme(legend.position = c(.85, .85))</code></pre>
-<p><img src="/post/2017-11-12-cville-s-towing-forecast_files/figure-html/distribution-1.png" width="672" /></p>
+<p><img src="/post/2017-11-12-cville-towing_files/figure-html/distribution-1.png" width="672" /></p>
 <p>The real data and the simulated data line up really well! I like doing these checks early on in an analysis, just to make sure I’m not missing any unexpected features or I’m not wasting my time on noise.</p>
 <p>Now we are starting to feel pretty good about our dataset…let’s take a closer look at the top 16 tags and see if we can detect any interesting patterns that might help explain the overall spikes we were seeing in total cases in September and October.</p>
 <pre class="r"><code>top16 &lt;- mutate(tib, offense = forcats::fct_infreq(offense)) %&gt;%
@@ -201,7 +201,7 @@ ggplot(top16, aes(date, color = offense)) +
     labs(title = &quot;Top 16 most reported offenses (collapsed)&quot;,
          caption = &quot;Data[2012-08-15:2017-08-01]&quot;,
          y = NULL, x = NULL)</code></pre>
-<p><img src="/post/2017-11-12-cville-s-towing-forecast_files/figure-html/top16-1.png" width="672" /></p>
+<p><img src="/post/2017-11-12-cville-towing_files/figure-html/top16-1.png" width="672" /></p>
 <p>It looks like “Assault”, “Towing”, “Vandalism” and “Disorderly” all have yearly spikes during our August to November, interval of interest . “Towing” is the only one of those that looks like it has been increasing steadily over the last five years. I will be focusing on “Towing” only in the time-series modeling next, but remember that “Assault”, had sub-categories that we collapsed earlier, so that might be an interesting area to look into further if one where so inclined.</p>
 </div>
 <div id="forcast-calls-for-tow" class="section level2">
@@ -221,7 +221,7 @@ ggplot(tow, aes(as.numeric(month), fill = as.factor(year))) +
          x = NULL, y = NULL,
          caption = &quot;Data[2013-01-01:2016-12-31]&quot;) +
     theme(legend.position = c(.95, .9))</code></pre>
-<p><img src="/post/2017-11-12-cville-s-towing-forecast_files/figure-html/tow-1.png" width="672" /></p>
+<p><img src="/post/2017-11-12-cville-towing_files/figure-html/tow-1.png" width="672" /></p>
 <p>We can see that the big annual spike is peaking in Sept-Oct. There also is a small bump in March and April, which also coincides with students returning for semester. Perhaps there is something else lurking to better explain our towing report spikes? Football maybe?</p>
 <p>Regardless it’s clear that this data set has repeated annual patterns. So if we want to model it, a simple <code>lm()</code> won’t do for accurately projecting future monthly towing totals.</p>
 <p>This ia where the <code>library(forecast)</code> comes in to define a syntax for time series modeling. This wonderful package, built by <a href="https://github.com/robjhyndman">Rob Hyndman</a>, is on version 8.1 as of this typing and has long been the standard tool for time-series analysis with <code>R</code>. It comes loaded with a bunch of customization functions for smoothing and decomposing, but for now let’s stick to the basics to get going.</p>
@@ -252,7 +252,7 @@ myts</code></pre>
 <pre class="r"><code>decomp_fit &lt;- stl(myts, s.window= &quot;periodic&quot;)
 
 plot(decomp_fit)</code></pre>
-<p><img src="/post/2017-11-12-cville-s-towing-forecast_files/figure-html/stl-1.png" width="672" /></p>
+<p><img src="/post/2017-11-12-cville-towing_files/figure-html/stl-1.png" width="672" /></p>
 <p>That is a quick way to look at the model components. We can see our raw data, the seasonal model, the loess trend model, its residuals to the raw data. The model has detected the strong seasonal spike we saw in September and Octorber as well as the steady annual increase of tows reported.</p>
 <p>Next let’s build a model that can combine the seasonal and trend components via <code>HoltWinters()</code>. This will allow us to project future towing report rates using all of the seasonal pattern information we have in our model to help us make more accurate predictions.</p>
 <pre class="r"><code>hw_fit &lt;- HoltWinters(myts)
@@ -312,7 +312,7 @@ ggplot(month_tib, aes(date, y, color = y)) +
          x = NULL,
          caption = &quot;Data[2012-08-16:2017-08-31]; Projections[2017-09-01:2018-10-31]&quot;) +
     theme(legend.position = &quot;none&quot;)</code></pre>
-<p><img src="/post/2017-11-12-cville-s-towing-forecast_files/figure-html/fin_plot-1.png" width="672" /></p>
+<p><img src="/post/2017-11-12-cville-towing_files/figure-html/fin_plot-1.png" width="672" /></p>
 <p>We see the loess (dashed) trend moving back down towards the historical average in our projection, while the our total seasonal plus trend model is still climbing upward.</p>
 <p>I hope this outline is a useful template for jumping into the ODP Crime Data with R. I know there a lot of trends in the Crime Data set that deserve more exploration, so time to get busy. Hopefully this portal can be used to have fun and build a more informed and engaged community. See you at the next Meetup!</p>
 </div>
