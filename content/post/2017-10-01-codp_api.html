@@ -57,27 +57,27 @@ crime_json &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/d1877e3
 <p>The data that we are after is in the second element <code>.$features</code>, but we can see from our <code>View()</code> look-in that it is formatted slightly weird. Let’s look at the top rows:</p>
 <pre class="r"><code>crime_df &lt;- crime_json[[&quot;features&quot;]]
 head(crime_df)</code></pre>
-<pre><code>##      type properties.RecordID                       properties.Offense
-## 1 Feature                1001     COMMUNITY RELATIONS INITIATIVE (CRI)
-## 2 Feature                1002        CRIME PREVENTION INITIATIVE (CPI)
-## 3 Feature                1003                      TRAFFIC-HIT AND RUN
-## 4 Feature                1004                LARCENY-ALL OTHER LARCENY
-## 5 Feature                1005         LARCENY-THEFT FROM MOTOR VEHICLE
-## 6 Feature                1006 VANDALISM/DAMAGE/DESTRUCTION OF PROPERTY
+<pre><code>##      type properties.RecordID             properties.Offense
+## 1 Feature                3001       LARCENY - POCKET PICKING
+## 2 Feature                3002                 ASSAULT-SIMPLE
+## 3 Feature                3003 BURGLARY/BREAKING AND ENTERING
+## 4 Feature                3004                        ROBBERY
+## 5 Feature                3005                 ASSAULT-SIMPLE
+## 6 Feature                3006                  TOWED VEHICLE
 ##   properties.IncidentID properties.BlockNumber properties.StreetName
-## 1             201300259                    400            CHERRY AVE
-## 2             201300260                    200     RIDGE MCINTIRE RD
-## 3             201300261                    400           BRANDON AVE
-## 4             201300262                   1400          MELBOURNE RD
-## 5             201300263                    700           BELMONT AVE
-## 6             201300264                    100      UNIVERSITY MANOR
+## 1             201303113                      0             E MAIN ST
+## 2             201303114                    200         STRIBLING AVE
+## 3             201303115                   1300             RUGBY AVE
+## 4             201303117                      0             8TH ST NW
+## 5             201303118                    900           WOODFOLK DR
+## 6             201303119                    100                RUN ST
 ##   properties.Agency properties.DateReported properties.HourReported
-## 1              CPD   2013/01/14 00:00:00+00                    0537
-## 2              CPD   2013/01/14 00:00:00+00                    0538
-## 3              CPD   2013/01/14 00:00:00+00                    0830
-## 4              CPD   2013/01/14 00:00:00+00                    0830
-## 5              CPD   2013/01/14 00:00:00+00                    0938
-## 6              CPD   2013/01/14 00:00:00+00                    0939
+## 1              CPD   2013/06/02 00:00:00+00                    1827
+## 2              CPD   2013/06/02 00:00:00+00                    1836
+## 3              CPD   2013/06/02 00:00:00+00                    1852
+## 4              CPD   2013/06/02 00:00:00+00                    2314
+## 5              CPD   2013/06/02 00:00:00+00                    2329
+## 6              CPD   2013/06/02 00:00:00+00                    2255
 ##   geometry
 ## 1       NA
 ## 2       NA

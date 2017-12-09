@@ -2,13 +2,6 @@
 title: Cville's Towing Forecast
 author: Nate Day
 date: '2017-09-04'
-output:
-  html_document:
-    toc: true
-    toc_depth: 3
-    toc_float:
-      collapsed: true
-      smooth_scroll: false
 description: "An exploratory analysis of Cville's open crime data, with an introduction to time series modeling for prediction"
 slug: codp-towing-forecast
 categories:
@@ -27,7 +20,7 @@ tags:
 <p>I love the OPD concept and believe that data can help drive better decisions for Charlottesville. So I used my long Labor day weekend to write up an analysis, using the ODP to do some time-series forecasting with <code>R</code>.</p>
 <p>The portal had a good layout and all of the data I have touched has been well formatted (thank you so much). So let’s dive into the analysis and I apologize for the typos, but not for the bad puns.</p>
 <div id="open-up-already" class="section level4">
-<h4><img src="/images/codp_towing/open_up.gif" alt="Open up already!" /></h4>
+<h4><img src="/images/codp_towing_open_up.gif" alt="Open up already!" /></h4>
 </div>
 </div>
 <div id="import" class="section level1">
@@ -100,7 +93,7 @@ str(tib, max.level = 1)</code></pre>
 <h2>Hoo dunnit?</h2>
 <p>I don’t work with date or time data very often but when I do I always use the <a href="https://cran.r-project.org/web/packages/lubridate/vignettes/lubridate.html"><code>lubridate</code></a> package. It maintains the tidy syntax and allows for easy manipulation (adding, subtracting, building sequence) of date and time period objects. Let’s use it here to build an series of annually reoccurring date ranges from mid-August to the end of October to feed in to <code>geom_rect()</code> highlight our window of interest.</p>
 <pre class="r"><code>students_back &lt;- tibble(date = seq(as.Date(&quot;2012-09-01&quot;), as.Date(&quot;2017-9-01&quot;), length.out = 6),
-                        date_min = date - ddays(16), # ~ Aug16
+                        date_min = date - days(16), # ~ Aug16
                         date_max = date %m+% months(2) ) # add to month
 
 ggplot(tib, aes(date)) +
