@@ -1,6 +1,8 @@
 base
 sf
 geojsonio
+viridisLite
+viridis
 tidyverse
 ggplot2
 tibble
