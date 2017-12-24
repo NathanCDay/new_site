@@ -141,9 +141,9 @@ res <- bind_rows(res1a_parsed, res2a_parsed) %>%
     full_join(address_df, ., by = c("address" = "query")) # on Github
 ```
 
-This final table with all of the unique address geocodes is available on (my GitHub here)[]. I plan to periodically update this as new versions of the crime data become available, but I will checke here first, so I don't needlessly rerun queries. Eventually this may turn into an offline geocoder for Charlottesville.
+This final table with all of the unique address geocodes is available on [my GitHub here](https://github.com/NathanCDay/cville_crime/blob/master/addresses_geocode.csv. I plan to periodically update this as new versions of the crime data become available, but I will checke here first, so I don't needlessly rerun queries. Eventually this may turn into an offline geocoder for Charlottesville.
 
-Becasue I like making things easy, I also have a full geocoded version of the Crime dataset we downloaded the the ODP available here on my GitHub too. But if you want to make your own just use `inner_join()`.
+Becasue I like making things easy, I also have a [full geocoded version of the Crime dataset](https://github.com/NathanCDay/cville_crime/blob/master/crime_geocode.csv) we downloaded the the ODP available here on my GitHub too. But if you want to make your own just use `inner_join()`.
 
 ```{r, eval = FALSE}
 crime <- inner_join(crime_df, res) # also on Github

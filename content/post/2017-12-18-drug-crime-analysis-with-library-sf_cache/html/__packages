@@ -1,0 +1,16 @@
+base
+sf
+geojsonio
+viridisLite
+viridis
+tidyverse
+ggplot2
+tibble
+tidyr
+readr
+purrr
+dplyr
+stringr
+forcats
+magrittr
+bindrcpp
