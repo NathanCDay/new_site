@@ -9,7 +9,7 @@ tags:
   - sf
   - spatial
 description: Using library(sf) to visualize the spatial distribution of drug related
-  crimes in Chalotteville
+  crimes in Chalottesville
 slug: drug-crime-analysis-with-library-sf
 ---
 
@@ -78,7 +78,7 @@ Because plotting ~31,000 points is a lot to plot, let's look at the data for uni
 ```{r viz_check, fig}
 # install dev ggplot2
 library(devtools)
-install_github("tidyverse/devtools")
+install_github("tidyverse/ggplot2")
 
 ggplot(census) +
     geom_sf(data = group_by(crime, address) %>% slice(1), # only unique addresses

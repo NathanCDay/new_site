@@ -2,14 +2,15 @@
 title: Spatial anlysis of drug crime
 author: Nate Day
 date: '2017-12-18'
-description: "Using library(sf) to visualize the spatial distribution of drug related crimes in Chalotteville"
-slug: drug-crime-analysis-with-library-sf
 categories:
   - Cville Open Data
 tags:
   - geocode
   - sf
   - spatial
+description: Using library(sf) to visualize the spatial distribution of drug related
+  crimes in Chalottesville
+slug: drug-crime-analysis-with-library-sf
 ---
 
 <script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
@@ -69,10 +70,9 @@ library(devtools)</code></pre>
 <pre><code>## The following object is masked from &#39;package:geojsonio&#39;:
 ## 
 ##     lint</code></pre>
-<pre class="r"><code>install_github(&quot;tidyverse/devtools&quot;)</code></pre>
-<pre><code>## Downloading GitHub repo tidyverse/devtools@master
-## from URL https://api.github.com/repos/tidyverse/devtools/zipball/master</code></pre>
-<pre><code>## Installation failed: Not Found (404)</code></pre>
+<pre class="r"><code>install_github(&quot;tidyverse/ggplot2&quot;)</code></pre>
+<pre><code>## Skipping install of &#39;ggplot2&#39; from a github remote, the SHA1 (a637c672) has not changed since last install.
+##   Use `force = TRUE` to force installation</code></pre>
 <pre class="r"><code>ggplot(census) +
     geom_sf(data = group_by(crime, address) %&gt;% slice(1), # only unique addresses
             alpha = .1) +
