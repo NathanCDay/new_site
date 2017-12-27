@@ -14,3 +14,5 @@ stringr
 forcats
 magrittr
 bindrcpp
+leaflet
+cowplot

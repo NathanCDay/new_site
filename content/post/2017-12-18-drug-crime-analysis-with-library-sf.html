@@ -1,7 +1,8 @@
 ---
-title: Drug crime spatial analysis with library(sf)
+title: Spatial anlysis of drug crime
 author: Nate Day
 date: '2017-12-18'
+description: "Using library(sf) to visualize the spatial distribution of drug related crimes in Chalotteville"
 slug: drug-crime-analysis-with-library-sf
 categories:
   - Cville Open Data
@@ -19,9 +20,8 @@ tags:
 
 <div id="intro" class="section level2">
 <h2>Intro</h2>
-<p>This post is focused on using the new R 📦 <a href="https://cran.r-project.org/web/packages/sf/sf.pdf"><code>library(sf)</code></a> and the <a href="http://opendata.charlottesville.org/datasets/crime-data">Charlottesville (VA) Police Department’s Crime Reports dataset</a> to locate drug activity hotspots in the city. This markdown uses tehniques discussed and data dervied from my earlier posts with the <a href="/categories/cville-open-data">Cville Open Data Tag</a>.</p>
-<p>The biggest reason I am excited about <code>library(sf)</code> is its new <code>sf</code> objects, which are extended dataframes with a specialized list column for storing simple features. <a href="https://en.wikipedia.org/wiki/Simple_Features">Simple features</a> is an ISO approved standardized format for representing two dimensional geometries, ie points, lines and polygons. <code>library(sf)</code> functions automatically use this list column when available, leaving all of the other columns for associated variables. This is means working with my favorite <code>tidyverse</code> tools to wrangle and summarize data are now just one <code>%&gt;%</code> away.</p>
-<p>All of the data used here is available either directly from the portal itself or my <a href="https://github.com/NathanCDay/cville_crime">Github repo</a>. If you like this stuff, I’m leading a Smart Cville Data Dive event on February 7th, and you should totally come.</p>
+<p>Historically working with spatial data in <code>R</code> revolved around using <code>library(sp)</code>and its special <code>S4</code> classes, like “SpatialPolygonsDataFrame”. The biggest reason I am excited to transition to <code>library(sf)</code> is its new <code>sf</code> objects, which are extended dataframes with a specialized list column for storing spatial geometries as simple features. This reimagined data structure means using with my favorite <code>tidyverse</code> tools on <code>sf</code> objects are now just one little <code>%&gt;%</code> away.</p>
+<p>All of the data used here is originally sourced from the <a href="http://opendata.charlottesville.org/">Charlottesville Open Data Portal</a>. A geocoded version of the Police Reports is discussed in an earlier post and is available as a csv on <a href="https://github.com/NathanCDay/cville_crime">my Github repo here</a>. If you like this stuff, I’m helping with a Smart Cville Crime Data Deep Dive event on February 7th, and you should totally come.</p>
 <pre class="r"><code># the library ---------------------------------------------------------------
 library(sf) # tools for simple features
 library(geojsonio) # API access
@@ -31,62 +31,101 @@ library(cowplot) # grid ggplots
 library(tidyverse) # always
 library(magrittr) # %&lt;&gt;% life
 
-theme_set(theme_void())</code></pre>
+theme_set(theme_void() +
+              theme(panel.grid = element_blank()))</code></pre>
 </div>
 <div id="data-in" class="section level2">
 <h2>Data In</h2>
-<p>The first piece of data we need is the geo-coded crime dataset from my <a href="/posts/drug-crime-analysis-with-library-sf.html">last post</a>. Since the published version of the crime data doesn’t include any geo-spatial information, Google Maps and I went ahead and tagged most of the records with longitude and latitude coordinates.</p>
+<p>The first piece of data we need is the geo-coded version of the police reports dataset that Google Maps and I made in <a href="/posts/drug-crime-analysis-with-library-sf.html">my last post</a>. You can download the csv file locally or use the <code>raw.githubusercontent.com</code> domain to download directly via URL from Github.</p>
 <pre class="r"><code>crime &lt;- read_csv(&quot;https://raw.githubusercontent.com/NathanCDay/cville_crime/master/crime_geocode.csv&quot;)
+
 crime %&lt;&gt;% filter(complete.cases(crime)) # not all of the records could be geo-coded
-names(crime) %&lt;&gt;% tolower() # easy typing
 
-# flag drug related offense tags
-crime %&lt;&gt;% mutate(drug_flag = ifelse(grepl(&quot;drug&quot;, offense, ignore.case = TRUE),
-                                     &quot;drugs&quot;, &quot;not_drugs&quot;))</code></pre>
-<p>Geo-coding is messy business and so is manual data entry. When I originally geocoded the crime dataset, I wanted to balance the ammount of manual manipulation with location accuracy. So I made minimal changes to the raw address values and allowed some obvious typos and cases of mistaken location to slip through in an effort to keep the dataset as stock as possible. But in this markdown we will do a little bit more filtering to clean up.</p>
-<p>We will use the <a href="http://opendata.charlottesville.org/datasets/us-census-block-group-area-2010">2010 US Census Block Group Area data</a> for Charlottesville, Virginia, to do some spatial filtering. This data is available on the ODP in a variety of formats but we will use the great <code>library(geojsonio)</code>, which <a href="/posts/">I wrote about here</a>, the ODP’s API to read it in and minimize headaches.</p>
+names(crime) %&lt;&gt;% tolower() # easy typing</code></pre>
+<p>In case you missed the last post, geo-coding and manual data entry are both messy businesses. Not every address in the police reports can be accurately geocoded, but in the name of transparency my geo-coded version retains these missed locations to match the original.</p>
+<p>The second data piece we need is the <a href="http://opendata.charlottesville.org/datasets/us-census-block-group-area-2010">2010 US Census Block Group Areas</a> for Charlottesville, Virginia, to filter the crime report locations to keep only those within the city limits. I am using <code>library(geojsonio)</code> to grab this data directly from the <a href="/posts.">ODP’s API</a>.</p>
 <pre class="r"><code>census &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/e60c072dbb734454a849d21d3814cc5a_14.geojson&quot;,
-                       what = &quot;sp&quot;) # a list object
-census %&lt;&gt;% st_as_sf() # convert to simple features data frame
-names(census) %&lt;&gt;% tolower() # easy typing
+                       what = &quot;sp&quot;) # a Spatial object (list)
 
-# keep only the housing and population related variables
-census %&lt;&gt;% select(geometry, starts_with(&quot;h&quot;), objectid:other) </code></pre>
-<p>We are keeping certain columes to give use some demographic and housing data along with the mapping areas.</p>
+census %&lt;&gt;% st_as_sf() # convert to sf
+
+names(census) %&lt;&gt;% tolower()
+
+census %&lt;&gt;% select(objectid, area = area_, population, geometry) # keep only a few variables</code></pre>
+<p>In spatial analysis, coordinate referense systems (CRS) are critical when working with multiple data sources. It is required that the CRS values match to perform any sort of spatial computations between objects. Since <code>census</code> was downloaded as geoJSON data, it already has a CRS assigned. We will use that for the setting the CRS of <code>crime</code>.</p>
+<pre class="r"><code>crs_val &lt;- st_crs(census, asText = TRUE) # returns CRS as chr
+
+crime %&lt;&gt;% st_as_sf(coords = c(&quot;lon&quot;, &quot;lat&quot;), # define coordinate variables
+                    crs = crs_val) # set CRS to match census</code></pre>
+</div>
+<div id="spatial-viz" class="section level2">
+<h2>Spatial viz</h2>
+<p>Maybe the second biggest reason to be excited about <code>library(sf)</code> is <code>geom_sf()</code>, which is in the development version of <code>library(ggplot2)</code>. This special geom is designed specifically for plotting <code>sf</code> objects, duh, meaning now we can stay in the land of layers and coninue avoiding <code>plot()</code> like the plauge.</p>
+<p>Because plotting ~31,000 points is a lot to plot, let’s look at the data for unique addresses only, which brings us down to ~3,000 points. Remember the addresses in this dataset are only reported to the hundred block level, so we expect to have a lot reports from high frequency blocks.</p>
+<pre class="r"><code># install dev ggplot2
+library(devtools)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;devtools&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:geojsonio&#39;:
+## 
+##     lint</code></pre>
+<pre class="r"><code>install_github(&quot;tidyverse/devtools&quot;)</code></pre>
+<pre><code>## Downloading GitHub repo tidyverse/devtools@master
+## from URL https://api.github.com/repos/tidyverse/devtools/zipball/master</code></pre>
+<pre><code>## Installation failed: Not Found (404)</code></pre>
+<pre class="r"><code>ggplot(census) +
+    geom_sf(data = group_by(crime, address) %&gt;% slice(1), # only unique addresses
+            alpha = .1) +
+    geom_sf(color = &quot;red&quot;, fill = NA)</code></pre>
+<p><img src="/post/2017-12-18-drug-crime-analysis-with-library-sf_files/figure-html/viz_check,%20fig-1.png" width="672" /></p>
+<p>We can see that bulk of the police reports are located within the city limits, but a lot are located just outside in Albemarle County and some reports are far far away. To focus on the crime patterns within the city we want to drop the point outside of the red areas.</p>
 </div>
 <div id="spatial-fitler" class="section level2">
 <h2>Spatial fitler</h2>
-<p>In spatial analysis, coordinate referense systems (CRS) are everything. In order to do any type of measurements, identical CRSs are required. Since the census data is downloaded as geoJSON data, it already has a CRS associated with it, but the crime data does not. Fortunatly <code>df::st_crs</code> and <code>df::st_as_sf</code> make this transformation simple.</p>
-<pre class="r"><code>st_crs(census) # checks crs of an object, returns list</code></pre>
-<pre><code>## $epsg
-## [1] 4326
-## 
-## $proj4string
-## [1] &quot;+proj=longlat +datum=WGS84 +no_defs&quot;
-## 
-## attr(,&quot;class&quot;)
-## [1] &quot;crs&quot;</code></pre>
-<pre class="r"><code>crs_val &lt;- st_crs(census, asText = TRUE) # returns chr string, convienent for use later
-
-# tranform crime to simple features data frame
-crime %&lt;&gt;% st_as_sf(coords = c(&quot;lon&quot;, &quot;lat&quot;), # define geo-spatial variables
-                    crs = crs_val) # set CRS to match census</code></pre>
-<p>To apply our spatial filter we can use good our good ol’ <code>dplyr</code> friends <code>mutate()</code> and <code>filter()</code> paired with <code>sf::st_within()</code>, which is one of several useful functions for computing predicates on pairs of simple feature geometries.</p>
+<p>We will use the areas from <code>census</code> as overlays to check which <code>crime</code> points fall within each, via <code>st_within()</code>. We want to store the resulting census block id for each observation in <code>crime</code> and drop the observations that don’t overlap. Since this is all with <code>sf</code> objects, we can use good the good old <code>library(dplyr)</code> functions <code>mutate()</code> and <code>filter()</code>, to make it happen.</p>
 <pre class="r"><code># add a new column to show which census block group each point resides in
 crime %&lt;&gt;% mutate(within = st_within(crime, census) %&gt;% # returns a list by default
                       as.numeric()) # convert to numeric for mutate()
 
-# remove rows with NAs, because they&#39;re outside of the city
-crime %&lt;&gt;% filter(!is.na(within))</code></pre>
+nrow(crime) # 31888</code></pre>
+<pre><code>## [1] 31888</code></pre>
+<pre class="r"><code># remove rows with NAs, because they&#39;re outside of the city
+crime %&lt;&gt;% filter(!is.na(within))
+nrow(crime) # 31034</code></pre>
+<pre><code>## [1] 31034</code></pre>
+<pre class="r"><code># re-viz
+ggplot(census) +
+    geom_sf(data = group_by(crime, address) %&gt;% slice(1), # only unique addresses
+            alpha = .1) +
+    geom_sf(color = &quot;red&quot;, fill = NA)</code></pre>
+<p><img src="/post/2017-12-18-drug-crime-analysis-with-library-sf_files/figure-html/filter_crime-1.png" width="672" /></p>
+<p>That looks better, doesn’t it? And we only lost ~800 reports.</p>
+<p>Now that we have only the police reports from within the city, let’s take a closer look at the distribution of drug related crime.</p>
 </div>
-<div id="sptial-viz" class="section level2">
-<h2>Sptial viz</h2>
-<p>Now that we’ve pruned down to only the crimes reported within the city limits. We can use the new <code>ggplot2::geom_sf()</code>, to plot it. Right now this <code>geom</code> is only in the development version so to use it you need to install directly from GitHub via <code>devtools::install_github(&quot;tidyverse/devtools&quot;)</code>. Lets use some more tidyverse magic to make a summary plot by address (remeber this data is is only coded to the hundred block), comparing the frequent locations for drug crime compared to all other crimes.</p>
+<div id="where-are-the-drugs" class="section level2">
+<h2>Where are the drugs?</h2>
+<p>In a perfect world all of the drug offenses would have the same tag in <code>crime$offense</code>. But this isn’t DisneyLand so lets use some <code>grepl()</code> to sift out the possible related tags.</p>
+<pre class="r"><code># flag drug-related offense tags
+crime %&lt;&gt;% mutate(drug_flag = ifelse(grepl(&quot;drug&quot;, offense, ignore.case = TRUE),
+                                     &quot;drugs&quot;, &quot;not_drugs&quot;))
+
+# check the &quot;drug-related&quot; tags
+filter(crime, drug_flag == &quot;drugs&quot;) %&gt;% with(table(offense))</code></pre>
+<pre><code>## offense
+##  DRUG AWARENESS PRESENTATION    DRUG EQUIPMENT VIOLATIONS 
+##                            1                           26 
+##      DRUG/NARCOTIC VIOLATION FEDERAL DRUG CONSPIRACY CASE 
+##                         1818                            1 
+##         MISC CRIMINAL - DRUG 
+##                            1</code></pre>
+<p>Those offense tags all seem to be drug related, except “DRUG AWARENESS PRESENTATION”, which doesn’t sound like a criminal report at all. Remember manual data entry is messy business, so let’s just drop the lone “DRUG AWARENESS PRESENTATION” observation and compare the distribution of drug crime and other crime.</p>
+<p>Here again we will use some classic <code>tidyverse</code> verbs directly on <code>crime</code>, to construct a summary of total counts for each <code>drug_flag</code> at every address.</p>
 <pre class="r"><code>address_summary &lt;- group_by(crime, address) %&gt;%
     summarise(drug_crime = sum(drug_flag == &quot;drugs&quot;),
               other_crime = sum(drug_flag != &quot;drugs&quot;)) %&gt;%
     gather(type, number, contains(&quot;crime&quot;))
 
+# now plot it
 ggplot(census) +
     geom_sf() +
     geom_sf(data = address_summary,
@@ -94,7 +133,7 @@ ggplot(census) +
     scale_color_viridis() +
     scale_size_area(max_size = 10) +
     facet_grid(~type)</code></pre>
-<p><img src="/post/2017-12-18-drug-crime-analysis-with-library-sf_files/figure-html/plot_size-1.png" width="672" /></p>
+<p><img src="/post/2017-12-18-drug-crime-analysis-with-library-sf_files/figure-html/address_sum-1.png" width="672" /></p>
 <p>It looks like there is a concentration of crime in the downtown area, which makes sense since becasue crime rates are typically proportional to population/business density. However one address downtown stands out as much more frequent that the rest, let’s investigate what’s going on there.</p>
 <pre class="r"><code>arrange(address_summary, -number) %&gt;% head() # 600 E Market St</code></pre>
 <pre><code>## Simple feature collection with 6 features and 3 fields
@@ -112,8 +151,8 @@ ggplot(census) +
 ## 4   1100 5TH ST SW Charlottesville VA other_crime    341 &lt;POINT (-78.4...&gt;
 ## 5  1100 EMMET ST N Charlottesville VA other_crime    307 &lt;POINT (-78.5...&gt;
 ## 6   400 GARRETT ST Charlottesville VA other_crime    303 &lt;POINT (-78.4...&gt;</code></pre>
-<pre class="r"><code># the police station is at 606 E Market St</code></pre>
-<p>Something is going on there, when the same block as the police station has the most reported cases for both drug crime and all other crimes. Perhaps it has something to do with the departments reporting practices, but this is definately not the city block with the most criminal activity. Let look at the proportion of drug and other crime reported at 600 E Market.</p>
+<p>Something is going on there. I don’t think it’s a coicidence, that the police station is located at 606 E Market St Perhaps it has something to do with the departments reporting practices, but I really doubt most crimes are being commited a stone’s throw from the popo.</p>
+<p>Perhaps we can learn something more by looking at the proportion of crimes reported at 600 E Market for each type of <code>drug_flag</code>.</p>
 <pre class="r"><code>station_props &lt;- arrange(address_summary, -number) %&gt;%
     group_by(type) %&gt;%
     add_count(wt = number) %&gt;%
@@ -138,12 +177,12 @@ summarise(station_props, prop_total = number / n)</code></pre>
 ## sample estimates:
 ##     prop 1     prop 2 
 ## 0.22198159 0.02175626</code></pre>
-<p>The relative proportion of drug crime reported at the police station is much higher than other crimes. This statistically significant difference needs to be investigated more. Recent pushes for more transparent policing have used cell-phone and body-camera videos to capture incidents, but data analysis can also play the same role by identifiying irregular patterns.</p>
-<p>The Murder Accountability Project (MAP), a crime-anlysis non-profit, is an example of this data intiative. Founded by an investiagtive reported and retired homicide detective, their alogrithmic murder suvurvaillance, was featuerd on <a href="https://news.vice.com/en_us/article/5955vd/is-there-a-serial-killer-roaming-the-streets-of-chicago">Vice News</a> for their “red alert” flagging for an active serial killer in Chicago Illinois. Chicago’s string of stranglation/asphixiation muders with female victims is the second most suspicious in the country, Cleveland, Ohio has an even scarier pattern. Both cities are believed to be the work of one or more active killers. You can see the MAP’s <a href="http://www.murderdata.org/p/clusters-by-county.html">alorithim at work on this nation-wide map tool</a>.</p>
+<p>The relative proportion of drug crime reported at the police station is much higher than that for other crimes. It’s quite possible that I’ve been watching to many crime/justice documentaries on Netflix, but I really hope there is solid reason for this disproportinate hotspot, and it’s not something more. Going forward I’ll drop the reports from 600 E Market so they don’t cloud our anlysis.</p>
 </div>
-<div id="hot-spots" class="section level2">
-<h2>Hot spots</h2>
-<p>Crime events tend to cluster and police departments already know this. Typically the most crime is found in the most urban areas; the places with the largest populations and the densest targets. Becasue of this using just total counts to find areas of of high criminal acivity, is not particularly useful without a normalization factor. Since we are really interested in areas with more drug crime than average, we can use the total number of crimes reported , to control for areas with high overall crime. Using the Census block group areas, for our grouping regions, use <code>dplyr::summarise()</code> to calculate some useful stats.</p>
+<div id="hot-blocks" class="section level2">
+<h2>Hot blocks</h2>
+<p>Crime tends to cluster and typically in the most urban areas, i.e. the places with the densest populations and the densest targets. Often just a single address or block is responsible for the majority of crime reported, this is called a “hot spot”. Becasue of this patternm, simply using total counts to find areas of of high criminal acivity, is not particularly useful.</p>
+<p>So we need a normalization factor. Normalizing to the total number of crimes reported will let us calculate the proportion of drug crime, which is a more useful measuring stick.</p>
 <pre class="r"><code># drop the police station to look at spatial trends in the community
 crime %&lt;&gt;% filter(address != &quot;600 E MARKET ST Charlottesville VA&quot;)
 
@@ -173,70 +212,94 @@ plot_list[[&quot;frac&quot;]] &lt;- ggplot(census) +
     scale_fill_viridis()
 
 cowplot::plot_grid(cowplot::plot_grid(plotlist = plot_list[1:2]), plot_list[[3]], nrow = 2)</code></pre>
-<p><img src="/post/2017-12-18-drug-crime-analysis-with-library-sf_files/figure-html/fig-1.png" width="672" /></p>
-<p>The total reports and total drug reports plots show samilar stories, with the downtown mall area being the most frequent census block for reports. This makes sense but it’s particularly useful metric. Using the fraction of crime reports, show highlights two census block groups with almost 10% of the crimes reportted being drug crimes. In order to get a better idea of what streets are included in each census block, we can replot the last “frac_drugs” plot as an interactive <code>leaflet</code>.</p>
+<p><img src="/post/2017-12-18-drug-crime-analysis-with-library-sf_files/figure-html/census_heat,%20fig-1.png" width="672" /></p>
+<p>The total reports and total drug reports plots show similar stories, with the downtown mall area being the most frequent census block for reports. You can see how totals aren’t the most useful metric.</p>
+<p>Once we plot the fraction of drug crimes, we see a new pattern. Two census block groups where almost 10% of the crime is drug related. In order to get a better idea of what streets are included in each census block, we can replot the last “frac_drugs” plot as an interactive <code>leaflet</code> map, so we can zoom in and to get a better view.</p>
 <pre class="r"><code>library(leaflet)
 
 fill_pal &lt;- pal &lt;- colorNumeric(&quot;viridis&quot;, domain = census$frac_drugs)
 
-leaflet(census) %&gt;%
+leaflet(census, options = leafletOptions(minZoom = 12, max_zoom = 16)) %&gt;%
     addProviderTiles(&quot;CartoDB.Positron&quot;) %&gt;%
-    addPolygons(color = ~fill_pal(frac_drugs)) %&gt;%
+    addPolygons(color = ~fill_pal(frac_drugs), fillOpacity = .5,
+                popup = ~paste0(&quot;drugs: &quot;, drugs, &quot;&lt;br&gt;&quot;,
+                                &quot;total: &quot;, total)) %&gt;%
     widgetframe::frameWidget(height = &#39;400&#39;) # containerizes widgets so CSS properties don&#39;t interfer with page CSS</code></pre>
 <div id="htmlwidget-1" style="width:100%;height:400px;" class="widgetframe html-widget"></div>
 <script type="application/json" data-for="htmlwidget-1">{"x":{"url":"/post/2017-12-18-drug-crime-analysis-with-library-sf_files/figure-html//widgets/widget_unnamed-chunk-4.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
-<p>The two census block groups with the highest proportions of drug crime, are located along Cherry Avenue and 5th Street SW. This area is home to two of Charlottesville’s Section 9 housing developments and both are some of the lowest income areas in the city. I have a follow up post planned for using <a href="https://www.census.gov/programs-surveys/acs/">American Community Survey data</a> to analyze income and unemployment statistics as they relate to drug crime. Discovering community risk factors is critical to combatting crime and creating safer communities.</p>
+<p>The two hot census blocks, are located along Cherry Avenue and 5th Street SW, just south of downtown. These adjacent areas are home to two of Charlottesville’s largest Section 9 housing developments and are likely some of the lowest income areas of the city.</p>
+<p>I have a follow up post planned for using <a href="https://www.census.gov/programs-surveys/acs/">American Community Survey data</a> to expand on this idea and actualy get data to quanitfy this hypothesis that low-income area have more drug crime. Exploring quanifiable risk factors is key to using data to creating safer communities.</p>
 </div>
-<div id="custom-shape-summarries" class="section level2">
-<h2>Custom shape summarries</h2>
-<p>Suppose we want to get an idea of hotspots on a smaller scale. Instead of using the census block areas, we can construct a grid of our own and apply the same process to summarise the crimes within these new areas. Making the grid is easy with <code>sf::st_make_grid()</code>.</p>
-<pre class="r"><code>grd &lt;- st_make_grid(census, n = 50) %&gt;% st_sf() # 50x50 evenly sized squares
+<div id="hot-grid" class="section level2">
+<h2>Hot grid</h2>
+<p>Suppose we want to get an idea of hot spots on a smaller scale. Instead of using the census block areas, we can construct a grid of our own, with <code>st_make_grid()</code>. The masking/point inclusion process is the same, just with new shapes. First let’s make out grid and overlay it on top of the census areas</p>
+<pre class="r"><code>grd &lt;- st_make_grid(census, n = 25) %&gt;% st_sf() # 25x25 evenly sized squares
 
-grd %&lt;&gt;% st_intersection(st_geometry(st_union(census))) # filter to those in census</code></pre>
-<p>The inital grid fills the entire bounding box, the smallest rectangle that encompases the entire census map, so the second line of code just removes an areas of the grid that don’t intersect with the area censsu areas (ie the corners). This fuction will reduce grid squares that partially overlap with census blocks to just the overlapping polygon fragment.</p>
-<p>Next we just need to caluculate the number of points within each grid unit, and summarise them by drug related and total reports like we did before.</p>
+ggplot(census) +
+    geom_sf(color = &quot;red&quot;) +
+    geom_sf(data = grd, fill = NA) +
+    coord_sf(crs = st_crs(census), datum = NA) # remove grid lines</code></pre>
+<p><img src="/post/2017-12-18-drug-crime-analysis-with-library-sf_files/figure-html/make_grid,%20message%20-%20FALSE-1.png" width="672" /></p>
+<p>Boom done.</p>
+<p>The inital grid fills the entire bounding box, i.e. the smallest rectangle that encompases the entire census map. This makes for a lot of grid squares that won’t have any data. Let’s remove the squares, whose area doesn’t intersect with the area of the census blocks.</p>
+<pre class="r"><code>grd %&lt;&gt;% st_intersection(st_geometry(st_union(census))) # filter to those in census
+
+ggplot(census) +
+    geom_sf(color = &quot;red&quot;) +
+    geom_sf(data = grd, fill = NA) +
+    coord_sf(crs = st_crs(census), datum = NA) # remove grid lines</code></pre>
+<p><img src="/post/2017-12-18-drug-crime-analysis-with-library-sf_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>The helper functions for pairwise geometry comparisons, like <code>st_within()</code> and <code>st_intersection()</code> are another nice perk of a <code>libary(sf)</code> workflow. Instead of multiple lines with <code>library(sp)</code> now it’s just one!</p>
+<p>All that’s left now is to caluculate the number of points within each square, and summarise them by drug related and total reports just like we did before.</p>
 <pre class="r"><code>crime$grd &lt;- st_within(crime, grd) %&gt;% as.numeric()
 
 grd_sum &lt;- st_set_geometry(crime, NULL) %&gt;% # need to remove geometry property
     group_by(grd, drug_flag) %&gt;%
     count() %&gt;%
     spread(drug_flag, n) %&gt;% rowwise() %&gt;%
-    mutate(total = sum(drugs, not_drugs),
+    mutate(drugs = ifelse(is.na(drugs), 0, drugs), # some areas don&#39;t have drug related crime, recode from NA to 0
+           total = sum(drugs, not_drugs, na.rm = TRUE),
            frac_drugs = drugs / total)
 
 # join sumamry stats back into grd
 grd %&lt;&gt;% set_names(&quot;geometry&quot;) %&gt;% # sf functions look for geometry column
     mutate(grd = 1:nrow(.)) %&gt;% # make a key to match back on
-    full_join(grd_sum)
+    full_join(grd_sum)</code></pre>
+<p>We did a little extra processing here than earlier, because as we moved to smaller summary areas, we introduced some areas without data (no crime reports). To imporove our visualiation, we recoded the ares with no drug crime from missing values to zeros. The area wihtout any crime reported are still treated as NAs.</p>
+<pre class="r"><code>bins &lt;- c(0, .05, .1, .15, 1) # set custom bin breaks
+grd_pal &lt;- pal &lt;- colorBin(&quot;viridis&quot;, domain = grd$frac_drugs, bins = bins) # important to rescale
 
-# some areas don&#39;t have drug related crime, recode from NA to 0
-grd$frac_drugs %&lt;&gt;% ifelse(is.na(.), 0, .)</code></pre>
-<p>We did a little extra processing here than earlier, because as we moved to smaller summary areas, we introduced more areas without data (no crime reports). To imporove our visualiation, recoding the missing values to zeros, removes the use of an NA fill color (default is grey) in our plot.</p>
-<pre class="r"><code>grd_pal &lt;- pal &lt;- colorNumeric(&quot;viridis&quot;, domain = grd$frac_drugs) # important to rescale
-
-leaflet(grd) %&gt;%
+leaflet(grd, options = leafletOptions(minZoom = 12, max_zoom = 16)) %&gt;%
     addProviderTiles(&quot;CartoDB.Positron&quot;) %&gt;%
     addPolygons(data = census, fill = NA, color = &quot;black&quot;, weight = 1) %&gt;%
-    addPolygons(color = ~grd_pal(frac_drugs), stroke = FALSE, opacity = .9,
+    addPolygons(color = ~grd_pal(frac_drugs), stroke = FALSE, fillOpacity = .75,
                 popup = ~paste0(&quot;drugs: &quot;, drugs, &quot;&lt;br&gt;&quot;,
                                 &quot;total: &quot;, total)) %&gt;%
+    addLegend(pal = grd_pal, values = ~frac_drugs, opacity = .7, title = NULL,
+              position = &quot;bottomright&quot;, na.label = &quot;no crimes&quot;) %&gt;%
     widgetframe::frameWidget(height = &#39;400&#39;)</code></pre>
 <div id="htmlwidget-2" style="width:100%;height:400px;" class="widgetframe html-widget"></div>
 <script type="application/json" data-for="htmlwidget-2">{"x":{"url":"/post/2017-12-18-drug-crime-analysis-with-library-sf_files/figure-html//widgets/widget_leaf_frac.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
-<p>Most of the highlighted hotspots have very low numbers of total crime reports, making their fraction of drug related offenses much higher than other higher crime areas. While it might be interested to look at these low total high proportional areas, this isn’t going to help us discrover areas of the city that have the most drug crime.</p>
-<p>Let’s remake the plot above but instead of using the fraction of drug related crime, go back to using just total drug reports.</p>
-<pre class="r"><code>grd$drugs %&lt;&gt;% ifelse(is.na(.), 0, .) # recode zeros
-grd_pal &lt;- colorBin(&quot;viridis&quot;, n = 5, domain = grd$drugs) # important to rescale
+<p>Clicking on a given grid square will show the break down of crimes reported there. We can see several of the highlighted hot spots have very low numbers of total reports, making their fraction of drug related offenses much higher. Still we see a band of blue and green squares to the south-west of downtown, in the same hot census blocks.</p>
+<p>Now that we are looking at smaller areas, let’s remake the plot above but instead of using the fraction of drug related crime, go back to using just total drug reports to see where the highest volume areas are.</p>
+<pre class="r"><code>bins2 &lt;- c(0, 10, 25, 50, Inf)
+grd_pal2 &lt;- colorBin(&quot;viridis&quot;, domain = grd$drugs, bins = bins2)
 
-leaflet(grd) %&gt;%
+leaflet(grd, options = leafletOptions(minZoom = 12, max_zoom = 16)) %&gt;%
     addProviderTiles(&quot;CartoDB.Positron&quot;) %&gt;%
     addPolygons(data = census, fill = NA, color = &quot;black&quot;, weight = 1) %&gt;%
-    addPolygons(color = ~grd_pal(drugs), stroke = FALSE, opacity = .9,
+    addPolygons(color = ~grd_pal2(drugs), stroke = FALSE, fillOpacity = .75,
                 popup = ~paste0(&quot;drugs: &quot;, drugs, &quot;&lt;br&gt;&quot;,
                                 &quot;total: &quot;, total)) %&gt;%
+    addLegend(pal = grd_pal2, values = ~frac_drugs, opacity = .7, title = NULL,
+              position = &quot;bottomright&quot;, na.label = &quot;no crimes&quot;) %&gt;%
     widgetframe::frameWidget(height = &#39;400&#39;)</code></pre>
 <div id="htmlwidget-3" style="width:100%;height:400px;" class="widgetframe html-widget"></div>
 <script type="application/json" data-for="htmlwidget-3">{"x":{"url":"/post/2017-12-18-drug-crime-analysis-with-library-sf_files/figure-html//widgets/widget_leaf_drugs.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
-<p>This shows some different hot spots the. Two major hot squares near the downtown mall, one on 4th St near Garret Square and the other on 1st St near Emancipation Park. The third hottest grid square, is between Tonsler Park and Forrest Hills. Analysis like this is useful for identifying areas like the Tonsler Park hotspot that are away from the most urban sections of the city and may represent some specific neighborhood trend. Like the hot square in the north central that is the right over Charlottesville High School.</p>
-<p>If you liked reading this, please come out to the Smart Cville meetup in February, where we will code our way through parts of this and other spatial statistics. I would love to get community feedback on this project and other ideas where data can make a positive impact on Cville. Just drop me a line by email or on Github, cheers!</p>
+<p>Using totals instead, highlights the hottest (yellow) spots as around the downtown mall. Other noteable hotter spots (green) cover areas near IX and Tonsler parks, both of those have large numbers of total reports. The lone green grid on the north side of the city, covers Charlottesville High School and no residental streets. There were 25 drug crimes reported there among 306 total crimes, making it one of the most frequent spots for criminal activity. Charlottesville’s reputatation for public school to prison pipeline, might have some data to back it up.</p>
+</div>
+<div id="wrap-up" class="section level2">
+<h2>Wrap up</h2>
+<p>I hope this was a easy to follow use case for spatial anlysis with <code>library(sf)</code>. I think it make a lot of the spatial manipulation simpler than before and it plays nicely with the <code>tidyverse</code>. It’s integration isn’t seemless yet, there are still some friction points, but I am excited to see it mature.</p>
+<p>If you liked this sort of stuff, come out to the Smart Cville meetup in February and get your hands coding. If you have any feedback on this project or other ideas where data might be able to help Cville, let me know. Cheers!</p>
 </div>

@@ -2,14 +2,15 @@
 title: Geocoding the CPD crime reports
 author: Nate Day
 date: '2017-12-09'
-description: "An short write up for geocoding the Charlottesville Police Department's crime reports"
-slug: geocoding-the-cpd-crime-reports
 categories:
   - Cville Open Data
 tags:
-  - ggmap
-  - geocode
   - data wrangling
+  - geocode
+  - ggmap
+description: Geocoding the Charlottesville Police Dept's crime reports with Google
+  Maps
+slug: geocoding-the-cpd-crime-reports
 ---
 
 ```{r setup, include=TRUE, warning = FALSE, message = FALSE}
