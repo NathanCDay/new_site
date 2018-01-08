@@ -206,19 +206,19 @@ plot_list[[&quot;total&quot;]] &lt;- ggplot(census) +
     geom_sf(aes(fill = drugs)) +
     scale_fill_viridis()  +
     coord_sf(crs = st_crs(census), datum = NA) +
-    labs(fill = &quot;# drug crimes&quot;)
+    labs(fill = &quot;total&quot;)
 
 plot_list[[&quot;capita&quot;]] &lt;- ggplot(census) +
     geom_sf(aes(fill = capita_drugs)) +
     scale_fill_viridis() +
     coord_sf(crs = st_crs(census), datum = NA) +
-    labs(fill = &quot;# drug crimes per capita&quot;)
+    labs(fill = &quot;per capita&quot;)
 
 plot_list[[&quot;frac&quot;]] &lt;- ggplot(census) +
     geom_sf(aes(fill = frac_drugs)) +
     scale_fill_viridis() +
     coord_sf(crs = st_crs(census), datum = NA) +
-    labs(fill = &quot;fraction drug crimes of total&quot;)
+    labs(fill = &quot;proportion&quot;)
 
 cowplot::plot_grid(cowplot::plot_grid(plotlist = plot_list[1:2]), plot_list[[3]], nrow = 2)</code></pre>
 <p><img src="/post/2017-12-18-drug-crime-analysis-with-library-sf_files/figure-html/census_heat,%20fig-1.png" width="672" /></p>

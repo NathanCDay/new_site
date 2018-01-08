@@ -212,19 +212,19 @@ plot_list[["total"]] <- ggplot(census) +
     geom_sf(aes(fill = drugs)) +
     scale_fill_viridis()  +
     coord_sf(crs = st_crs(census), datum = NA) +
-    labs(fill = "# drug crimes")
+    labs(fill = "total")
 
 plot_list[["capita"]] <- ggplot(census) +
     geom_sf(aes(fill = capita_drugs)) +
     scale_fill_viridis() +
     coord_sf(crs = st_crs(census), datum = NA) +
-    labs(fill = "# drug crimes per capita")
+    labs(fill = "per capita")
 
 plot_list[["frac"]] <- ggplot(census) +
     geom_sf(aes(fill = frac_drugs)) +
     scale_fill_viridis() +
     coord_sf(crs = st_crs(census), datum = NA) +
-    labs(fill = "fraction drug crimes of total")
+    labs(fill = "proportion")
 
 cowplot::plot_grid(cowplot::plot_grid(plotlist = plot_list[1:2]), plot_list[[3]], nrow = 2)
 ```
