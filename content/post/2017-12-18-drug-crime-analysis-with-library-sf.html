@@ -1,5 +1,5 @@
 ---
-title: Spatial anlysis of drug crime
+title: Spatial viz of drug crime
 author: Nate Day
 date: '2017-12-30'
 categories:
@@ -54,7 +54,7 @@ names(census) %&lt;&gt;% tolower()
 
 census %&lt;&gt;% select(objectid, area = area_, population, geometry) # keep only a few variables</code></pre>
 <p>In spatial analysis, coordinate referense systems (CRS) are critical when working with multiple data sources. It is required that the CRS values match to perform any sort of spatial computations between objects. Since <code>census</code> was downloaded as geoJSON data, it already has a CRS assigned. We will use that for the setting the CRS of <code>crime</code> and be done with the data read ins.</p>
-<pre class="r"><code>crs_val &lt;- st_crs(census, asText = TRUE) # returns CRS as chr
+<pre class="r"><code>crs_val &lt;- st_crs(census) # returns CRS
 
 crime %&lt;&gt;% st_as_sf(coords = c(&quot;lon&quot;, &quot;lat&quot;), # define coordinate variables
                     crs = crs_val) # set CRS to match census</code></pre>
@@ -293,5 +293,5 @@ leaflet(grd, options = leafletOptions(minZoom = 12, max_zoom = 16)) %&gt;%
 <h2>Wrap up</h2>
 <p>I hope this was a easy to follow use case for making prety makes with <code>library(sf)</code>. I prefer working with <code>sf</code> objects, becasue they make a lot of the data manipulation simpler. Plus is plays nicely with the <code>tidyverse</code>, which is bonus points. It’s integration isn’t seemless yet, there are definatly still some friction points, but I am excited to see it mature.</p>
 <p>If you like this stuff, I’m helping with a Smart Cville Crime Data Deep Dive event on February 7th, and you should totally come.</p>
-<p>If you have any feedback on this project or notice some awful typo or just other ideas where data might be able to help Cville, let me know. Cheers!</p>
+<p>If you have any feedback on this project or notice a typo or just have ideas about where data might be able to help Cville, let me know. Cheers!</p>
 </div>

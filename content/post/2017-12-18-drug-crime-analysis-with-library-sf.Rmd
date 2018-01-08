@@ -1,5 +1,5 @@
 ---
-title: Spatial anlysis of drug crime
+title: Spatial viz of drug crime
 author: Nate Day
 date: '2017-12-30'
 categories:
@@ -64,7 +64,7 @@ census %<>% select(objectid, area = area_, population, geometry) # keep only a f
 In spatial analysis, coordinate referense systems (CRS) are critical when working with multiple data sources. It is required that the CRS values match to perform any sort of spatial computations between objects. Since `census` was downloaded as geoJSON data, it already has a CRS assigned. We will use that for the setting the CRS of `crime` and be done with the data read ins.
 
 ```{r crs, warning = FALSE, message = FALSE}
-crs_val <- st_crs(census, asText = TRUE) # returns CRS as chr
+crs_val <- st_crs(census) # returns CRS
 
 crime %<>% st_as_sf(coords = c("lon", "lat"), # define coordinate variables
                     crs = crs_val) # set CRS to match census
@@ -321,5 +321,5 @@ I hope this was a easy to follow use case for making prety makes with `library(s
 
 If you like this stuff, I'm helping with a Smart Cville Crime Data Deep Dive event on February 7th, and you should totally come.
 
-If you have any feedback on this project or notice some awful typo or just other ideas where data might be able to help Cville, let me know. Cheers!
+If you have any feedback on this project or notice a typo or just have ideas about where data might be able to help Cville, let me know. Cheers!
 
