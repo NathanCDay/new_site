@@ -4,7 +4,7 @@ title = "NateDay-ta"
 
 theme = "min_night"
 disqusShortname = ""#"nateday-me" # delete this to disable disqus comments
-googleAnalytics = ""
+googleAnalytics = "UA-112244351-1"
 ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files/", "_cache$"]
 
 [permalinks]
