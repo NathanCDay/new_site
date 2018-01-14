@@ -13,6 +13,8 @@ description: Using library(sf) to visualize the spatial distribution of drug rel
 slug: drug-crime-analysis-with-library-sf
 ---
 
+####![cocaine](/images/sf_drugs/coke.gif)
+
 ## Intro
 
 Using data originally sourced from the [Charlottesville Open Data Portal](http://opendata.charlottesville.org/), I made a geocoded version of the Police Reports dataset (available as a csv on [my Github repo here](https://github.com/NathanCDay/cville_crime)) to look for spatial patterns. In this post I'm using the very tidy `library(sf)` to do some filtering and viridis visualizations to search for locations with highl drug crime. 
@@ -320,7 +322,7 @@ The lone green grid on the north-central side of the city, covers Charlottesvill
 
 ## Wrap up
 
-I hope this was a easy to follow use case for making prety makes with `library(sf)`. I prefer working with `sf` objects, becasue they make a lot of the data manipulation simpler. Plus is plays nicely with the `tidyverse`, which is bonus points. It's integration isn't seemless yet, there are definatly still some friction points, but I am excited to see it mature. 
+I hope this was a easy to follow use case for making pretty maps with `library(sf)`. I like working with `sf` objects, becasue I can see the objects as a typical dataframes. So using all of my favorite `tidyverse` tricks is easy, and that makes me feel good. Word of caution, the integration isn't seemless yet, but new versions are coming out rapidly, and I can't wait to see it mature.
 
 If you like this stuff, I'm helping with a Smart Cville Crime Data Deep Dive event on February 7th, and you should totally come.
 

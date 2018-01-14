@@ -15,18 +15,21 @@ slug: geocoding-the-cpd-crime-reports
 
 
 
-<pre class="r"><code># Globals ------------------------------------------------------------------
-library(geojsonio)
-library(ggmap)
-library(tidyverse) # always
-library(magrittr) # %&lt;&gt;% life</code></pre>
+<div id="maps" class="section level4">
+<h4><img src="/images/geocode_crime/maps.gif" alt="maps" /></h4>
+</div>
 <div id="geocoding" class="section level2">
 <h2>Geocoding</h2>
 <p>“Is the process of converting addresses (like a street address) into geographic coordinates (like latitude and longitude), which you can use to place markers on a map, or position the map.” - <a href="https://developers.google.com/maps/documentation/geocoding/start">Google Maps API Documentation</a></p>
 <p>Unfortunately the Crime Data from the <a href="http://opendata.charlottesville.org/">Charllottesville Open Data Portal</a> (OPD) doesn’t come currated with latitude and longitude coordinates. So it is up to us to geocode it, by accessing the Google Maps API via the great R 📦 <a href="https://github.com/dkahle/ggmap">ggmap</a>.</p>
+<pre class="r"><code># Load Out -----------------------------------------------
+library(geojsonio)
+library(ggmap)
+library(tidyverse) # always
+library(magrittr) # %&lt;&gt;% life</code></pre>
 </div>
-<div id="get-the-data" class="section level2">
-<h2>Get the data</h2>
+<div id="import" class="section level2">
+<h2>Import</h2>
 <p>Using the OPD’s API is easy with <code>library(geojsonio)</code> and I made a separate <a href="./api.html">API post here</a>, if you want more details. I like to use <code>geojsonio::geojson_read</code> to import any data from the ODP. By default the return value will be a <code>list</code> object, in the “geoJSON” format. Becasue the crime data has no geometry/shape components, we can parse the original <code>list</code> down to just a <code>tibble</code>.</p>
 <pre class="r"><code>crime_json &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/d1877e350fad45d192d233d2b2600156_7.geojson&quot;,
                            parse = TRUE) # ~ 1-5 minutes...for a 2 element list

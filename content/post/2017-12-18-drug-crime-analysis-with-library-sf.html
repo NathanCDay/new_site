@@ -19,6 +19,9 @@ slug: drug-crime-analysis-with-library-sf
 <script src="/rmarkdown-libs/widgetframe-binding/widgetframe.js"></script>
 
 
+<div id="cocaine" class="section level4">
+<h4><img src="/images/sf_drugs/coke.gif" alt="cocaine" /></h4>
+</div>
 <div id="intro" class="section level2">
 <h2>Intro</h2>
 <p>Using data originally sourced from the <a href="http://opendata.charlottesville.org/">Charlottesville Open Data Portal</a>, I made a geocoded version of the Police Reports dataset (available as a csv on <a href="https://github.com/NathanCDay/cville_crime">my Github repo here</a>) to look for spatial patterns. In this post I’m using the very tidy <code>library(sf)</code> to do some filtering and viridis visualizations to search for locations with highl drug crime.</p>
@@ -138,11 +141,11 @@ ggplot(census) +
 ## epsg (SRID):    4326
 ## proj4string:    +proj=longlat +datum=WGS84 +no_defs
 ## # A tibble: 2 x 4
-## # Groups: type [2]
-##   address                            type        number geometry          
-##   &lt;chr&gt;                              &lt;chr&gt;        &lt;int&gt; &lt;simple_feature&gt;  
-## 1 600 E MARKET ST Charlottesville VA drug_crime     410 c(-78.4774586, 38…
-## 2 600 E MARKET ST Charlottesville VA other_crime    635 c(-78.4774586, 38…</code></pre>
+## # Groups:   type [2]
+##                              address        type number          geometry
+##                                &lt;chr&gt;       &lt;chr&gt;  &lt;int&gt;  &lt;simple_feature&gt;
+## 1 600 E MARKET ST Charlottesville VA  drug_crime    410 &lt;POINT (-78.4...&gt;
+## 2 600 E MARKET ST Charlottesville VA other_crime    635 &lt;POINT (-78.4...&gt;</code></pre>
 <p>Something is going on in the 600 block of East Market, could it be the police station that’s located at 606 E Market St? Originally I wondered if this had something to do with the departments reporting practices, so SmartCville reached out to police department and they provided this response:</p>
 <blockquote>
 <p>“…when individuals walk in to the police department to file a report the physical address of the department (606 E Market Street) is often used in that initial report if no other known address is available at the time. This is especially true for incidents of found or lost property near the downtown mall where there is no true known incident location. The same is true for any warrant services that result in a police report occurring at the police department.”</p>
@@ -155,10 +158,10 @@ ggplot(census) +
 
 summarise(station_props, prop_total = number / n)</code></pre>
 <pre><code>## # A tibble: 2 x 2
-##   type        prop_total
-##   &lt;chr&gt;            &lt;dbl&gt;
-## 1 drug_crime      0.222 
-## 2 other_crime     0.0218</code></pre>
+##          type prop_total
+##         &lt;chr&gt;      &lt;dbl&gt;
+## 1  drug_crime 0.22210184
+## 2 other_crime 0.02175626</code></pre>
 <pre class="r"><code>with(station_props, prop.test(number, n))</code></pre>
 <pre><code>## 
 ##  2-sample test for equality of proportions with continuity
@@ -250,9 +253,9 @@ ggplot(census) +
     coord_sf(crs = st_crs(census), datum = NA) # remove grid lines</code></pre>
 <p><img src="/post/2017-12-18-drug-crime-analysis-with-library-sf_files/figure-html/make_grid,%20message%20-%20FALSE-1.png" width="672" /></p>
 <p>The inital grid fills the entire bounding box, i.e. the smallest rectangle that encompases the entire census map. This makes for a lot of grid squares that won’t have any data. Let’s remove the squares now, whose area doesn’t intersect with the area of the census blocks.</p>
-<pre class="r"><code>grd %&lt;&gt;% st_intersection(st_geometry(st_union(census))) # filter to those in census
-
-ggplot(census) +
+<pre class="r"><code>grd %&lt;&gt;% st_intersection(st_geometry(st_union(census))) # filter to those in census</code></pre>
+<pre><code>## although coordinates are longitude/latitude, st_intersection assumes that they are planar</code></pre>
+<pre class="r"><code>ggplot(census) +
     geom_sf(fill = viridis_pal()(3)[3]) +
     geom_sf(data = grd, fill = NA, color = viridis_pal()(3)[1]) +
     coord_sf(crs = st_crs(census), datum = NA) # remove grid lines</code></pre>
@@ -294,7 +297,7 @@ leaflet(grd, options = leafletOptions(minZoom = 12, max_zoom = 16)) %&gt;%
 </div>
 <div id="wrap-up" class="section level2">
 <h2>Wrap up</h2>
-<p>I hope this was a easy to follow use case for making prety makes with <code>library(sf)</code>. I prefer working with <code>sf</code> objects, becasue they make a lot of the data manipulation simpler. Plus is plays nicely with the <code>tidyverse</code>, which is bonus points. It’s integration isn’t seemless yet, there are definatly still some friction points, but I am excited to see it mature.</p>
+<p>I hope this was a easy to follow use case for making pretty maps with <code>library(sf)</code>. I like working with <code>sf</code> objects, becasue I can see the objects as a typical dataframes. So using all of my favorite <code>tidyverse</code> tricks is easy, and that makes me feel good. Word of caution, the integration isn’t seemless yet, but new versions are coming out rapidly, and I can’t wait to see it mature.</p>
 <p>If you like this stuff, I’m helping with a Smart Cville Crime Data Deep Dive event on February 7th, and you should totally come.</p>
 <p>If you have any feedback on this project or notice a typo or just have ideas about where data might be able to help Cville, let me know. Cheers!</p>
 </div>

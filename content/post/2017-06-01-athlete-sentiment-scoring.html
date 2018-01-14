@@ -1,0 +1,235 @@
+---
+title: Athlete Sentiment Scoring
+author: Nate Day
+date: '2017-06-01'
+slug: athlete-sentiment-scoring
+categories:
+  - Text Analysis
+tags:
+  - tidytext
+  - sentimentr
+  - sports
+---
+
+
+
+<div id="sports-fan-baby" class="section level4">
+<h4><img src="/images/ass/sports.gif" alt="Sports fan baby" /></h4>
+<p>With the season finals for the NBA and NHL dominating the sports-cast schedule, I decided to build a quick text analysis of athletes from the NBA, NHL, NASCAR, and PGA. I’ve always thought of hockey players as nicer than normal athletes and wanted to compare them against other sporting professionals. Let’s see how nice they actually are … eh?</p>
+<hr />
+</div>
+<div id="setup" class="section level2">
+<h2>Setup</h2>
+<pre class="r"><code># packages
+library(rvest) # the R scraping tool
+library(ggsci) # pretty colors
+library(stringr) # text wrangling
+library(tidyverse) # tibble wrangling
+library(magrittr) # %&lt;&gt;% is not a pipe
+
+theme_set(theme_minimal()) # set the gglot theme once
+
+# cust fxns
+na_filler &lt;- function(vector, reverse = F) {
+    if (reverse) {seq &lt;- length(vector):1}
+    if (!reverse) {seq &lt;- 1:length(vector)}
+    for (i in seq) {
+        if (!is.na(vector[i])) {j &lt;- vector[i]}
+        if (is.na(vector[i])) {vector[i] &lt;- j} }
+    return(vector) }</code></pre>
+<p>This analysis would not be possible with out the <a href="http://tidyverse.org/"><code>tidyverse</code></a> or the fantastic packages of <a href="https://github.com/trinker">Tyler Rinker</a>, <a href="https://github.com/juliasilge">Julia Silge</a> and <a href="https://github.com/dgrtwo">David Robinson</a>. Thank you all for your inspiration and contribution to the text analysis tool chest of <code>R</code>.</p>
+</div>
+<div id="scraper" class="section level2">
+<h2>Scraper</h2>
+<p>Because of <a href="http://www.asapsports.com/">ASAPSports</a> we can access transcripts from a wide-range of professional and amateur athlete interviews. Unfortunately this data is not immediately available in “tidy” format, or even as a .csv, but have no fear our web-scraping bff <a href="https://chrome.google.com/webstore/detail/selectorgadget/mhjhnkcfbdhnjickkkdbjoemdmbfginb?hl=en">Selector Gadget</a> and <a href="https://cran.r-project.org/web/packages/rvest/rvest.pdf"><code>library(rvest)</code></a> are here!!!!!</p>
+<pre class="r"><code># scrapes from any event link_page URL, like this one:
+# http://www.asapsports.com/show_event.php?category=5&amp;date=2017-5-30&amp;title=NHL+STANLEY+CUP+FINAL%3A+PREDATORS+VS+PENGUINS
+
+asap_scraper &lt;- function(link_page) {
+    pages &lt;- read_html(link_page)
+    
+    pages %&lt;&gt;% html_nodes(&quot;td a&quot;) %&gt;% # selector gadget
+        html_attr(&quot;href&quot;) %&gt;% # get links out
+        Filter(function(x) { grepl(&quot;id=\\d*&quot;, x) }, .) # filter for interviews
+    
+    # web-scraping is always gross
+    sport &lt;- map_df(pages, ~ read_html(.) %&gt;%
+                        html_nodes(&quot;td&quot;) %&gt;%
+                        html_text() %&gt;% 
+                        .[14] %&gt;%
+                        gsub(&quot;.*\n\t\t&quot;, &quot;&quot;, .) %&gt;%
+                        str_split(&quot;\n&quot;) %&gt;%
+                        unlist() %&gt;%
+                        tibble(text = .) %&gt;%
+                        mutate(text = trimws(text),
+                               text = gsub(&quot;Q\\..*&quot;, &quot;&quot;, text),
+                               text = gsub(&quot;FastScripts.*&quot;, &quot;&quot;, text),
+                               speaker = gsub(&quot;(^.*): .*&quot;, &quot;\\1&quot;, text),
+                               text = gsub(&quot;^.*: &quot;, &quot;&quot;, text),
+                               speaker = ifelse(speaker == text, NA, speaker),
+                               text = ifelse(str_count(speaker, &quot; &quot;) &gt; 3, paste(speaker, text), text),
+                               speaker = ifelse(str_count(speaker, &quot; &quot;) &gt; 3, NA, speaker)) %&gt;%
+                        .[-1,] %&gt;%
+                        filter(!is.na(text)))
+    
+    sport$speaker %&lt;&gt;% na_filler()   
+    
+    return(sport) }</code></pre>
+<p>Yea sorry web scrapping is always a little messy. We also accomplished the bulk of our data cleaning in the above function too. But now that we have our data tidied up, we can start plotting and leave that raw <code>html</code> behind.</p>
+<hr />
+<p>Let’s looks at some recent test cases…</p>
+<pre class="r"><code># here is a list of 4 sport&#39;s test cases
+pages &lt;- list(&quot;http://www.asapsports.com/show_event.php?category=5&amp;date=2017-5-30&amp;title=NHL+STANLEY+CUP+FINAL%3A+PREDATORS+VS+PENGUINS&quot;,
+              &quot;http://www.asapsports.com/show_event.php?category=11&amp;date=2017-5-25&amp;title=NBA+EASTERN+CONFERENCE+FINALS%3A+CELTICS+VS+CAVALIERS&quot;,
+              &quot;http://www.asapsports.com/show_event.php?category=4&amp;date=2017-5-28&amp;title=BMW+PGA+CHAMPIONSHIP&quot;,
+              &quot;http://www.asapsports.com/show_event.php?category=3&amp;date=2017-5-28&amp;title=MONSTER+ENERGY+NASCAR+CUP+SERIES%3A+COCA-COLA+600&quot; ) %&gt;%
+    set_names(c(&quot;NHL&quot;, &quot;NBA&quot;, &quot;PGA&quot;, &quot;NASCAR&quot;))
+
+# and ...
+sports &lt;- map_df(pages, asap_scraper, .id = &quot;sport&quot;)
+# tah-dah its a tidy tibble !!!</code></pre>
+<p>Doesn’t that feel nice and clean? Don’t you worry about that nasty pipe-chain no more:)</p>
+<p>Let’s enjoy all of our hard work.</p>
+<pre class="r"><code>table(sports$speaker, useNA = &quot;always&quot;)</code></pre>
+<pre><code>## 
+##         ALEX NOREN      AUSTIN DILLON      AVERY BRADLEY 
+##                 25                 32                  6 
+##       BRAD STEVENS     BRIONY CARLYON     COLTON SISSONS 
+##                 18                  3                  3 
+##     DEAN BURMESTER     FILIP FORSBERG FRANCESCO MOLINARI 
+##                  4                  3                  4 
+## FREDERICK GAUDREAU     HENRIK STENSON         J.R. SMITH 
+##                  2                 10                  1 
+##   JUSTIN ALEXANDER         KEVIN LOVE        KRIS LETANG 
+##                 11                  5                  9 
+##         KYLE BUSCH       KYRIE IRVING       LeBRON JAMES 
+##                  1                  8                 11 
+##   MARTIN TRUEX JR.        MATT MURRAY      MIKE SULLIVAN 
+##                  8                 13                 13 
+##  NICOLAS COLSAERTS        P.K. SUBBAN   PETER LAVIOLETTE 
+##                  3                  7                 10 
+##  RICHARD CHILDRESS         RYAN ELLIS        SHANE LOWRY 
+##                 17                  8                  3 
+##      SIDNEY CROSBY      THE MODERATOR         TYRONN LUE 
+##                 15                 15                 14 
+##               &lt;NA&gt; 
+##                  0</code></pre>
+<pre class="r"><code># get that non-athlete outa&#39; here
+sports %&lt;&gt;% filter(speaker != &quot;THE MODERATOR&quot;)</code></pre>
+</div>
+<div id="read-ability" class="section level2">
+<h2>Read-ability</h2>
+<p><a href="https://github.com/trinker">Tyler Rinker</a> has developed a series of standardized text analysis packages that are available on CRAN. Here we are going to use two of his packages to quantify each athlete’s interview transcript with six readability systems.</p>
+<pre class="r"><code>library(syllable)
+library(readability)
+
+read_scores &lt;- with(sports, readability(text, list(sport, speaker))) %&gt;%
+    gather(method, score, -(sport:speaker))
+    
+ggplot(read_scores, aes(sport, score, color = sport)) +
+    stat_summary(fun.data = mean_cl_normal, geom = &quot;crossbar&quot;, width = .5) +
+    geom_point(size = 4, alpha = .5) +
+    facet_wrap(~ method) +
+    coord_flip() + 
+    scale_color_d3() +
+    scale_fill_d3()</code></pre>
+<p><img src="/post/2017-06-01-athlete-sentiment-scoring_files/figure-html/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Those two outliers are: Kyle Bush (NASCAR) and J.R. Smith (NBA). Let’s see why…</p>
+<pre class="r"><code>filter(sports, speaker %in% c(&quot;J.R. SMITH&quot;, &quot;KYLE BUSCH&quot;))</code></pre>
+<pre><code>## # A tibble: 2 x 3
+##    sport                                               text    speaker
+##    &lt;chr&gt;                                              &lt;chr&gt;      &lt;chr&gt;
+## 1    NBA            He drove the green, I&#39;ll tell you that. J.R. SMITH
+## 2 NASCAR I&#39;m not surprised about anything. Congratulations. KYLE BUSCH</code></pre>
+<pre class="r"><code># ahhh just sentences with some high &amp; low syllable words
+
+# get &#39;em outta here
+read_scores %&lt;&gt;% filter(!(speaker %in% c(&quot;J.R. SMITH&quot;, &quot;KYLE BUSCH&quot;)))
+
+# re-investigate
+ggplot(read_scores, aes(sport, score, color = sport)) +
+    stat_summary(fun.data = mean_cl_normal, geom = &quot;crossbar&quot;, width = .5) +
+    geom_point(size = 4, alpha = .5) +
+    facet_wrap(~ method) +
+    coord_flip() + 
+    scale_color_d3() +
+    scale_fill_d3()</code></pre>
+<p><img src="/post/2017-06-01-athlete-sentiment-scoring_files/figure-html/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>After we kick out those outliers, we can see that NBA athletes are consistently rated the highest in terms of reading level. And that NASCAR athletes are consistently the lowest. It also looks like the gaps between NASCAR-NBA and NHL-NBA might be statistically significant.</p>
+</div>
+<div id="sentiment" class="section level2">
+<h2>Sentiment</h2>
+<p>But really we wanted to know if hockey players are nicer than normal guys. So we are going to use another great Tyler Rinker (he’s kinda of a big deal in text-anlysis) package and the fantastic <a href="https://cran.r-project.org/web/packages/tidytext/vignettes/tidytext.html"><code>library(tidytext)</code></a> from the Stack Overflow data team, Julia Silge and David Robinson.</p>
+<pre class="r"><code>library(sentimentr)
+sents &lt;- with(sports, sentiment_by(text) ) %&gt;%
+    select(words = word_count,
+           sent = ave_sentiment) %&gt;%
+    bind_cols(sports, .)
+    
+# make initials to de-clutter axis
+sents %&lt;&gt;% mutate(initials = gsub(&quot;(^\\D).* (\\D).*&quot;, &quot;\\1\\2&quot;, speaker))
+
+ggplot(sents,aes(initials, sent, color = sport)) +
+    stat_summary(fun.data = mean_se, geom = &quot;crossbar&quot;) +
+    geom_point(size = 4, alpha = .5) +
+    facet_wrap(~ sport, scales = &quot;free_y&quot;) +
+    coord_flip() +
+    scale_color_d3() +
+    scale_fill_d3()</code></pre>
+<p><img src="/post/2017-06-01-athlete-sentiment-scoring_files/figure-html/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Ah man, why is Nicolar Colserats having such a bad day in that one quote?</p>
+<pre class="r"><code>filter(sents, sent &lt; -0.5) %&gt;%
+    select(text) %&gt;%
+    unlist()</code></pre>
+<pre><code>##                                                                                                                                                                                                                                    text 
+## &quot;Yeah, yesterday was pretty tough.  I didn&#39;t play 18 holes into the tough bit.  But yeah, I felt that if I played the same way, in a way where it wasn&#39;t really blowing that much, you could all of a sudden be a bit more aggressive.&quot;</code></pre>
+<p>That makes sense, it does sound like he had a bad day. Golf can do that to anyone, even professionals.</p>
+<p>Let’s drop that statement as an outlier and drop any athletes with just a single sentiment value and re-investigate by sports</p>
+<pre class="r"><code>sents %&lt;&gt;% filter(sent &gt; -0.5) %&gt;%
+    group_by(initials) %&gt;%
+    filter(n() != 1) %&gt;%
+    ungroup()
+
+library(ggbeeswarm)
+ggplot(sents, aes(sport, sent, color = sport)) +
+    stat_summary(fun.data = mean_se, geom = &quot;crossbar&quot;) +
+    geom_quasirandom(size = 4, alpha = .5) +
+    coord_flip() +
+    scale_color_d3() +
+    scale_fill_d3()</code></pre>
+<p><img src="/post/2017-06-01-athlete-sentiment-scoring_files/figure-html/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>From the looks of this plot it seems like hockey players are the lowest (in this case least positive) sentiment athletes, but this scoring system is based on word score summation, lets try binning words based on associated sentiment.</p>
+<p>To do this we will switch package gears.</p>
+<pre class="r"><code>library(tidytext)
+
+# new scoring system
+nrc &lt;- get_sentiments(&quot;nrc&quot;)
+
+# unnest_tokens to words
+words &lt;- unnest_tokens( select(sents, sport:speaker, initials), word, text) %&gt;%
+    inner_join(nrc) %&gt;%
+    group_by(sport, speaker, initials) %&gt;%
+    count(sentiment)</code></pre>
+<pre><code>## Joining, by = &quot;word&quot;</code></pre>
+<pre class="r"><code># collapse to sport level and use proportions
+sport_words &lt;- group_by(words, sport, sentiment) %&gt;%
+    summarise(n = sum(n)) %&gt;%
+    mutate(prop = n / sum(n))
+
+ggplot(sport_words, aes(sentiment, prop, fill = sentiment)) +
+    geom_col() +
+    facet_grid(~ sport) +
+    coord_flip() +
+    scale_fill_d3()</code></pre>
+<p><img src="/post/2017-06-01-athlete-sentiment-scoring_files/figure-html/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Well now it looks like all athletes have a similar sentiment distribution with high levels of ‘positive’, ‘anticipation’ and ‘trust’ sentiments across sports. Maybe all of that sports psychology is onto something after all.</p>
+<p>But to truly see whether hockey players are nice, lets do side by side comparisons for each sport, only paneled by sentiments.</p>
+<pre class="r"><code>ggplot(sport_words, aes(sport, prop, fill = sport)) +
+    geom_col() +
+    facet_wrap(~ sentiment, scales = &quot;free&quot;) +
+    coord_flip() +
+    scale_fill_rickandmorty() # it really exists like that szechuan sauce!!!</code></pre>
+<p><img src="/post/2017-06-01-athlete-sentiment-scoring_files/figure-html/unnamed-chunk-9-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>Now we can see golfers are the angriest, racers have the most anticipation, basketball players have the least fear and hockey players are the most positive and least negative (at least in this small sample). Maybe hockey players really are nicer than other professional athletes.</p>
+<p>Longer term I’d like to look correlations between attitude anlysis and game results. More tests are in order with more scraping to power them, off we go.</p>
+</div>

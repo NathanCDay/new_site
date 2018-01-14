@@ -13,13 +13,7 @@ description: Geocoding the Charlottesville Police Dept's crime reports with Goog
 slug: geocoding-the-cpd-crime-reports
 ---
 
-```{r setup, include=TRUE, warning = FALSE, message = FALSE}
-# Globals ------------------------------------------------------------------
-library(geojsonio)
-library(ggmap)
-library(tidyverse) # always
-library(magrittr) # %<>% life
-```
+####![maps](/images/geocode_crime/maps.gif)
 
 ## Geocoding
 
@@ -27,7 +21,16 @@ library(magrittr) # %<>% life
 
 Unfortunately the Crime Data from the [Charllottesville Open Data Portal](http://opendata.charlottesville.org/) (OPD) doesn't come currated with latitude and longitude coordinates. So it is up to us to geocode it, by accessing the Google Maps API via the great R 📦 [ggmap](https://github.com/dkahle/ggmap).
 
-## Get the data
+
+```{r setup, include=TRUE, warning = FALSE, message = FALSE}
+# Load Out -----------------------------------------------
+library(geojsonio)
+library(ggmap)
+library(tidyverse) # always
+library(magrittr) # %<>% life
+```
+
+## Import
 
 Using the OPD's API is easy with `library(geojsonio)` and I made a separate [API post here](./api.html), if you want more details. I like to use `geojsonio::geojson_read` to import any data from the ODP. By default the return value will be a `list` object, in the "geoJSON" format. Becasue the crime data has no geometry/shape components, we can parse the original `list` down to just a `tibble`.
 

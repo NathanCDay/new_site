@@ -20,7 +20,7 @@ I love the OPD concept and believe that data can help drive better decisions for
 
 The portal had a good layout and all of the data I have touched has been well formatted (thank you so much). So let's dive into the analysis and I apologize for the typos, but not for the bad puns.
 
-####![Open up already!](/images/codp_towing_open_up.gif)
+####![Open up already!](/images/codp_towing/open_up.gif)
 
 
 # Import
