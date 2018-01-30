@@ -1,0 +1,98 @@
+---
+title: Spatial Testing
+author: Nate Day
+date: '2018-01-28'
+slug: spatial-testing
+categories:
+  - Cville Open Data
+tags:
+  - spatial
+  - sf
+  - statistics
+---
+
+
+
+<div id="intro" class="section level2">
+<h2>Intro</h2>
+<p>In my last post I spent a lot of time visualizing the drug crime data published by the Charlottesville Police Department, with <code>library(sf)</code>. This is the peanut butter to that viz jelly, the statistical testing tools that can measure the significance of the trends we observed. And who doens’t like PB&amp;Js?</p>
+</div>
+<div id="globals" class="section level2">
+<h2>Globals</h2>
+<pre class="r"><code># the package load out
+library(geojsonio) # data read in
+
+library(sf) # last post
+library(viridis) # ^^^
+
+library(spatstat) # new
+
+library(magrittr)
+library(tidyverse)
+
+# some custom functions to make my fingers happy
+theme_set(theme_grey() + theme(legend.position = &quot;top&quot;))
+scale_fill_continuous &lt;- function(...) { viridis::scale_fill_viridis(...) }</code></pre>
+</div>
+<div id="data-input" class="section level2">
+<h2>Data Input</h2>
+<p>This is block of code is aggregated from my other posts revolving around the the city’s crime data. It handles a lot of the weirdness in the original data set that needs cleaning attention. For this I’m leaving little comments as bread crumbs, if you need the whole loaf check out the earlier posts or hmu.</p>
+<pre class="r"><code># get geo-coded crime data from my GitHub
+crime &lt;- read.csv(&quot;https://raw.githubusercontent.com/NathanCDay/cville_crime/master/crime_geocode.csv&quot;)
+crime %&lt;&gt;% filter(complete.cases(crime)) # not all raw address could be geo_coded
+names(crime) %&lt;&gt;% tolower() # safer/easier
+crime %&lt;&gt;% mutate(drug_flag = ifelse(grepl(&quot;drug&quot;, offense, ignore.case = TRUE),
+                                     &quot;drugs&quot;, &quot;not_drugs&quot;)) # flag drug related crimes
+crime %&lt;&gt;% filter(offense != &quot;DRUG AWARENESS PRESENTATION&quot;) # drop DARE class (90&#39;s kids hands up)
+crime %&lt;&gt;% filter(address != &quot;600 E MARKET ST Charlottesville VA&quot;) # drop the Police Station block (fishy)
+
+# get census data for shapes and housing data
+census &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/e60c072dbb734454a849d21d3814cc5a_14.geojson&quot;,
+                       what = &quot;sp&quot;)
+names(census) %&lt;&gt;% tolower()
+census %&lt;&gt;% st_as_sf() # convert to sf object
+census %&lt;&gt;% select(geometry, starts_with(&quot;hu&quot;), white, black, pop = population, objectid, blockgroup) # select important columns
+
+# filter via spatial overlay
+crime %&lt;&gt;% st_as_sf(coords = c(&quot;lon&quot;, &quot;lat&quot;), crs = st_crs(census)) # project crime onto census CRS
+crime %&lt;&gt;% mutate(objectid = st_within(crime, census) %&gt;% as.numeric()) # returns NA for those outside</code></pre>
+<pre><code>## although coordinates are longitude/latitude, st_within assumes that they are planar</code></pre>
+<pre class="r"><code>crime %&lt;&gt;% filter(!is.na(objectid))</code></pre>
+<p>Oh the things we do for reproducible scripts. Now that is out of the way we are ready to jump into testing.</p>
+</div>
+<div id="areal-stats" class="section level2">
+<h2>Areal Stats</h2>
+<p>This type of statistics uses regions to summarize indivdual cases. Here I’m using Census blocks (again) as our region boundaries, because census data is well curated and contains a ton of meta data that we can use later on in modeling.</p>
+<p>So the first step is to summarise the observaction in <code>crime</code> by shapes in <code>census</code>.</p>
+<pre class="r"><code>st_geometry(crime) &lt;- NULL # remove sf geometry, back to basic tibble
+
+crime %&lt;&gt;% group_by(objectid, drug_flag) %&gt;% # count totals by census block
+    count() %&gt;%
+    spread(drug_flag, n) %&gt;%  # calculate fraction of drug related crime
+    mutate(frac_drugs = drugs / not_drugs)
+
+census %&lt;&gt;% inner_join(crime) # merge into census</code></pre>
+<pre><code>## Joining, by = &quot;objectid&quot;</code></pre>
+<div id="morans-i" class="section level3">
+<h3>Moran’s I</h3>
+<p>The first test statistic to learn for spatial data is <a href="https://en.wikipedia.org/wiki/Moran%27s_I">Moran’s I</a>. This is used to measure spatial autocorrelation, in other words are adjacent areas likely to have similar signals. The test statstic I ranges from -1 (pure dispersion) to 1 (pure clustering) with a value of 0 being random. Morans’ I is implemented in the R <code>library(spdep)</code> and I will focus on the function <code>moran.mc()</code>, which performs a Monte Carlo simulation under the hood to establish rank.</p>
+<p>First we have to convert our <code>sf</code> objects into a <code>SpatialPolygons</code> objects, then we can use a couple other functions from <code>library(spdep)</code> to construct a weighted list of neigbors which is required to run <code>moran.mc()</code>.</p>
+<pre class="r"><code>census_sp &lt;- as(census, &quot;Spatial&quot;) # convert spatial object type
+
+census_wnb &lt;- spdep::poly2nb(census_sp) %&gt;% # convert set of polygons to neighbor list
+     spdep::nb2listw() # weight that list
+
+spdep::moran.mc(census_sp$frac_drugs, census_wnb, nsim = 999) # 999+1 simulations</code></pre>
+<pre><code>## 
+##  Monte-Carlo simulation of Moran I
+## 
+## data:  census_sp$frac_drugs 
+## weights: census_wnb  
+## number of simulations + 1: 1000 
+## 
+## statistic = 0.21778, observed rank = 991, p-value = 0.009
+## alternative hypothesis: greater</code></pre>
+<pre class="r"><code>ggplot(census) + geom_sf(aes(fill = frac_drugs))</code></pre>
+<p><img src="/post/2018-01-28-spatial-testing_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+</div>
+</div>

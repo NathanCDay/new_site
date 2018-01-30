@@ -1,0 +1,103 @@
+---
+title: Spatial Testing
+author: Nate Day
+date: '2018-01-28'
+slug: spatial-testing
+categories:
+  - Cville Open Data
+tags:
+  - spatial
+  - sf
+  - statistics
+---
+
+## Intro
+
+In my last post I spent a lot of time visualizing the drug crime data published by the Charlottesville Police Department, with `library(sf)`. This is the peanut butter to that viz jelly, the statistical testing tools that can measure the significance of the trends we observed. And who doens't like PB&Js?
+
+## Globals
+```{r global, cache = TRUE, warnings = FALSE, messages = FALSE}
+# the package load out
+library(geojsonio) # data read in
+
+library(sf) # last post
+library(viridis) # ^^^
+
+library(spatstat) # new
+
+library(magrittr)
+library(tidyverse)
+
+# some custom functions to make my fingers happy
+theme_set(theme_grey() + theme(legend.position = "top"))
+scale_fill_continuous <- function(...) { viridis::scale_fill_viridis(...) }
+```
+
+## Data Input
+
+This is block of code is aggregated from my other posts revolving around the the city's crime data. It handles a lot of the weirdness in the original data set that needs cleaning attention. For this I'm leaving little comments as bread crumbs, if you need the whole loaf check out the earlier posts or hmu.
+
+```{r data_in, cache = TRUE, warnings = FALSE, messages = FALSE}
+# get geo-coded crime data from my GitHub
+crime <- read.csv("https://raw.githubusercontent.com/NathanCDay/cville_crime/master/crime_geocode.csv")
+crime %<>% filter(complete.cases(crime)) # not all raw address could be geo_coded
+names(crime) %<>% tolower() # safer/easier
+crime %<>% mutate(drug_flag = ifelse(grepl("drug", offense, ignore.case = TRUE),
+                                     "drugs", "not_drugs")) # flag drug related crimes
+crime %<>% filter(offense != "DRUG AWARENESS PRESENTATION") # drop DARE class (90's kids hands up)
+crime %<>% filter(address != "600 E MARKET ST Charlottesville VA") # drop the Police Station block (fishy)
+
+# get census data for shapes and housing data
+census <- geojson_read("https://opendata.arcgis.com/datasets/e60c072dbb734454a849d21d3814cc5a_14.geojson",
+                       what = "sp")
+names(census) %<>% tolower()
+census %<>% st_as_sf() # convert to sf object
+census %<>% select(geometry, starts_with("hu"), white, black, pop = population, objectid, blockgroup) # select important columns
+
+# filter via spatial overlay
+crime %<>% st_as_sf(coords = c("lon", "lat"), crs = st_crs(census)) # project crime onto census CRS
+crime %<>% mutate(objectid = st_within(crime, census) %>% as.numeric()) # returns NA for those outside
+crime %<>% filter(!is.na(objectid))
+
+```
+
+Oh the things we do for reproducible scripts. Now that is out of the way we are ready to jump into testing.
+
+## Areal Stats
+
+This type of statistics uses regions to summarize indivdual cases. Here I'm using Census blocks (again) as our region boundaries, because census data is well curated and contains a ton of meta data that we can use later on in modeling.
+
+So the first step is to summarise the observaction in `crime` by shapes in `census`.
+
+```{r}
+st_geometry(crime) <- NULL # remove sf geometry, back to basic tibble
+
+crime %<>% group_by(objectid, drug_flag) %>% # count totals by census block
+    count() %>%
+    spread(drug_flag, n) %>%  # calculate fraction of drug related crime
+    mutate(frac_drugs = drugs / not_drugs)
+
+census %<>% inner_join(crime) # merge into census
+```
+
+### Moran's I
+The first test statistic to learn for spatial data is [Moran's I](https://en.wikipedia.org/wiki/Moran%27s_I). This is used to measure spatial autocorrelation, in other words are adjacent areas likely to have similar signals. The test statstic I ranges from -1 (pure dispersion) to 1 (pure clustering) with a value of 0 being random. Morans' I is implemented in the R `library(spdep)` and I will focus on the function `moran.mc()`, which performs a Monte Carlo simulation under the hood to establish rank.
+
+First we have to convert our `sf` objects into a `SpatialPolygons` objects, then we can use a couple other functions from `library(spdep)` to construct a weighted list of neigbors which is required to run `moran.mc()`.
+
+```{r}
+census_sp <- as(census, "Spatial") # convert spatial object type
+
+census_wnb <- spdep::poly2nb(census_sp) %>% # convert set of polygons to neighbor list
+     spdep::nb2listw() # weight that list
+
+spdep::moran.mc(census_sp$frac_drugs, census_wnb, nsim = 999) # 999+1 simulations
+
+ggplot(census) + geom_sf(aes(fill = frac_drugs))
+```
+
+
+
+
+
+
