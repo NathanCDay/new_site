@@ -2,6 +2,7 @@
 title: Spatial Testing
 author: Nate Day
 date: '2018-01-28'
+description: Using spatial statistics to investigate the rate of drug crime in Cville's census blocks.
 slug: spatial-testing
 categories:
   - Cville Open Data
@@ -16,21 +17,21 @@ tags:
 In my last post I spent a lot of time visualizing the drug crime data published by the Charlottesville Police Department, with `library(sf)`. This is the peanut butter to that viz jelly, the statistical testing tools that can measure the significance of the trends we observed. And who doens't like PB&Js?
 
 ## Globals
-```{r global, cache = TRUE, warnings = FALSE, messages = FALSE}
-# the package load out
-library(geojsonio) # data read in
-
+```{r global, warnings = FALSE, messages = FALSE}
+library(geojsonio) # last two posts
 library(sf) # last post
-library(viridis) # ^^^
+library(viridis) # last post
 
-library(spatstat) # new
+# library(spatstat) # new
+library(spdep) # new
+library(tidycensus) # new
 
-library(magrittr)
+library(magrittr) # %<>% life
 library(tidyverse)
 
 # some custom functions to make my fingers happy
 theme_set(theme_grey() + theme(legend.position = "top"))
-scale_fill_continuous <- function(...) { viridis::scale_fill_viridis(...) }
+scale_fill_continuous <- function(...) { viridis::scale_fill_viridis(option = "A", ...) }
 ```
 
 ## Data Input
@@ -81,23 +82,100 @@ census %<>% inner_join(crime) # merge into census
 ```
 
 ### Moran's I
+
 The first test statistic to learn for spatial data is [Moran's I](https://en.wikipedia.org/wiki/Moran%27s_I). This is used to measure spatial autocorrelation, in other words are adjacent areas likely to have similar signals. The test statstic I ranges from -1 (pure dispersion) to 1 (pure clustering) with a value of 0 being random. Morans' I is implemented in the R `library(spdep)` and I will focus on the function `moran.mc()`, which performs a Monte Carlo simulation under the hood to establish rank.
 
 First we have to convert our `sf` objects into a `SpatialPolygons` objects, then we can use a couple other functions from `library(spdep)` to construct a weighted list of neigbors which is required to run `moran.mc()`.
 
 ```{r}
-census_sp <- as(census, "Spatial") # convert spatial object type
+census_sp <- as(census, "Spatial") # convert to spatial object type
 
-census_wnb <- spdep::poly2nb(census_sp) %>% # convert set of polygons to neighbor list
-     spdep::nb2listw() # weight that list
+census_wnb <- spdep::poly2nb(census_sp) %>% # convert polygons to neighbor list
+     spdep::nb2listw() # weight the list by 
 
 spdep::moran.mc(census_sp$frac_drugs, census_wnb, nsim = 999) # 999+1 simulations
 
 ggplot(census) + geom_sf(aes(fill = frac_drugs))
+sp::spplot(census_sp, zcol = "frac_drugs") # perhaps easier/faster???
 ```
 
+Either way you plot it, its easy to see that the SW corner of the city has a larger fraction of drug crime than either of the other three. But now we can say with a statistic greater than 0, that we are observing a clustering pattern in the fraction of drug crime. A statistic value of 0 would indicate a true random pattern and one under 0, a dispearsal pattern.
 
+## MORE DATA!!!
 
+If we want to investigate more, we need more data. The stock census data has some housing and demographic data that might be useful, but we want more. Realistically we'd like to scan a bunch of indicators, but here we will just grab median income and age by Census block. This data is from the [American Community Survey](https://www.census.gov/programs-surveys/acs/) is readily available via good guy [Kyle Walk and his bomb package tidycensus package](https://walkerke.github.io/2017/05/tidycensus-every-tract/). So go ahead and put those parsing pants away.
 
+All you really have to do is [register an API key here](https://api.census.gov/data/key_signup.html) wait a couple of minutes, check your email and from there it's all slick functions from there.
 
+```{r tidy cenus}
 
+# census_api_key("your_key")
+
+cvl <- get_acs(geography = "block group", county = "Charlottesville", state = "VA",
+               variables = c("B19013_001", "B01002_001") ) # income & age
+
+# the rest is cleaning...
+decode <- c("income", "age") %>% set_names(c("B19013_001", "B01002_001")) # named vecs ftw
+cvl$variable %<>% decode[.] # recip pipe is so nice
+
+cvl %<>% select(GEOID, variable, estimate) %>% spread(variable, estimate) # spread to tidy
+
+census %<>% full_join(rename(cvl, blockgroup = GEOID)) # two block have missing income values
+
+```
+
+## Explore that
+
+Great now we have a couple of extra variables to work with. But before we just blindly throw them into a model, let's look at all of the relationships quickly via `GGally::ggpairs()`. Before we do that I want to build variables for the proportion of vacant homes and the population that identifies as black.
+
+```{r}
+census %<>% mutate(frac_vacant = hu_vacant / (hu_occupied + hu_vacant),
+                   frac_black = black / pop)
+
+col_index <- match(c("frac_drugs", "frac_vacant", "age", "income", "frac_black"), names(census))
+
+GGally::ggpairs(census, col_index)
+
+```
+
+We can see that the fraction of drug crime is positively related to the fraction of the comminity that is black, the fraction of the homes that are vacant and negatively related to income. This is not suprising since [America has well documented history of using drug laws to target minorities](http://www.drugpolicy.org/issues/race-and-drug-war), especially black communities.
+
+# Model time
+
+Since our respons variable is a the proportion of drug crime to total crime and is bounded by 0 and 1, we are best off using a quasi-binomial distribution. If we were using the total count of drug crimes as our response, we'd want to use a Poisson or quasipoisson distribution instead. R's flexible `glm()` makes either of these scenarios simple to code with the `family = ` argument.
+
+```{r}
+
+glm(frac_drugs ~ income + age + frac_black + frac_vacant, data = census,
+           family = quasibinomial(link = "logit")) %>% summary()
+
+# refit with just frac_black to get back our DFs
+mod <- glm(frac_drugs ~ frac_black, data = census,
+           family = quasibinomial(link = "logit"))
+summary(mod)
+```
+
+### Interpreting the predictors
+
+Having `frac_black` as the only signifcant predictor in our models, does not mean that black people are more likely to commit drug crimes. In fact according to the US Health Department's national drug use survey: [Whites, Blacks and Hispanics all use drugs at similar levels](https://www.samhsa.gov/data/sites/default/files/NSDUHresultsPDFWHTML2013/Web/NSDUHresults2013.pdf) and Asians use signicantly less. Politifact dug into the arrest rates for different races and estimated [Blacks almost 5.8x more likely to be impresioned for drug crime than Whites](http://www.politifact.com/punditfact/statements/2016/jul/13/van-jones/van-jones-claim-drug-use-imprisonment-rates-blacks/).
+
+Stats like this are complicated and don't have simple fixes, but they do deserve public attention. Seeing these trends happening here in Charlottesville, is the first step toward correcting them.
+
+## Check out
+
+The final check on our model is to test the residuals for auto-correlation. If we see a spatial pattern in the residuals, it indicates we may be missing a critical explanatory variable.
+
+```{r}
+
+census$resid <- resid(mod)
+ggplot(census) + geom_sf(aes(fill = resid))
+
+moran.mc(resid(mod), listw = census_wnb, nsim = 99)
+
+```
+
+We see a small negative test statistic and we fail to reject the null hypothesis that the residuals are random spatially.
+
+When I first started playing around with the City's Data Portal back when it launched in August 2017, I wasn't sure what I would find, but I wanted to focus my #rstats skills on local problems Since I got interested in the crime data, I've taken two spatial data courses on Data Camp: [Spatial Statistics in R](https://www.datacamp.com/courses/spatial-statistics-in-r) with Barry Rowlingson and [Spatial Analysis in R with sf and raster](https://www.datacamp.com/courses/spatial-analysis-in-r-with-sf-and-raster) with Zev Ross, which were great and I highly reccommend.
+
+If you have any questions, comments or ideas for future projects, please drop me an email. I'm really looking forward to hosting the [Smart Cville Open Data Deep Dive next week](https://www.smartcville.com/events/10/open-data-deep-dive-crime-data-drug-offenses/), so if you want to learn and play with these tool come out, code and meet some cool civic nerds in the community.

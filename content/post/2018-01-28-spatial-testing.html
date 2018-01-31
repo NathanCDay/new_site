@@ -2,6 +2,7 @@
 title: Spatial Testing
 author: Nate Day
 date: '2018-01-28'
+description: Using spatial statistics to investigate the rate of drug crime in Cville's census blocks.
 slug: spatial-testing
 categories:
   - Cville Open Data
@@ -19,20 +20,47 @@ tags:
 </div>
 <div id="globals" class="section level2">
 <h2>Globals</h2>
-<pre class="r"><code># the package load out
-library(geojsonio) # data read in
-
-library(sf) # last post
-library(viridis) # ^^^
-
-library(spatstat) # new
-
-library(magrittr)
-library(tidyverse)
-
-# some custom functions to make my fingers happy
+<pre class="r"><code>library(geojsonio) # last two posts</code></pre>
+<pre><code>## 
+## Attaching package: &#39;geojsonio&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:base&#39;:
+## 
+##     pretty</code></pre>
+<pre class="r"><code>library(sf) # last post</code></pre>
+<pre><code>## Warning: package &#39;sf&#39; was built under R version 3.4.2</code></pre>
+<pre><code>## Linking to GEOS 3.6.1, GDAL 2.1.3, proj.4 4.9.3</code></pre>
+<pre class="r"><code>library(viridis) # last post</code></pre>
+<pre><code>## Loading required package: viridisLite</code></pre>
+<pre class="r"><code># library(spatstat) # new
+library(spdep) # new</code></pre>
+<pre><code>## Warning: package &#39;spdep&#39; was built under R version 3.4.3</code></pre>
+<pre><code>## Loading required package: sp</code></pre>
+<pre><code>## Loading required package: Matrix</code></pre>
+<pre><code>## Loading required package: spData</code></pre>
+<pre><code>## Warning: package &#39;spData&#39; was built under R version 3.4.2</code></pre>
+<pre><code>## To access larger datasets in this package, install the spDataLarge
+## package with: `install.packages(&#39;spDataLarge&#39;)`</code></pre>
+<pre class="r"><code>library(tidycensus) # new</code></pre>
+<pre><code>## Warning: package &#39;tidycensus&#39; was built under R version 3.4.2</code></pre>
+<pre class="r"><code>library(magrittr) # %&lt;&gt;% life
+library(tidyverse)</code></pre>
+<pre><code>## Warning: package &#39;tidyverse&#39; was built under R version 3.4.2</code></pre>
+<pre><code>## ── Attaching packages ────────────────────────────────────────────────────────── tidyverse 1.2.1 ──</code></pre>
+<pre><code>## ✔ ggplot2 2.2.1.9000     ✔ purrr   0.2.4     
+## ✔ tibble  1.3.4          ✔ dplyr   0.7.4.9000
+## ✔ tidyr   0.7.2          ✔ stringr 1.2.0     
+## ✔ readr   1.1.1          ✔ forcats 0.2.0</code></pre>
+<pre><code>## Warning: package &#39;tidyr&#39; was built under R version 3.4.2</code></pre>
+<pre><code>## Warning: package &#39;purrr&#39; was built under R version 3.4.2</code></pre>
+<pre><code>## ── Conflicts ───────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ✖ tidyr::expand()    masks Matrix::expand()
+## ✖ tidyr::extract()   masks magrittr::extract()
+## ✖ dplyr::filter()    masks stats::filter()
+## ✖ dplyr::lag()       masks stats::lag()
+## ✖ purrr::set_names() masks magrittr::set_names()</code></pre>
+<pre class="r"><code># some custom functions to make my fingers happy
 theme_set(theme_grey() + theme(legend.position = &quot;top&quot;))
-scale_fill_continuous &lt;- function(...) { viridis::scale_fill_viridis(...) }</code></pre>
+scale_fill_continuous &lt;- function(...) { viridis::scale_fill_viridis(option = &quot;A&quot;, ...) }</code></pre>
 </div>
 <div id="data-input" class="section level2">
 <h2>Data Input</h2>
@@ -77,10 +105,10 @@ census %&lt;&gt;% inner_join(crime) # merge into census</code></pre>
 <h3>Moran’s I</h3>
 <p>The first test statistic to learn for spatial data is <a href="https://en.wikipedia.org/wiki/Moran%27s_I">Moran’s I</a>. This is used to measure spatial autocorrelation, in other words are adjacent areas likely to have similar signals. The test statstic I ranges from -1 (pure dispersion) to 1 (pure clustering) with a value of 0 being random. Morans’ I is implemented in the R <code>library(spdep)</code> and I will focus on the function <code>moran.mc()</code>, which performs a Monte Carlo simulation under the hood to establish rank.</p>
 <p>First we have to convert our <code>sf</code> objects into a <code>SpatialPolygons</code> objects, then we can use a couple other functions from <code>library(spdep)</code> to construct a weighted list of neigbors which is required to run <code>moran.mc()</code>.</p>
-<pre class="r"><code>census_sp &lt;- as(census, &quot;Spatial&quot;) # convert spatial object type
+<pre class="r"><code>census_sp &lt;- as(census, &quot;Spatial&quot;) # convert to spatial object type
 
-census_wnb &lt;- spdep::poly2nb(census_sp) %&gt;% # convert set of polygons to neighbor list
-     spdep::nb2listw() # weight that list
+census_wnb &lt;- spdep::poly2nb(census_sp) %&gt;% # convert polygons to neighbor list
+     spdep::nb2listw() # weight the list by 
 
 spdep::moran.mc(census_sp$frac_drugs, census_wnb, nsim = 999) # 999+1 simulations</code></pre>
 <pre><code>## 
@@ -94,5 +122,140 @@ spdep::moran.mc(census_sp$frac_drugs, census_wnb, nsim = 999) # 999+1 simulation
 ## alternative hypothesis: greater</code></pre>
 <pre class="r"><code>ggplot(census) + geom_sf(aes(fill = frac_drugs))</code></pre>
 <p><img src="/post/2018-01-28-spatial-testing_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<pre class="r"><code>sp::spplot(census_sp, zcol = &quot;frac_drugs&quot;) # perhaps easier/faster???</code></pre>
+<p><img src="/post/2018-01-28-spatial-testing_files/figure-html/unnamed-chunk-2-2.png" width="672" /></p>
+<p>Either way you plot it, its easy to see that the SW corner of the city has a larger fraction of drug crime than either of the other three. But now we can say with a statistic greater than 0, that we are observing a clustering pattern in the fraction of drug crime. A statistic value of 0 would indicate a true random pattern and one under 0, a dispearsal pattern.</p>
+</div>
+</div>
+<div id="more-data" class="section level2">
+<h2>MORE DATA!!!</h2>
+<p>If we want to investigate more, we need more data. The stock census data has some housing and demographic data that might be useful, but we want more. Realistically we’d like to scan a bunch of indicators, but here we will just grab median income and age by Census block. This data is from the <a href="https://www.census.gov/programs-surveys/acs/">American Community Survey</a> is readily available via good guy <a href="https://walkerke.github.io/2017/05/tidycensus-every-tract/">Kyle Walk and his bomb package tidycensus package</a>. So go ahead and put those parsing pants away.</p>
+<p>All you really have to do is <a href="https://api.census.gov/data/key_signup.html">register an API key here</a> wait a couple of minutes, check your email and from there it’s all slick functions from there.</p>
+<pre class="r"><code># census_api_key(&quot;your_key&quot;)
+
+cvl &lt;- get_acs(geography = &quot;block group&quot;, county = &quot;Charlottesville&quot;, state = &quot;VA&quot;,
+               variables = c(&quot;B19013_001&quot;, &quot;B01002_001&quot;) ) # income &amp; age
+
+# the rest is cleaning...
+decode &lt;- c(&quot;income&quot;, &quot;age&quot;) %&gt;% set_names(c(&quot;B19013_001&quot;, &quot;B01002_001&quot;)) # named vecs ftw
+cvl$variable %&lt;&gt;% decode[.] # recip pipe is so nice
+
+cvl %&lt;&gt;% select(GEOID, variable, estimate) %&gt;% spread(variable, estimate) # spread to tidy
+
+census %&lt;&gt;% full_join(rename(cvl, blockgroup = GEOID)) # two block have missing income values</code></pre>
+<pre><code>## Joining, by = &quot;blockgroup&quot;</code></pre>
+<pre><code>## Warning: Column `blockgroup` joining factor and character vector, coercing
+## into character vector</code></pre>
+</div>
+<div id="explore-that" class="section level2">
+<h2>Explore that</h2>
+<p>Great now we have a couple of extra variables to work with. But before we just blindly throw them into a model, let’s look at all of the relationships quickly via <code>GGally::ggpairs()</code>. Before we do that I want to build variables for the proportion of vacant homes and the population that identifies as black.</p>
+<pre class="r"><code>census %&lt;&gt;% mutate(frac_vacant = hu_vacant / (hu_occupied + hu_vacant),
+                   frac_black = black / pop)
+
+col_index &lt;- match(c(&quot;frac_drugs&quot;, &quot;frac_vacant&quot;, &quot;age&quot;, &quot;income&quot;, &quot;frac_black&quot;), names(census))
+
+GGally::ggpairs(census, col_index)</code></pre>
+<pre><code>## Warning in (function (data, mapping, alignPercent = 0.6, method =
+## &quot;pearson&quot;, : Removed 2 rows containing missing values</code></pre>
+<pre><code>## Warning in (function (data, mapping, alignPercent = 0.6, method =
+## &quot;pearson&quot;, : Removed 2 rows containing missing values</code></pre>
+<pre><code>## Warning in (function (data, mapping, alignPercent = 0.6, method =
+## &quot;pearson&quot;, : Removed 2 rows containing missing values</code></pre>
+<pre><code>## Warning: Removed 2 rows containing missing values (geom_point).
+
+## Warning: Removed 2 rows containing missing values (geom_point).
+
+## Warning: Removed 2 rows containing missing values (geom_point).</code></pre>
+<pre><code>## Warning: Removed 2 rows containing non-finite values (stat_density).</code></pre>
+<pre><code>## Warning in (function (data, mapping, alignPercent = 0.6, method =
+## &quot;pearson&quot;, : Removed 2 rows containing missing values</code></pre>
+<pre><code>## Warning: Removed 2 rows containing missing values (geom_point).</code></pre>
+<p><img src="/post/2018-01-28-spatial-testing_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>We can see that the fraction of drug crime is positively related to the fraction of the comminity that is black, the fraction of the homes that are vacant and negatively related to income. This is not suprising since <a href="http://www.drugpolicy.org/issues/race-and-drug-war">America has well documented history of using drug laws to target minorities</a>, especially black communities.</p>
+</div>
+<div id="model-time" class="section level1">
+<h1>Model time</h1>
+<p>Since our respons variable is a the proportion of drug crime to total crime and is bounded by 0 and 1, we are best off using a quasi-binomial distribution. If we were using the total count of drug crimes as our response, we’d want to use a Poisson or quasipoisson distribution instead. R’s flexible <code>glm()</code> makes either of these scenarios simple to code with the <code>family =</code> argument.</p>
+<pre class="r"><code>glm(frac_drugs ~ income + age + frac_black + frac_vacant, data = census,
+           family = quasibinomial(link = &quot;logit&quot;)) %&gt;% summary()</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = frac_drugs ~ income + age + frac_black + frac_vacant, 
+##     family = quasibinomial(link = &quot;logit&quot;), data = census)
+## 
+## Deviance Residuals: 
+##       Min         1Q     Median         3Q        Max  
+## -0.157940  -0.060269  -0.000251   0.041697   0.166152  
+## 
+## Coefficients:
+##               Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -3.509e+00  3.344e-01 -10.493 1.47e-11 ***
+## income      -2.516e-06  3.931e-06  -0.640 0.526968    
+## age          6.283e-03  1.092e-02   0.575 0.569452    
+## frac_black   1.567e+00  3.982e-01   3.936 0.000455 ***
+## frac_vacant  1.012e-01  2.487e+00   0.041 0.967799    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for quasibinomial family taken to be 0.007009726)
+## 
+##     Null deviance: 0.37394  on 34  degrees of freedom
+## Residual deviance: 0.21268  on 30  degrees of freedom
+##   (2 observations deleted due to missingness)
+## AIC: NA
+## 
+## Number of Fisher Scoring iterations: 6</code></pre>
+<pre class="r"><code># refit with just frac_black to get back our DFs
+mod &lt;- glm(frac_drugs ~ frac_black, data = census,
+           family = quasibinomial(link = &quot;logit&quot;))
+summary(mod)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = frac_drugs ~ frac_black, family = quasibinomial(link = &quot;logit&quot;), 
+##     data = census)
+## 
+## Deviance Residuals: 
+##      Min        1Q    Median        3Q       Max  
+## -0.16185  -0.05374  -0.00943   0.03796   0.17934  
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)  -3.4598     0.1022 -33.859  &lt; 2e-16 ***
+## frac_black    1.6812     0.3165   5.312 6.24e-06 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for quasibinomial family taken to be 0.006540553)
+## 
+##     Null deviance: 0.39617  on 36  degrees of freedom
+## Residual deviance: 0.22748  on 35  degrees of freedom
+## AIC: NA
+## 
+## Number of Fisher Scoring iterations: 6</code></pre>
+<div id="interpreting-the-predictors" class="section level3">
+<h3>Interpreting the predictors</h3>
+<p>Having <code>frac_black</code> as the only signifcant predictor in our models, does not mean that black people are more likely to commit drug crimes. In fact according to the US Health Department’s national drug use survey: <a href="https://www.samhsa.gov/data/sites/default/files/NSDUHresultsPDFWHTML2013/Web/NSDUHresults2013.pdf">Whites, Blacks and Hispanics all use drugs at similar levels</a> and Asians use signicantly less. Politifact dug into the arrest rates for different races and estimated <a href="http://www.politifact.com/punditfact/statements/2016/jul/13/van-jones/van-jones-claim-drug-use-imprisonment-rates-blacks/">Blacks almost 5.8x more likely to be impresioned for drug crime than Whites</a>.</p>
+<p>Stats like this are complicated and don’t have simple fixes, but they do deserve public attention. Seeing these trends happening here in Charlottesville, is the first step toward correcting them.</p>
+</div>
+<div id="check-out" class="section level2">
+<h2>Check out</h2>
+<p>The final check on our model is to test the residuals for auto-correlation. If we see a spatial pattern in the residuals, it indicates we may be missing a critical explanatory variable.</p>
+<pre class="r"><code>census$resid &lt;- resid(mod)
+ggplot(census) + geom_sf(aes(fill = resid))</code></pre>
+<p><img src="/post/2018-01-28-spatial-testing_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<pre class="r"><code>moran.mc(resid(mod), listw = census_wnb, nsim = 99)</code></pre>
+<pre><code>## 
+##  Monte-Carlo simulation of Moran I
+## 
+## data:  resid(mod) 
+## weights: census_wnb  
+## number of simulations + 1: 100 
+## 
+## statistic = -0.064084, observed rank = 38, p-value = 0.62
+## alternative hypothesis: greater</code></pre>
+<p>We see a small negative test statistic and we fail to reject the null hypothesis that the residuals are random spatially.</p>
+<p>When I first started playing around with the City’s Data Portal back when it launched in August 2017, I wasn’t sure what I would find, but I wanted to focus my #rstats skills on local problems Since I got interested in the crime data, I’ve taken two spatial data courses on Data Camp: <a href="https://www.datacamp.com/courses/spatial-statistics-in-r">Spatial Statistics in R</a> with Barry Rowlingson and <a href="https://www.datacamp.com/courses/spatial-analysis-in-r-with-sf-and-raster">Spatial Analysis in R with sf and raster</a> with Zev Ross, which were great and I highly reccommend.</p>
+<p>If you have any questions, comments or ideas for future projects, please drop me an email. I’m really looking forward to hosting the <a href="https://www.smartcville.com/events/10/open-data-deep-dive-crime-data-drug-offenses/">Smart Cville Open Data Deep Dive next week</a>, so if you want to learn and play with these tool come out, code and meet some cool civic nerds in the community.</p>
 </div>
 </div>
