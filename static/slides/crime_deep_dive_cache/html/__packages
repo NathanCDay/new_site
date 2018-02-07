@@ -20,6 +20,7 @@ viridisLite
 viridis
 sf
 tidycensus
+geojsonio
 sp
 Matrix
 spData

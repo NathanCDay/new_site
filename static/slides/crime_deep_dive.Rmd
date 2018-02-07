@@ -6,7 +6,6 @@ output:
   ioslides_presentation: 
     incremental: yes
     smaller: yes
-  slidy_presentation: default
 ---
 
 ```{r setup, include=FALSE}
@@ -43,6 +42,7 @@ library(tidycensus)
 4. Model and test patterns with `library(spdep)` and `glm()`
 
 ```{r libs, echo = TRUE, message = FALSE, warning = FALSE}
+library(geojsonio) # get ODP data
 library(tidyverse) # duh
 library(magrittr) # %<>% life
 library(viridis) # it's pretty
@@ -79,8 +79,8 @@ The police station's address is 606 E Market Street....
 
 "The answer is quite simple - when individuals walk in to the police department to file a report the physical address of the department (606 E Market Street) is often used in that initial report if no other known address is available at the time. This is especially true for incidents of found or lost property near the downtown mall where there is no true known incident location. The same is true for any warrant services that result in a police report occurring at the police department." - CPD
 
-<div 
 ![](what_police.gif)
+
 
 ## Test if proportions are different {.smaller .build}
 
@@ -180,7 +180,7 @@ moran.mc(census_sp$frac_drugs, block_wnb, nsim = 999) %>% tidy
 Get median `income` and `age` data from the American Community Survey via `tidycensus` to supplement housing and demographics from the Census.
 
 ```{r model_vars, echo=F, fig.height = 4, warning =F, message = F}
-cvl <- get_acs(geography = "block group", county = "Charlottesville", state = "VA",
+cvl <- tidycensus::get_acs(geography = "block group", county = "Charlottesville", state = "VA",
                variables = c("B19013_001", "B01002_001") )
 
 decode <- c("income", "age") %>% set_names(c("B19013_001", "B01002_001"))
