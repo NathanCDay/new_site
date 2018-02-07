@@ -33,7 +33,7 @@ library(tidycensus)
 - Provide an open-template for analyzing more data
 - Get people excited about using R
 
-![](/images/excited.gif)
+![](excited.gif)
 
 ## Data Process {.build}
 
@@ -80,7 +80,7 @@ The police station's address is 606 E Market Street....
 "The answer is quite simple - when individuals walk in to the police department to file a report the physical address of the department (606 E Market Street) is often used in that initial report if no other known address is available at the time. This is especially true for incidents of found or lost property near the downtown mall where there is no true known incident location. The same is true for any warrant services that result in a police report occurring at the police department." - CPD
 
 <div 
-![](images/what_police.gif)
+![](what_police.gif)
 
 ## Test if proportions are different {.smaller .build}
 
@@ -101,7 +101,7 @@ Census blocks make a lot of sense becuase:
 + Reputable source with code books and APIs
 + Easy to access in R via ODP and `library(tidycensus)`
 
-![](images/do_it.gif)
+![](do_it.gif)
 
 ## Start to do it {.smaller .build}
 ```{r census_pop, echo = TRUE, warning=FALSE, message=FALSE, fig.height=4, cache = TRUE}
@@ -242,4 +242,4 @@ moran.mc(resid(mod), block_wnb, nsim = 999) %>% tidy
 
 ## Questions? | Thanks for listening
 
-![](images/what.gif)
+![](what.gif)
