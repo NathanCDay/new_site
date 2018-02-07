@@ -58,26 +58,26 @@ crime_json &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/d1877e3
 <pre class="r"><code>crime_df &lt;- crime_json[[&quot;features&quot;]]
 head(crime_df)</code></pre>
 <pre><code>##      type properties.RecordID             properties.Offense
-## 1 Feature                   1 BURGLARY/BREAKING AND ENTERING
-## 2 Feature                   2        DRUG/NARCOTIC VIOLATION
-## 3 Feature                   3        DRUG/NARCOTIC VIOLATION
-## 4 Feature                   4        DRUG/NARCOTIC VIOLATION
-## 5 Feature                   5        DRUG/NARCOTIC VIOLATION
-## 6 Feature                   6        DRUG/NARCOTIC VIOLATION
+## 1 Feature                1001            TRAFFIC-HIT AND RUN
+## 2 Feature                1002      LARCENY-ALL OTHER LARCENY
+## 3 Feature                1003                    ANIMAL-BITE
+## 4 Feature                1004 BURGLARY/BREAKING AND ENTERING
+## 5 Feature                1005                  TOWED VEHICLE
+## 6 Feature                1006  ASSIST CITIZEN-MENTAL/TDO/ECO
 ##   properties.IncidentID properties.BlockNumber properties.StreetName
-## 1             201073238                   1700             ALLIED LN
-## 2             201201112                    600            E WATER ST
-## 3             201202894                    400            GARRETT ST
-## 4             201203796                    400            GARRETT ST
-## 5             201206016                    100       TURTLE CREEK DR
-## 6             201206200                    400            14TH ST NW
+## 1             201301960                    100           SHAMROCK RD
+## 2             201301961                   2000                IVY RD
+## 3             201301962                   2300            BANBURY CT
+## 4             201301963                      0        UNIVERSITY WAY
+## 5             201301964                    600           PRESTON AVE
+## 6             201301965                    700              RIDGE ST
 ##   properties.Agency properties.DateReported properties.HourReported
-## 1              CPD   2017/09/22 00:00:00+00                    1200
-## 2              CPD   2013/07/01 00:00:00+00                    0845
-## 3              CPD   2013/02/25 00:00:00+00                    1005
-## 4              CPD   2013/02/25 00:00:00+00                    1530
-## 5              CPD   2013/03/11 00:00:00+00                    1117
-## 6              CPD   2013/07/03 05:45:00+00                    0545
+## 1              CPD   2013/04/08 00:00:00+00                    2100
+## 2              CPD   2013/04/08 00:00:00+00                    1927
+## 3              CPD   2013/04/08 00:00:00+00                    2017
+## 4              CPD   2013/04/08 00:00:00+00                    2237
+## 5              CPD   2013/04/08 00:00:00+00                    2250
+## 6              CPD   2013/04/09 00:00:00+00                    0610
 ##   geometry
 ## 1       NA
 ## 2       NA
