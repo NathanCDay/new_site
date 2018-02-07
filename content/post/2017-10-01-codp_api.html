@@ -57,27 +57,27 @@ crime_json &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/d1877e3
 <p>The data that we are after is in the second element <code>.$features</code>, but we can see from our <code>View()</code> look-in that it is formatted slightly weird. Let’s look at the top rows:</p>
 <pre class="r"><code>crime_df &lt;- crime_json[[&quot;features&quot;]]
 head(crime_df)</code></pre>
-<pre><code>##      type properties.RecordID                       properties.Offense
-## 1 Feature                1001     COMMUNITY RELATIONS INITIATIVE (CRI)
-## 2 Feature                1002                            TOWED VEHICLE
-## 3 Feature                1003 VANDALISM/DAMAGE/DESTRUCTION OF PROPERTY
-## 4 Feature                1004 VANDALISM/DAMAGE/DESTRUCTION OF PROPERTY
-## 5 Feature                1005 VANDALISM/DAMAGE/DESTRUCTION OF PROPERTY
-## 6 Feature                1006          MOTOR VEHICLE THEFT/STOLEN AUTO
+<pre><code>##      type properties.RecordID             properties.Offense
+## 1 Feature                   1 BURGLARY/BREAKING AND ENTERING
+## 2 Feature                   2        DRUG/NARCOTIC VIOLATION
+## 3 Feature                   3        DRUG/NARCOTIC VIOLATION
+## 4 Feature                   4        DRUG/NARCOTIC VIOLATION
+## 5 Feature                   5        DRUG/NARCOTIC VIOLATION
+## 6 Feature                   6        DRUG/NARCOTIC VIOLATION
 ##   properties.IncidentID properties.BlockNumber properties.StreetName
-## 1             201301708                    400            14TH ST NW
-## 2             201301709                    200             2ND ST NE
-## 3             201301710                    700         ALTAVISTA AVE
-## 4             201301711                    100            14TH ST NW
-## 5             201301712                    900          MONTROSE AVE
-## 6             201301713                    100            W SOUTH ST
+## 1             201073238                   1700             ALLIED LN
+## 2             201201112                    600            E WATER ST
+## 3             201202894                    400            GARRETT ST
+## 4             201203796                    400            GARRETT ST
+## 5             201206016                    100       TURTLE CREEK DR
+## 6             201206200                    400            14TH ST NW
 ##   properties.Agency properties.DateReported properties.HourReported
-## 1              CPD   2013/03/27 00:00:00+00                    0946
-## 2              CPD   2013/03/27 00:00:00+00                    0943
-## 3              CPD   2013/03/27 00:00:00+00                    0941
-## 4              CPD   2013/03/27 00:00:00+00                    1010
-## 5              CPD   2013/03/27 00:00:00+00                    1108
-## 6              CPD   2013/03/27 00:00:00+00                    1115
+## 1              CPD   2017/09/22 00:00:00+00                    1200
+## 2              CPD   2013/07/01 00:00:00+00                    0845
+## 3              CPD   2013/02/25 00:00:00+00                    1005
+## 4              CPD   2013/02/25 00:00:00+00                    1530
+## 5              CPD   2013/03/11 00:00:00+00                    1117
+## 6              CPD   2013/07/03 05:45:00+00                    0545
 ##   geometry
 ## 1       NA
 ## 2       NA

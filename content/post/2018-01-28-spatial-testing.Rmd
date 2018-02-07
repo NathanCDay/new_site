@@ -36,7 +36,7 @@ scale_fill_continuous <- function(...) { viridis::scale_fill_viridis(option = "A
 
 ## Data Input
 
-This is block of code is aggregated from my other posts revolving around the the city's crime data. It handles a lot of the weirdness in the original data set that needs cleaning attention. For this I'm leaving little comments as bread crumbs, if you need the whole loaf check out the earlier posts or hmu.
+This is block of code is aggregated from my other posts revolving around the the city's crime data. It handles a lot of the weirdness in the original data set that needs cleaning attention. For this I'm leaving little comments as bread crumbs, if you need the whole loaf check out the earlier posts or send me an email.
 
 ```{r data_in, cache = TRUE, warnings = FALSE, messages = FALSE}
 # get geo-coded crime data from my GitHub
@@ -112,7 +112,7 @@ All you really have to do is [register an API key here](https://api.census.gov/d
 # census_api_key("your_key")
 
 cvl <- get_acs(geography = "block group", county = "Charlottesville", state = "VA",
-               variables = c("B19013_001", "B01002_001") ) # income & age
+               variables = c("B19013_001", "B01002_001"), output = "tidy") # income & age
 
 # the rest is cleaning...
 decode <- c("income", "age") %>% set_names(c("B19013_001", "B01002_001")) # named vecs ftw
