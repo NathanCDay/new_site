@@ -57,27 +57,27 @@ crime_json &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/d1877e3
 <p>The data that we are after is in the second element <code>.$features</code>, but we can see from our <code>View()</code> look-in that it is formatted slightly weird. Let’s look at the top rows:</p>
 <pre class="r"><code>crime_df &lt;- crime_json[[&quot;features&quot;]]
 head(crime_df)</code></pre>
-<pre><code>##      type properties.RecordID             properties.Offense
-## 1 Feature                1001            TRAFFIC-HIT AND RUN
-## 2 Feature                1002      LARCENY-ALL OTHER LARCENY
-## 3 Feature                1003                    ANIMAL-BITE
-## 4 Feature                1004 BURGLARY/BREAKING AND ENTERING
-## 5 Feature                1005                  TOWED VEHICLE
-## 6 Feature                1006  ASSIST CITIZEN-MENTAL/TDO/ECO
+<pre><code>##      type properties.RecordID                       properties.Offense
+## 1 Feature                1001                       ASSAULT-AGGRAVATED
+## 2 Feature                1002                            PROPERTY-LOST
+## 3 Feature                1003 VANDALISM/DAMAGE/DESTRUCTION OF PROPERTY
+## 4 Feature                1004                           ASSAULT-SIMPLE
+## 5 Feature                1005                      LARCENY-SHOPLIFTING
+## 6 Feature                1006                                  ROBBERY
 ##   properties.IncidentID properties.BlockNumber properties.StreetName
-## 1             201301960                    100           SHAMROCK RD
-## 2             201301961                   2000                IVY RD
-## 3             201301962                   2300            BANBURY CT
-## 4             201301963                      0        UNIVERSITY WAY
-## 5             201301964                    600           PRESTON AVE
-## 6             201301965                    700              RIDGE ST
+## 1             201302147                    100             W MAIN ST
+## 2             201302148                   1900            EMMET ST N
+## 3             201302149                    200         CHANCELLOR ST
+## 4             201302150                    400            GARRETT ST
+## 5             201302151                   1800          HYDRAULIC RD
+## 6             201302152                   1200             CEDARS CT
 ##   properties.Agency properties.DateReported properties.HourReported
-## 1              CPD   2013/04/08 00:00:00+00                    2100
-## 2              CPD   2013/04/08 00:00:00+00                    1927
-## 3              CPD   2013/04/08 00:00:00+00                    2017
-## 4              CPD   2013/04/08 00:00:00+00                    2237
-## 5              CPD   2013/04/08 00:00:00+00                    2250
-## 6              CPD   2013/04/09 00:00:00+00                    0610
+## 1              CPD   2013/04/16 00:00:00+00                    1924
+## 2              CPD   2013/04/16 00:00:00+00                    1932
+## 3              CPD   2013/04/16 00:00:00+00                    1954
+## 4              CPD   2013/04/16 00:00:00+00                    2045
+## 5              CPD   2013/04/16 00:00:00+00                    2031
+## 6              CPD   2013/04/17 00:00:00+00                    0600
 ##   geometry
 ## 1       NA
 ## 2       NA
