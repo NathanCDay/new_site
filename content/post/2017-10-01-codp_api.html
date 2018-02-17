@@ -58,26 +58,26 @@ crime_json &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/d1877e3
 <pre class="r"><code>crime_df &lt;- crime_json[[&quot;features&quot;]]
 head(crime_df)</code></pre>
 <pre><code>##      type properties.RecordID                       properties.Offense
-## 1 Feature                1001                       ASSAULT-AGGRAVATED
-## 2 Feature                1002                            PROPERTY-LOST
-## 3 Feature                1003 VANDALISM/DAMAGE/DESTRUCTION OF PROPERTY
-## 4 Feature                1004                           ASSAULT-SIMPLE
-## 5 Feature                1005                      LARCENY-SHOPLIFTING
-## 6 Feature                1006                                  ROBBERY
+## 1 Feature                2001 VANDALISM/DAMAGE/DESTRUCTION OF PROPERTY
+## 2 Feature                2002                  DRUG/NARCOTIC VIOLATION
+## 3 Feature                2003                 PROPERTY-FOUND/RECOVERED
+## 4 Feature                2004 VANDALISM/DAMAGE/DESTRUCTION OF PROPERTY
+## 5 Feature                2005                LARCENY-ALL OTHER LARCENY
+## 6 Feature                2006              LARCENY-THEFT FROM BUILDING
 ##   properties.IncidentID properties.BlockNumber properties.StreetName
-## 1             201302147                    100             W MAIN ST
-## 2             201302148                   1900            EMMET ST N
-## 3             201302149                    200         CHANCELLOR ST
-## 4             201302150                    400            GARRETT ST
-## 5             201302151                   1800          HYDRAULIC RD
-## 6             201302152                   1200             CEDARS CT
+## 1             201303339                    100            13TH ST NW
+## 2             201303341                   1000             MARTIN ST
+## 3             201303342                    900            RAINIER RD
+## 4             201303344                    200            14TH ST NW
+## 5             201303345                   2000                IVY RD
+## 6             201303346                    200            CARLTON RD
 ##   properties.Agency properties.DateReported properties.HourReported
-## 1              CPD   2013/04/16 00:00:00+00                    1924
-## 2              CPD   2013/04/16 00:00:00+00                    1932
-## 3              CPD   2013/04/16 00:00:00+00                    1954
-## 4              CPD   2013/04/16 00:00:00+00                    2045
-## 5              CPD   2013/04/16 00:00:00+00                    2031
-## 6              CPD   2013/04/17 00:00:00+00                    0600
+## 1              CPD   2013/06/14 00:00:00+00                    0955
+## 2              CPD   2013/06/14 00:00:00+00                    1333
+## 3              CPD   2013/06/14 00:00:00+00                    1215
+## 4              CPD   2013/06/14 00:00:00+00                    1317
+## 5              CPD   2013/06/14 00:00:00+00                    1422
+## 6              CPD   2013/06/14 00:00:00+00                    1434
 ##   geometry
 ## 1       NA
 ## 2       NA
