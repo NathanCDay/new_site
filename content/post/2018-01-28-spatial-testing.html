@@ -20,45 +20,18 @@ tags:
 </div>
 <div id="globals" class="section level2">
 <h2>Globals</h2>
-<pre class="r"><code>library(geojsonio) # last two posts</code></pre>
-<pre><code>## 
-## Attaching package: &#39;geojsonio&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:base&#39;:
-## 
-##     pretty</code></pre>
-<pre class="r"><code>library(sf) # last post</code></pre>
-<pre><code>## Warning: package &#39;sf&#39; was built under R version 3.4.2</code></pre>
-<pre><code>## Linking to GEOS 3.6.1, GDAL 2.1.3, proj.4 4.9.3</code></pre>
-<pre class="r"><code>library(viridis) # last post</code></pre>
-<pre><code>## Loading required package: viridisLite</code></pre>
-<pre class="r"><code># library(spatstat) # new
-library(spdep) # new</code></pre>
-<pre><code>## Warning: package &#39;spdep&#39; was built under R version 3.4.3</code></pre>
-<pre><code>## Loading required package: sp</code></pre>
-<pre><code>## Loading required package: Matrix</code></pre>
-<pre><code>## Loading required package: spData</code></pre>
-<pre><code>## Warning: package &#39;spData&#39; was built under R version 3.4.2</code></pre>
-<pre><code>## To access larger datasets in this package, install the spDataLarge
-## package with: `install.packages(&#39;spDataLarge&#39;)`</code></pre>
-<pre class="r"><code>library(tidycensus) # new
+<pre class="r"><code>library(geojsonio) # last two posts
+library(sf) # last post
+library(viridis) # last post
+
+# library(spatstat) # new
+library(spdep) # new
+library(tidycensus) # new
 
 library(magrittr) # %&lt;&gt;% life
-library(tidyverse)</code></pre>
-<pre><code>## Warning: package &#39;tidyverse&#39; was built under R version 3.4.2</code></pre>
-<pre><code>## ── Attaching packages ─────────────────────────────────────────────────────────── tidyverse 1.2.1 ──</code></pre>
-<pre><code>## ✔ ggplot2 2.2.1.9000     ✔ purrr   0.2.4     
-## ✔ tibble  1.3.4          ✔ dplyr   0.7.4.9000
-## ✔ tidyr   0.8.0          ✔ stringr 1.2.0     
-## ✔ readr   1.1.1          ✔ forcats 0.2.0</code></pre>
-<pre><code>## Warning: package &#39;tidyr&#39; was built under R version 3.4.3</code></pre>
-<pre><code>## Warning: package &#39;purrr&#39; was built under R version 3.4.2</code></pre>
-<pre><code>## ── Conflicts ────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
-## ✖ tidyr::expand()    masks Matrix::expand()
-## ✖ tidyr::extract()   masks magrittr::extract()
-## ✖ dplyr::filter()    masks stats::filter()
-## ✖ dplyr::lag()       masks stats::lag()
-## ✖ purrr::set_names() masks magrittr::set_names()</code></pre>
-<pre class="r"><code># some custom functions to make my fingers happy
+library(tidyverse)
+
+# some custom functions to make my fingers happy
 theme_set(theme_grey() + theme(legend.position = &quot;top&quot;))
 scale_fill_continuous &lt;- function(...) { viridis::scale_fill_viridis(option = &quot;A&quot;, ...) }</code></pre>
 </div>
@@ -83,9 +56,8 @@ census %&lt;&gt;% select(geometry, starts_with(&quot;hu&quot;), white, black, po
 
 # filter via spatial overlay
 crime %&lt;&gt;% st_as_sf(coords = c(&quot;lon&quot;, &quot;lat&quot;), crs = st_crs(census)) # project crime onto census CRS
-crime %&lt;&gt;% mutate(objectid = st_within(crime, census) %&gt;% as.numeric()) # returns NA for those outside</code></pre>
-<pre><code>## although coordinates are longitude/latitude, st_within assumes that they are planar</code></pre>
-<pre class="r"><code>crime %&lt;&gt;% filter(!is.na(objectid))</code></pre>
+crime %&lt;&gt;% mutate(objectid = st_within(crime, census) %&gt;% as.numeric()) # returns NA for those outside
+crime %&lt;&gt;% filter(!is.na(objectid))</code></pre>
 <p>Oh the things we do for reproducible scripts. Now that is out of the way we are ready to jump into testing.</p>
 </div>
 <div id="areal-stats" class="section level2">
@@ -100,7 +72,6 @@ crime %&lt;&gt;% group_by(objectid, drug_flag) %&gt;% # count totals by census b
     mutate(frac_drugs = drugs / not_drugs)
 
 census %&lt;&gt;% inner_join(crime) # merge into census</code></pre>
-<pre><code>## Joining, by = &quot;objectid&quot;</code></pre>
 <div id="morans-i" class="section level3">
 <h3>Moran’s I</h3>
 <p>The first test statistic to learn for spatial data is <a href="https://en.wikipedia.org/wiki/Moran%27s_I">Moran’s I</a>. This is used to measure spatial autocorrelation, in other words are adjacent areas likely to have similar signals. The test statstic I ranges from -1 (pure dispersion) to 1 (pure clustering) with a value of 0 being random. Morans’ I is implemented in the R <code>library(spdep)</code> and I will focus on the function <code>moran.mc()</code>, which performs a Monte Carlo simulation under the hood to establish rank.</p>
@@ -118,12 +89,12 @@ spdep::moran.mc(census_sp$frac_drugs, census_wnb, nsim = 999) # 999+1 simulation
 ## weights: census_wnb  
 ## number of simulations + 1: 1000 
 ## 
-## statistic = 0.21778, observed rank = 984, p-value = 0.016
+## statistic = 0.21778, observed rank = 982, p-value = 0.018
 ## alternative hypothesis: greater</code></pre>
 <pre class="r"><code>ggplot(census) + geom_sf(aes(fill = frac_drugs))</code></pre>
-<p><img src="/post/2018-01-28-spatial-testing_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="/post/2018-01-28-spatial-testing_files/figure-html/moran-1.png" width="672" /></p>
 <pre class="r"><code>sp::spplot(census_sp, zcol = &quot;frac_drugs&quot;) # perhaps easier/faster???</code></pre>
-<p><img src="/post/2018-01-28-spatial-testing_files/figure-html/unnamed-chunk-2-2.png" width="672" /></p>
+<p><img src="/post/2018-01-28-spatial-testing_files/figure-html/moran-2.png" width="672" /></p>
 <p>Either way you plot it, its easy to see that the SW corner of the city has a larger fraction of drug crime than either of the other three. But now we can say with a statistic greater than 0, that we are observing a clustering pattern in the fraction of drug crime. A statistic value of 0 would indicate a true random pattern and one under 0, a dispearsal pattern.</p>
 </div>
 </div>
@@ -134,18 +105,15 @@ spdep::moran.mc(census_sp$frac_drugs, census_wnb, nsim = 999) # 999+1 simulation
 <pre class="r"><code># census_api_key(&quot;your_key&quot;)
 
 cvl &lt;- get_acs(geography = &quot;block group&quot;, county = &quot;Charlottesville&quot;, state = &quot;VA&quot;,
-               variables = c(&quot;B19013_001&quot;, &quot;B01002_001&quot;), output = &quot;tidy&quot;) # income &amp; age</code></pre>
-<pre><code>## Please note: `get_acs()` now defaults to a year or endyear of 2016.</code></pre>
-<pre class="r"><code># the rest is cleaning...
+               variables = c(&quot;B19013_001&quot;, &quot;B01002_001&quot;), output = &quot;tidy&quot;) # income &amp; age
+
+# the rest is cleaning...
 decode &lt;- c(&quot;income&quot;, &quot;age&quot;) %&gt;% set_names(c(&quot;B19013_001&quot;, &quot;B01002_001&quot;)) # named vecs ftw
 cvl$variable %&lt;&gt;% decode[.] # recip pipe is so nice
 
 cvl %&lt;&gt;% select(GEOID, variable, estimate) %&gt;% spread(variable, estimate) # spread to tidy
 
 census %&lt;&gt;% full_join(rename(cvl, blockgroup = GEOID)) # two block have missing income values</code></pre>
-<pre><code>## Joining, by = &quot;blockgroup&quot;</code></pre>
-<pre><code>## Warning: Column `blockgroup` joining factor and character vector, coercing
-## into character vector</code></pre>
 </div>
 <div id="explore-that" class="section level2">
 <h2>Explore that</h2>
@@ -156,22 +124,7 @@ census %&lt;&gt;% full_join(rename(cvl, blockgroup = GEOID)) # two block have mi
 col_index &lt;- match(c(&quot;frac_drugs&quot;, &quot;frac_vacant&quot;, &quot;age&quot;, &quot;income&quot;, &quot;frac_black&quot;), names(census))
 
 GGally::ggpairs(census, col_index)</code></pre>
-<pre><code>## Warning in (function (data, mapping, alignPercent = 0.6, method =
-## &quot;pearson&quot;, : Removed 3 rows containing missing values</code></pre>
-<pre><code>## Warning in (function (data, mapping, alignPercent = 0.6, method =
-## &quot;pearson&quot;, : Removed 3 rows containing missing values</code></pre>
-<pre><code>## Warning in (function (data, mapping, alignPercent = 0.6, method =
-## &quot;pearson&quot;, : Removed 3 rows containing missing values</code></pre>
-<pre><code>## Warning: Removed 3 rows containing missing values (geom_point).
-
-## Warning: Removed 3 rows containing missing values (geom_point).
-
-## Warning: Removed 3 rows containing missing values (geom_point).</code></pre>
-<pre><code>## Warning: Removed 3 rows containing non-finite values (stat_density).</code></pre>
-<pre><code>## Warning in (function (data, mapping, alignPercent = 0.6, method =
-## &quot;pearson&quot;, : Removed 3 rows containing missing values</code></pre>
-<pre><code>## Warning: Removed 3 rows containing missing values (geom_point).</code></pre>
-<p><img src="/post/2018-01-28-spatial-testing_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p><img src="/post/2018-01-28-spatial-testing_files/figure-html/mutate-1.png" width="672" /></p>
 <p>We can see that the fraction of drug crime is positively related to the fraction of the comminity that is black, the fraction of the homes that are vacant and negatively related to income. This is not suprising since <a href="http://www.drugpolicy.org/issues/race-and-drug-war">America has well documented history of using drug laws to target minorities</a>, especially black communities.</p>
 </div>
 <div id="model-time" class="section level1">
@@ -243,7 +196,7 @@ summary(mod)</code></pre>
 <p>The final check on our model is to test the residuals for auto-correlation. If we see a spatial pattern in the residuals, it indicates we may be missing a critical explanatory variable.</p>
 <pre class="r"><code>census$resid &lt;- resid(mod)
 ggplot(census) + geom_sf(aes(fill = resid))</code></pre>
-<p><img src="/post/2018-01-28-spatial-testing_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p><img src="/post/2018-01-28-spatial-testing_files/figure-html/last-call-1.png" width="672" /></p>
 <pre class="r"><code>moran.mc(resid(mod), listw = census_wnb, nsim = 99)</code></pre>
 <pre><code>## 
 ##  Monte-Carlo simulation of Moran I
@@ -252,7 +205,7 @@ ggplot(census) + geom_sf(aes(fill = resid))</code></pre>
 ## weights: census_wnb  
 ## number of simulations + 1: 100 
 ## 
-## statistic = -0.064084, observed rank = 38, p-value = 0.62
+## statistic = -0.064084, observed rank = 48, p-value = 0.52
 ## alternative hypothesis: greater</code></pre>
 <p>We see a small negative test statistic and we fail to reject the null hypothesis that the residuals are random spatially.</p>
 <p>When I first started playing around with the City’s Data Portal back when it launched in August 2017, I wasn’t sure what I would find, but I wanted to focus my #rstats skills on local problems Since I got interested in the crime data, I’ve taken two spatial data courses on Data Camp: <a href="https://www.datacamp.com/courses/spatial-statistics-in-r">Spatial Statistics in R</a> with Barry Rowlingson and <a href="https://www.datacamp.com/courses/spatial-analysis-in-r-with-sf-and-raster">Spatial Analysis in R with sf and raster</a> with Zev Ross, which were great and I highly reccommend.</p>

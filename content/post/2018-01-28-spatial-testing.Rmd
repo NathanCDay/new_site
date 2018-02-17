@@ -17,7 +17,7 @@ tags:
 In my last post I spent a lot of time visualizing the drug crime data published by the Charlottesville Police Department, with `library(sf)`. This is the peanut butter to that viz jelly, the statistical testing tools that can measure the significance of the trends we observed. And who doens't like PB&Js?
 
 ## Globals
-```{r global, warnings = FALSE, messages = FALSE}
+```{r global, warning = FALSE, message = FALSE}
 library(geojsonio) # last two posts
 library(sf) # last post
 library(viridis) # last post
@@ -38,7 +38,7 @@ scale_fill_continuous <- function(...) { viridis::scale_fill_viridis(option = "A
 
 This is block of code is aggregated from my other posts revolving around the the city's crime data. It handles a lot of the weirdness in the original data set that needs cleaning attention. For this I'm leaving little comments as bread crumbs, if you need the whole loaf check out the earlier posts or send me an email.
 
-```{r data_in, cache = TRUE, warnings = FALSE, messages = FALSE}
+```{r data_in, cache = TRUE, warning = FALSE, message = FALSE}
 # get geo-coded crime data from my GitHub
 crime <- read.csv("https://raw.githubusercontent.com/NathanCDay/cville_crime/master/crime_geocode.csv")
 crime %<>% filter(complete.cases(crime)) # not all raw address could be geo_coded
@@ -70,7 +70,7 @@ This type of statistics uses regions to summarize indivdual cases. Here I'm usin
 
 So the first step is to summarise the observaction in `crime` by shapes in `census`.
 
-```{r}
+```{r joins, warning = F, message = F}
 st_geometry(crime) <- NULL # remove sf geometry, back to basic tibble
 
 crime %<>% group_by(objectid, drug_flag) %>% # count totals by census block
@@ -87,7 +87,7 @@ The first test statistic to learn for spatial data is [Moran's I](https://en.wik
 
 First we have to convert our `sf` objects into a `SpatialPolygons` objects, then we can use a couple other functions from `library(spdep)` to construct a weighted list of neigbors which is required to run `moran.mc()`.
 
-```{r}
+```{r moran, warning = F, message = F}
 census_sp <- as(census, "Spatial") # convert to spatial object type
 
 census_wnb <- spdep::poly2nb(census_sp) %>% # convert polygons to neighbor list
@@ -107,7 +107,7 @@ If we want to investigate more, we need more data. The stock census data has som
 
 All you really have to do is [register an API key here](https://api.census.gov/data/key_signup.html) wait a couple of minutes, check your email and from there it's all slick functions from there.
 
-```{r tidy cenus}
+```{r tidy-cenus, warning = F, message = F}
 
 # census_api_key("your_key")
 
@@ -128,7 +128,7 @@ census %<>% full_join(rename(cvl, blockgroup = GEOID)) # two block have missing 
 
 Great now we have a couple of extra variables to work with. But before we just blindly throw them into a model, let's look at all of the relationships quickly via `GGally::ggpairs()`. Before we do that I want to build variables for the proportion of vacant homes and the population that identifies as black.
 
-```{r}
+```{r mutate, warning = F, message = F}
 census %<>% mutate(frac_vacant = hu_vacant / (hu_occupied + hu_vacant),
                    frac_black = black / pop)
 
@@ -144,7 +144,7 @@ We can see that the fraction of drug crime is positively related to the fraction
 
 Since our respons variable is a the proportion of drug crime to total crime and is bounded by 0 and 1, we are best off using a quasi-binomial distribution. If we were using the total count of drug crimes as our response, we'd want to use a Poisson or quasipoisson distribution instead. R's flexible `glm()` makes either of these scenarios simple to code with the `family = ` argument.
 
-```{r}
+```{r model, warning = F, message = F}
 
 glm(frac_drugs ~ income + age + frac_black + frac_vacant, data = census,
            family = quasibinomial(link = "logit")) %>% summary()
@@ -165,7 +165,7 @@ Stats like this are complicated and don't have simple fixes, but they do deserve
 
 The final check on our model is to test the residuals for auto-correlation. If we see a spatial pattern in the residuals, it indicates we may be missing a critical explanatory variable.
 
-```{r}
+```{r last-call, warning = F, message = F}
 
 census$resid <- resid(mod)
 ggplot(census) + geom_sf(aes(fill = resid))
