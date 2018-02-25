@@ -19,14 +19,12 @@ library(tidyverse)
 
 ## Background
 
-
-![](img/cool_park.gif)
-
 - 105 metered spaces around the Downtown mall
 - Started September 5, 2017
 - City council cancels pilot on January 2, 2018 (planned to run until March 5th)
 - \$51K in revenue (meters cost \$50K)
 
+![](img/meter.gif)
 
 ## More info
 
@@ -38,6 +36,8 @@ library(tidyverse)
 - Concerns
     - Businnesses worried about meters decreasing patron traffic
     - Also about employee parking
+    
+
 
 ## The meters
 
@@ -101,7 +101,7 @@ ggplot(rev_by_day, aes(day, revenue, fill = day)) +
 ```
 
 - Sundays are dead
-- Weekend revenue is greater
+- Increased use Thur-Sat
 
 ## Daily patterns
 
@@ -120,19 +120,19 @@ group_by(dat, hour, day) %>%
 
 ## \$tats
 
-Average meter fee:
+Average paid meter fee:
 
 ```{r}
 mean(dat$total) %>% round(2)
 ```
 
-Program revenue: 
+Total meter revenue: 
 
 ```{r}
 sum(dat$total)
 ```
 
-Projected yearly revenue:
+Estimated yearly revenue:
 ```{r}
 week_rev <- group_by(dat, week) %>%
     summarise(rev = sum(total)) %>%
