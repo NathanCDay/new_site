@@ -259,7 +259,8 @@ leaflet(space_rev) %>%
                      radius = ~ifelse(metertype == "Singlespace", 10, 20)) %>%
     addLegend("bottomright", pal = pal, values = ~log2(revenue),
               labFormat = labelFormat(transform = function(x) 2^x),
-              title = "$USD Revenue")
+              title = "$USD Revenue") %>%
+    widgetframe::frameWidget(height = '400')
 ```
 
 We see the multi-space meters along Market Street make the most money. But is it really just because the have more spaces? While we don't have actual sub-space counts, we can do an approximation, assuming the number of sub-spaces is the same for each multi-space meter. Remember this program launched with 105 spaces.
@@ -284,7 +285,8 @@ leaflet(space_rev) %>%
                      color = ~pal(avg_space_revnue),
                      radius = ~ifelse(metertype == "Singlespace", 10, 20)) %>%
     addLegend("bottomright", pal = pal, values = ~avg_space_revnue,
-              title = "$USD Revenue")
+              title = "$USD Revenue") %>%
+    widgetframe::frameWidget(height = '400')
 ```
 
 That image looks more balanced than before, we don't see the multi-space Market St bias. Now it looks like the meters were used evenly across locations, with the two best earning spots closest to Felleni's on the corner of Market and 2nd NW. Which makes sense, Felleni's is awesome.

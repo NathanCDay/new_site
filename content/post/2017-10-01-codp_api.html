@@ -57,27 +57,27 @@ crime_json &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/d1877e3
 <p>The data that we are after is in the second element <code>.$features</code>, but we can see from our <code>View()</code> look-in that it is formatted slightly weird. Let’s look at the top rows:</p>
 <pre class="r"><code>crime_df &lt;- crime_json[[&quot;features&quot;]]
 head(crime_df)</code></pre>
-<pre><code>##      type properties.RecordID           properties.Offense
-## 1 Feature                1001                      RUNAWAY
-## 2 Feature                1002 PORNOGRAPHY/OBSCENE MATERIAL
-## 3 Feature                1003                      ROBBERY
-## 4 Feature                1004      DRUG/NARCOTIC VIOLATION
-## 5 Feature                1005     PROPERTY-FOUND/RECOVERED
-## 6 Feature                1006                      RUNAWAY
+<pre><code>##      type properties.RecordID                       properties.Offense
+## 1 Feature                2001           BURGLARY/BREAKING AND ENTERING
+## 2 Feature                2002                LARCENY-ALL OTHER LARCENY
+## 3 Feature                2003                LARCENY-ALL OTHER LARCENY
+## 4 Feature                2004                  DRUG/NARCOTIC VIOLATION
+## 5 Feature                2005                 PROPERTY-FOUND/RECOVERED
+## 6 Feature                2006 VANDALISM/DAMAGE/DESTRUCTION OF PROPERTY
 ##   properties.IncidentID properties.BlockNumber properties.StreetName
-## 1             201302242                    400             4TH ST NE
-## 2             201302243                    700             NASSAU ST
-## 3             201302244                    700            LOCUST AVE
-## 4             201302245                    200            W WATER ST
-## 5             201302246                    200            W WATER ST
-## 6             201302247                    400             4TH ST NE
+## 1             201303458                   1500          VIRGINIA AVE
+## 2             201303459                   1500    CARLTON AVE LOT 44
+## 3             201303460                    200     RIDGE MCINTIRE RD
+## 4             201303461                    200              RIDGE ST
+## 5             201303462                   2300         N BERSHIRE RD
+## 6             201303463                   2100              ANGES RD
 ##   properties.Agency properties.DateReported properties.HourReported
-## 1              CPD   2013/04/20 00:00:00+00                    2248
-## 2              CPD   2013/04/20 00:00:00+00                    2350
-## 3              CPD   2013/04/21 00:00:00+00                    0015
-## 4              CPD   2013/04/21 00:00:00+00                    0312
-## 5              CPD   2013/04/21 00:00:00+00                    0125
-## 6              CPD   2013/04/21 00:00:00+00                    0230
+## 1              CPD   2013/06/19 00:00:00+00                    1813
+## 2              CPD   2013/06/19 00:00:00+00                    1651
+## 3              CPD   2013/06/19 19:00:00+00                    1851
+## 4              CPD   2013/06/19 00:00:00+00                    1930
+## 5              CPD   2013/06/19 00:00:00+00                    2031
+## 6              CPD   2013/06/19 00:00:00+00                    2255
 ##   geometry
 ## 1       NA
 ## 2       NA
