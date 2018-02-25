@@ -57,27 +57,27 @@ crime_json &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/d1877e3
 <p>The data that we are after is in the second element <code>.$features</code>, but we can see from our <code>View()</code> look-in that it is formatted slightly weird. Let’s look at the top rows:</p>
 <pre class="r"><code>crime_df &lt;- crime_json[[&quot;features&quot;]]
 head(crime_df)</code></pre>
-<pre><code>##      type properties.RecordID                       properties.Offense
-## 1 Feature                2001 VANDALISM/DAMAGE/DESTRUCTION OF PROPERTY
-## 2 Feature                2002                  DRUG/NARCOTIC VIOLATION
-## 3 Feature                2003                 PROPERTY-FOUND/RECOVERED
-## 4 Feature                2004 VANDALISM/DAMAGE/DESTRUCTION OF PROPERTY
-## 5 Feature                2005                LARCENY-ALL OTHER LARCENY
-## 6 Feature                2006              LARCENY-THEFT FROM BUILDING
+<pre><code>##      type properties.RecordID           properties.Offense
+## 1 Feature                1001                      RUNAWAY
+## 2 Feature                1002 PORNOGRAPHY/OBSCENE MATERIAL
+## 3 Feature                1003                      ROBBERY
+## 4 Feature                1004      DRUG/NARCOTIC VIOLATION
+## 5 Feature                1005     PROPERTY-FOUND/RECOVERED
+## 6 Feature                1006                      RUNAWAY
 ##   properties.IncidentID properties.BlockNumber properties.StreetName
-## 1             201303339                    100            13TH ST NW
-## 2             201303341                   1000             MARTIN ST
-## 3             201303342                    900            RAINIER RD
-## 4             201303344                    200            14TH ST NW
-## 5             201303345                   2000                IVY RD
-## 6             201303346                    200            CARLTON RD
+## 1             201302242                    400             4TH ST NE
+## 2             201302243                    700             NASSAU ST
+## 3             201302244                    700            LOCUST AVE
+## 4             201302245                    200            W WATER ST
+## 5             201302246                    200            W WATER ST
+## 6             201302247                    400             4TH ST NE
 ##   properties.Agency properties.DateReported properties.HourReported
-## 1              CPD   2013/06/14 00:00:00+00                    0955
-## 2              CPD   2013/06/14 00:00:00+00                    1333
-## 3              CPD   2013/06/14 00:00:00+00                    1215
-## 4              CPD   2013/06/14 00:00:00+00                    1317
-## 5              CPD   2013/06/14 00:00:00+00                    1422
-## 6              CPD   2013/06/14 00:00:00+00                    1434
+## 1              CPD   2013/04/20 00:00:00+00                    2248
+## 2              CPD   2013/04/20 00:00:00+00                    2350
+## 3              CPD   2013/04/21 00:00:00+00                    0015
+## 4              CPD   2013/04/21 00:00:00+00                    0312
+## 5              CPD   2013/04/21 00:00:00+00                    0125
+## 6              CPD   2013/04/21 00:00:00+00                    0230
 ##   geometry
 ## 1       NA
 ## 2       NA
