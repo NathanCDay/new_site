@@ -21,11 +21,11 @@ knitr::opts_chunk$set(comment = "")
 
 ## Intro
 
-The Charlottesville City Council [voted to not resume](http://www.nbc29.com/story/37183074/charlottesville-ends-parking-meter-pilot-program) the Downtown parking lot pilot as scheduled on January 2, 2018 and now [the data](http://opendata.charlottesville.org/datasets/parking-meter-pilot-data) is on the City's Open Data Portal. This program began last year on September 5th with [105 on street spots](http://www.nbc29.com/story/37153548/charlottesville-to-restart-parking-meter-program) around the Downtown mall. It took a holiday break starting mid November and was supposed to resume in 2018 and run until March 5th.
+On January 2nd, 2018, Charlottesville City Council [voted to end](http://www.nbc29.com/story/37183074/charlottesville-ends-parking-meter-pilot-program) the Downtown parking meter pilot, and now [the data](http://opendata.charlottesville.org/datasets/parking-meter-pilot-data) is available on the City's Open Data Portal. This program began last year, on September 5th, with [105 on street spots](http://www.nbc29.com/story/37153548/charlottesville-to-restart-parking-meter-program) around the Downtown mall. It took a holiday break starting mid November and was supposed to resume in 2018 and run until March 5th.
 
-The city's numbers show they collected \$51,000, despite the abbreviated study, but this is likely not enough to cover [remaining expenses](http://www.nbc29.com/story/37201791/charlottesville-unlikely-to-see-profit-from-parking-meters) like repairing vandalism and paying the survey designers. This makes the premature end to the pilot program, mildly disturbing, why would the city want to shoot itself in the foot and take a loss when the numbers showed a strong successful start.
+The numbers show that the city collected \$51,000, despite the abbreviated study, but this is likely not enough to cover the [remaining expenses](http://www.nbc29.com/story/37201791/charlottesville-unlikely-to-see-profit-from-parking-meters) like repairing vandalism and paying the survey designers. This makes the premature end to the pilot program mildly disturbing. Why would the city want to shoot itself in the foot and take a loss when the numbers showed a strong successful start?
 
-The original aim of the meters was to improve short term parking access by getting longer term parkers to use the parking decks more. Downtown business owners have had concerns about the [negative impact](http://www.nbc29.com/story/36032734/charlottesville-officials-host-meeting-on-metered-parking-pilot-program) these meters might have on their livelihoods from the beinging.
+The original aim of the meters was to improve short term parking access by getting longer term parkers to use the parking decks more. Downtown business owners have had concerns about the [negative impact](http://www.nbc29.com/story/36032734/charlottesville-officials-host-meeting-on-metered-parking-pilot-program) these meters might have on their livelihoods from the beginning of the pilot. 
 
 I want to see if there are any trends in this data that support the business concern or the decision to end the program early.
 
@@ -43,7 +43,7 @@ library(tidyverse) # yep
 
 ## Data In
 
-There are two "Parking Meter" data two links on the ODP, ["Pilot Data" (everything)](http://opendata.charlottesville.org/datasets/parking-meter-pilot-data) and "Pilot Locations" (subset with only lat/lon cordinates). So we need "Pilot Data" to explore revenue trends and patterns, which is ~27,000 rows (5.1 MB). I like [using the GeoJSON API with `geojsonio`](/2017/10/01/codp-api/) to pull data from the portal, but you could just as easily download the CSV file and use `read.table()` instead.
+There are two "Parking Meter" data links on the ODP, ["Pilot Data" (everything)](http://opendata.charlottesville.org/datasets/parking-meter-pilot-data) and "Pilot Locations" (subset with only lat/lon cordinates). So we need "Pilot Data" to explore revenue trends and patterns, which is ~27,000 rows (5.1 MB). I like [using the GeoJSON API with `geojsonio`](/2017/10/01/codp-api/) to pull data from the portal, but you could just as easily download the CSV file and use `read.table()` instead.
 
 ```{r data_in, cache = T}
 dat <- geojson_read("https://opendata.arcgis.com/datasets/d68e620e74e74ec1bd0184971e82ffaa_15.geojson",
@@ -59,8 +59,6 @@ names(dat) %<>% tolower() # I just think lower-case is easier to type
 Just from the column names we can see the data has everything we need to investigate the temporal patterns in usage and revenue, but because all of the columns are either `character` or `numeric`, we need to do some cleaning first.
 
 In order to really explore this data set properly, we need to build some `POSIXct` class columns for date and time. Since there are multiple columns describing time and date, I choose to just use "ParkingEndTime" as the starting material for consistancy.
-
-And now back to our regularly scheduled `POSIXct` conversion. That's how exploratory data analysis works in the wild, it's always a good idea to keep any eye out for `NA`s in any raw data set. 
 
 ```{r tmp_parse, cache = T}
 # split column into date, clock:time, AM/PM parts
@@ -81,11 +79,11 @@ pm_add <- ifelse(grepl("PM", dat$parkingendtime) & !grepl(" 12:", dat$time), #
 dat$time %<>% add(pm_add)
 ```
 
-Now we have the columns we need to get started visualizing.
+Now we have the columns we need to start visualizing.
 
 ## Explore
 
-Let's start by looking at the time-course of usage of all the meters for duration of the program. I think it makes sense to use weeks as the grouping varaible and `lubridate::isoweek` makes it easy to calculate the week number from begining of the year.
+Let's start by looking at the usage timeline of all the meters for the duration of the program. I think it makes sense to use weeks as the grouping varaible and `lubridate::isoweek` makes it easy to calculate the week number from begining of the year.
 
 ```{r week_counts}
 dat$week <- isoweek(dat$date) %>% as.factor()
@@ -94,19 +92,19 @@ ggplot(dat, aes(week)) +
     geom_bar()
 ```
 
-Here we are looking at just the counts of meter transactions and we can see constant usage over the course of the program data. The first and last weeks, #36 and #46 are missing days, so they appear lower than average.
+Here we are looking at just the counts of meter transactions and we see constant usage over the course of the program data. The first and last weeks, #36 and #46 are missing days, so they appear lower than average.
 
-Before we go future we need to find out where those NA values came from.
+Before we go any further we need to find out where those NA values came from.
 
 #### NA investigation
 
-`NA`s are nice in data exploration, I like to think of them as data mining's equivalent to the [carnary in a coal mine.](https://en.wiktionary.org/wiki/canary_in_a_coal_mine), because they alert you to missing or (more often) missed data. 
+`NA`s are a nice helper in data exploration. I like to think of them as data mining's equivalent to the [carnary in a coal mine.](https://en.wiktionary.org/wiki/canary_in_a_coal_mine), because they alert you to missing or (more often in my case) mistaken data.
 
 ```{r data_clean}
 filter(dat, is.na(week)) %>% head(5)
 ```
 
-Here I  used `head()` for breviety in the markdown but in RStudio I could use `View()` instead.
+Here I used `head()` for breviety in the markdown but in RStudio I could use `View()` instead.
 
 Looks like all of these transactions are the same type "Collect. Card" and all of them are negative balance transactions occuring at midnight. But let's be sure.
 
@@ -116,13 +114,13 @@ filter(dat, is.na(week)) %>% with(range(total)) # all negative or zero
 filter(dat, is.na(parkingendtime)) %>% with(mean(total)) # average of -$31
 ```
 
-I'm not 100% what these "Collect. Card" transactions represent, but I'm guessing they are batched credit card transactions. Not sure why they would be included in the data set, but going with my gut instinct, I want to drop them going forward.
+I'm not 100% what these "Collect. Card" transactions represent, but I'm guessing they are batched meter fee collections. Not sure why they would be included in the data set, but going with my gut, I'm going to drop them.
 
 ```{r}
 dat %<>% filter(transactiontype != "Collect. Card")
 ```
 
-This is a great example of oddities in raw data and why it pays to pay attention to the details. Never trust in raw data, always confirm things are what you expect and use `NA` values a clues to look deeper.
+This is a good example of oddities in raw data and how `NA` values can be clues to look deeper.
 
 #### Weekly revenue
 
@@ -137,8 +135,7 @@ ggplot(week_rev, aes(week, revenue)) +
     geom_col()
 ```
 
-
-Remember local business owners were worried about the meters reducing traffic to their establishments. While we don't have the business records (that'd be cool), we don't see a decreasing pattern in usage or revenue from the metered spots. It looks like people continued using the spaces and the Downtown mall businesses, dispite the increased cost.
+Remember how local business owners were worried about the meters reducing traffic to their establishments? While we don't have the business records (that'd be cool), we do not see a decreasing pattern in revenue from the metered spots. It looks like people continued using the spaces (and likely the Downtown mall businesses) despite the new cost.
 
 Next let's look at what a typical meter fee was. The `total` column has this data in it.
 
@@ -148,11 +145,13 @@ hist(dat$total) # distribution of fees
 sum(dat$total) # total revenue
 ```
 
-So the average meter bill was just under \$2 and people rarely paid over \$4. Most of the acitivities found on the Downtown mall from shows to restraunts are going to cost a little more than \$2, so this small fee wasn't a deal breaker for people looking to park conviently. And sure the meters collected more than \$50,000 dollars in 9 weeks! That's a lot of 💸 and means the meters have already payed for themselves.
+The average meter bill was \$1.85, just north of the hourly rate \$1.80 and people rarely paid over \$4, or stayed over two hours. Most of the acitivities found on the Downtown mall, from concerts to restraunts, are going to cost a little more than \$2, so this small fee probably wasn't a deal breaker for people looking to park conveniently.
+
+The meters collected more than \$50,000 dollars over the <11 weeks they were in operation, meaning they paid themselves in just over two months. So it seems like the meters were encouraging shorter parking times and making a bunch of 💸!
 
 #### Average Week
 
-If our haunches are corrected and people are coming to the Downtown mall for food or fun, that's what I do. We would expect meter traffic to increase at lunch, dinner and on the weekends. First lets look at which days are busiest with `lubridate::wday()`.
+If our haunches are correct and people are coming to the Downtown mall for food or fun, we would expect meter traffic to increase at lunch, dinner, and on the weekends. Lets look at which weekdays are busiest with `lubridate::wday()` to see if the weekends are actually busier.
 
 ```{r day_of_week}
 dat$day <- wday(dat$date, T)
@@ -164,7 +163,7 @@ ggplot(dat, aes(day)) +
 dat %<>% filter(day != "Sun")
 ```
 
-That was just the counts, but hardly anyone uses the meters on Sunday. Let's look at revenue.
+That was just the counts, but sure enough the weekend sees more meter usage and hardly anyone uses the meters on Sunday. Let's double check and look at revenue.
 
 ```{r rev_by_day}
 rev_by_day <- group_by(dat, day) %>% 
@@ -174,11 +173,11 @@ ggplot(rev_by_day, aes(day, revenue)) +
     geom_col()
 ```
 
-Ok so Sunday becomes even less relevant, but we see a stronger signal of increased weekend usage. Saturday is the largest earner, followed by Friday then Thursday. Looks when people are going to the mall for weekend recreation they don't mind using the metered spots.
+Ok so Sunday is definately not relevant, but we see an even stronger signal of increased weekend usage. Saturday is the largest earner, followed by Friday, then Thursday. Looks like when people are going to the mall for weekend recreation they don't mind using the metered spots.
 
 #### Average Day
 
-To look for time of day patterns in meter usage Let's use `lubridate::hour()` to extract the hour from our `POSIXct` times.
+To look for time of day patterns in meter usage, let's use `lubridate::hour()` to extract the hour from our `POSIXct` times.
 
 ```{r}
 dat$hour <- hour(dat$time)
@@ -189,7 +188,7 @@ ggplot(dat, aes(hour)) +
 ```
 
 
-We can see an increase in meter activity at lunch time and a big spike at 8pm. The meter spots only required feeding between 8am - 8pm, but it looks like they are only catching the begining of the evening traffic to the downtown mall. I wonder if the meters would capture a lot more revenue if the program was extended until 10p or even 12a?
+We can see an increase in meter activity at lunch time and a big spike at 8pm, right before the meter hours expire. The meter spots only required feeding between 8am - 8pm, but it looks like they are only catching the begining of the evening traffic to the Downtown mall. I wonder if the meters would capture a lot more revenue if the program was extended until 10pm or even midnight?
 
 Let's check the revenue numbers for each hour.
 
@@ -201,12 +200,11 @@ group_by(dat, hour) %>%
     scale_x_continuous(breaks = c(8,12,17,20), labels = c("8a", "12p", "5p", "8p"))
 ```
 
-The revenue numbers show the 8pm spike is bigger than the counts indicated. Extending the metered hours to cover more of peak evening mall activity looks like an even better idea. The 8p-10p window would likely produce some high revenue numbers, assuming the evening rush has a similar pattern to the lunch time one.
-
+The revenue numbers show the 8pm spike is bigger than the counts indicated. Extending the metered hours to cover more of peak evening mall activity looks like an even better idea. The 8pm-10pm window would likely produce some high revenue numbers, assuming the evening rush has a similar pattern to the lunch time one.
 
 #### Different days
 
-We might expect that the evening spike is largest on the weekends, because most people don't hit the bars early in the week, and that the lunch time peak is sharpest during the work week, when people are on tighter schedules.
+We might expect that the evening spike is largest on the weekends because most people don't hit the bars or go out for dinner early in the week. Also I would expect lunchtime peak is sharpest earlier in the work week, when people are on tighter schedules.
 
 To get a better idea, we can take advantage of `hour` and `day` to group on.
 
@@ -220,15 +218,15 @@ group_by(dat, hour, day) %>%
     scale_x_continuous(breaks = c(8,12,17,20), labels = c("8a", "12p", "5p", "8p"))
 ```
 
-This is great because we can see the evening meter revnue spike happen every single day, but the biggest spikes belong to Saturday, Friday, and Thursday like we expected.
+This is great because we can see the evening meter revnue spike happen every single day, but the biggest spikes belong to Saturday, Friday, and Thursday - like we expected.
 
-We also see more a lot more traffic at lunch on Friday than other days and who doesn't like a nice Friday office escape to enjoy a tasty lunch.
+Our other hypothesis of a steady increase in lunch time traffic through out the week is visable too. We see the most lunch traffic on Friday than other days - who doesn't like a nice Friday office escape to enjoy a tasty lunch?
 
-I think the spike on Monday at 5p is interesting, perhaps it's people hitting happy hour to help soothe their case of the Mondays?
+I think the spike on Monday at 5p is interesting, perhaps it's people hitting happy hour to help soothe their new found case of the Mondays?
 
 #### Money meters
 
-This pilot included 100+ metered spaces around the downtown mall, and this data set identifies spaces by their `spacename`, of which there are 41. Each of these represents either one or multiple spaces and that info is stored in `metertype`. Unfortunatly there is no data indicating how many spaces belong to a given meter 😞. So we need to be careful when looking for high revenue meters, to make sure we aren't just identifying the meters with the most spaces.
+This pilot included 105 metered spaces around the downtown mall, and this data set identifies spaces by their `spacename`, of which there are 41. Each of these represents either one or multiple spaces and that info is stored in `metertype`. Unfortunatly there is no data indicating how many spaces belong to a given meter 😞. So we need to be careful when looking for high revenue meters, to make sure we aren't just identifying the meters with the most spaces.
 
 ```{r}
 space_rev <- group_by(dat, spacename, metertype) %>%
@@ -240,9 +238,11 @@ ggplot(space_rev, aes(spacename, revenue)) +
     theme(axis.text.x = element_text(angle = 90, vjust = .5)) # to be able to read it
 ```
 
-We have a lot more single space meters than multi-space ones and sure enough multi-space meters generate more revenue, who woulda' though?
+We have a lot more single space meters than multi-space ones and sure enough multi-space meters generate more revenue, who woulda' thought?
 
-The `spacename`s don't tell me anything useful about the location of the spaces, but remember this data set comes with lat/lon coordinates for each meter. Let's look at a map of the meters to see where the busiest ones were located. I'm going to use color to show `log2(revenue)` and stroke (size of outline) to show `metertype`. Transforming to a log2 scale helps normalize `dist(revenue)` and prevent the multispace meters from soaking up most of our color range.
+The `spacename`s don't tell us anything useful about the location of the spaces, but remember this data set comes with lat/lon coordinates for each meter. Let's look at a map of the meters to see where the busiest ones were located.
+
+I'm going to use color to show `log2(revenue)` and use size to show `metertype`. Transforming with `log2` helps normalize the distribution of `revenue` and prevent the multispace meters from soaking up most of our color range.
 
 ```{r}
 space_rev <- group_by(dat, spacename, metertype, meter_lat, meter_long) %>%
@@ -263,7 +263,7 @@ leaflet(space_rev) %>%
     widgetframe::frameWidget(height = '400')
 ```
 
-We see the multi-space meters along Market Street make the most money. But is it really just because the have more spaces? While we don't have actual sub-space counts, we can do an approximation, assuming the number of sub-spaces is the same for each multi-space meter. Remember this program launched with 105 spaces.
+We see the multi-space meters along Market Street make the most money. But is it really because they just have more spaces? While we don't have actual sub-space counts, we can do an approximation, assuming the number of sub-spaces is the same for each multi-space meter.
 
 Note: I'm not using the `log2` transformation anymore, since the values are well distributed in linear space.
 
@@ -289,21 +289,23 @@ leaflet(space_rev) %>%
     widgetframe::frameWidget(height = '400')
 ```
 
-That image looks more balanced than before, we don't see the multi-space Market St bias. Now it looks like the meters were used evenly across locations, with the two best earning spots closest to Felleni's on the corner of Market and 2nd NW. Which makes sense, Felleni's is awesome.
+That image looks more balanced than before: we don't see the multi-space Market St bias. Now it looks like the meters were used evenly across locations, with the two best earning spots closest to Felleni's on the corner of Market and 2nd NW. Which makes sense, Felleni's is awesome.
 
 ## Conculsion
 
-This data set shows us a lot about when people were parking at the mall meters. We see meter usage was steady across the pilot, which is counter to the concerns of businesses that the meters would decrease mall traffic. We also still see lunch, dinner and weekend spikes, indicating people don't mind feeding a meter, if it means getting a good spot close to their destination. It would be great to get some business revenue data from the same time period, to see the other side of the story, but from here it doesn't appear that the meters decreased traffic to the mall.
+This data set shows us a lot about when people were parking at the mall meters. We see meter usage was steady across the pilot, which is counter to the concerns of businesses that the meters would decrease mall traffic. We also still see lunch, dinner, and weekend spikes, indicating people don't mind feeding a meter, if it means getting a good spot close to their destination. It would be great to get some business revenue data from the same time period, to see the other side of the story, but from here it doesn't appear that the meters were hurting mall traffic.
 
-This data set also shows that the meters were distributed well, revenue was fairly consistant across spots. I would love to have the actual multi-space breakdown for sub-spaces, but even without that we see a story of positive cash flow. The decision to stop the program doesn't seem to have stong data support, I would love to know what information the council had before their vote. 
+This data set also shows that the meters were distributed well as revenue was fairly consistant across spots. I would love to have the actual multi-space breakdown for sub-spaces, but even without that we see only a few under utilized meters.
+
+The decision to stop the program doesn't seem to have stong data support, I would love to know what information the council had before their vote. Let's estimate how much money the program would generate if it ran for a full year, without a holiday break, based on the 9 weeks of full data.
 
 ```{r}
 mean(week_rev$revenue) * 52 # weeks
 ```
 
-If the meter pilot was run for an entire year, without a holiday break, this data says the city would expect to collect more than \$250,000 dollars! Even if the city's annual expense to maintain the meters was half of their original cost or $25,500, that would still be a huge chunk of change avaialble to support the city's schools or future infrastructure improvements.
+More than \$250,000 dollars! Even if the city's annual expense to maintain the meters was half of their original cost or $25,500, that would still be a huge chunk of change avaialble to support the city's schools or future improvements.
 
-Overall this looks like Charlottesville missed an opportunity here, and I really hope the city council understood this data before their vote.
+Overall this looks like Charlottesville missed an opportunity here, but I don't have all the data. I really hope the city council did. It would be a small let a small cohert of angry and loud meter opponents sabotage a steady source of revenue for the city, with just emotion and not real data.
 
 
 
