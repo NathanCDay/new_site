@@ -145,11 +145,11 @@ mean(week_rev$rev) * 52
 
 - City estimates they will take a loss due to secondary costs (vandalism, consultant)
 
-![](img/wtf.gif)
-
 - Why did they cancel early?
     - On track for profit
     - Meters already paid for
+
+![](img/wtf.gif)
 
 ## Follow ups
 

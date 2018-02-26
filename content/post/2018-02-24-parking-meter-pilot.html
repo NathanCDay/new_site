@@ -162,14 +162,15 @@ ggplot(week_rev, aes(week, revenue)) +
 </div>
 <div id="average-week" class="section level4">
 <h4>Average Week</h4>
-<p>If our haunches are correct and people are coming to the Downtown mall for food or fun, we would expect meter traffic to increase at lunch, dinner, and on the weekends. Lets look at which weekdays are busiest with <code>lubridate::wday()</code> to see if the weekends are actually busier.</p>
+<p>If our haunches are correct and people are coming to the Downtown mall for food or fun, we would expect meter traffic to increase at lunch, dinner, and on the weekends. Lets look at which weekdays are busiest with <code>lubridate::wday()</code> to see if the weekends are actually busier. Parking remained free on Sundays so those days have been dropped here.</p>
 <pre class="r"><code>dat$day &lt;- wday(dat$date, T)
+
+# no one usese meters on Sundays.
+dat %&lt;&gt;% filter(day != &quot;Sun&quot;)
 
 ggplot(dat, aes(day)) +
     geom_bar()</code></pre>
 <p><img src="/post/2018-02-24-parking-meter-pilot_files/figure-html/day_of_week-1.png" width="672" /></p>
-<pre class="r"><code># no one usese meters on Sundays.
-dat %&lt;&gt;% filter(day != &quot;Sun&quot;)</code></pre>
 <p>That was just the counts, but sure enough the weekend sees more meter usage and hardly anyone uses the meters on Sunday. Let’s double check and look at revenue.</p>
 <pre class="r"><code>rev_by_day &lt;- group_by(dat, day) %&gt;% 
     summarise(revenue = sum(total))
@@ -177,24 +178,26 @@ dat %&lt;&gt;% filter(day != &quot;Sun&quot;)</code></pre>
 ggplot(rev_by_day, aes(day, revenue)) +
     geom_col()</code></pre>
 <p><img src="/post/2018-02-24-parking-meter-pilot_files/figure-html/rev_by_day-1.png" width="672" /></p>
-<p>Ok so Sunday is definately not relevant, but we see an even stronger signal of increased weekend usage. Saturday is the largest earner, followed by Friday, then Thursday. Looks like when people are going to the mall for weekend recreation they don’t mind using the metered spots.</p>
+<p>Here we see an even stronger signal of increased weekend usage. Saturday is the largest earner, followed by Friday, then Thursday. Looks like when people are going to the mall for recreation they don’t mind using the metered spots.</p>
 </div>
 <div id="average-day" class="section level4">
 <h4>Average Day</h4>
-<p>To look for time of day patterns in meter usage, let’s use <code>lubridate::hour()</code> to extract the hour from our <code>POSIXct</code> times.</p>
+<p>To look for time of day patterns in meter usage, let’s use <code>lubridate::hour()</code> to extract the hour from our <code>POSIXct</code> times. The meters are only required payments between 8a and 8p, parking was free outside of that window.</p>
 <pre class="r"><code>dat$hour &lt;- hour(dat$time)
 
 ggplot(dat, aes(hour)) +
     geom_bar() +
-    scale_x_continuous(breaks = c(8,12,17,20), labels = c(&quot;8a&quot;, &quot;12p&quot;, &quot;5p&quot;, &quot;8p&quot;))</code></pre>
+    scale_x_continuous(limits = c(7, 21), breaks = c(8,12,17,20), labels = c(&quot;8a&quot;, &quot;12p&quot;, &quot;5p&quot;, &quot;8p&quot;))</code></pre>
+<pre><code>Warning: Removed 28 rows containing non-finite values (stat_count).</code></pre>
 <p><img src="/post/2018-02-24-parking-meter-pilot_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
-<p>We can see an increase in meter activity at lunch time and a big spike at 8pm, right before the meter hours expire. The meter spots only required feeding between 8am - 8pm, but it looks like they are only catching the begining of the evening traffic to the Downtown mall. I wonder if the meters would capture a lot more revenue if the program was extended until 10pm or even midnight?</p>
+<p>We can see an increase in meter activity at lunch time and a big spike at 8pm, right before the metered hours expire. It looks like the 8p cutoff is only catching the begining of the evening traffic to the Downtown mall. I wonder if the meters would capture a lot more revenue if the program was extended until 10pm or even midnight?</p>
 <p>Let’s check the revenue numbers for each hour.</p>
 <pre class="r"><code>group_by(dat, hour) %&gt;%
     summarise(rev = sum(total)) %&gt;%
     ggplot(aes(hour, rev)) +
     geom_col() +
-    scale_x_continuous(breaks = c(8,12,17,20), labels = c(&quot;8a&quot;, &quot;12p&quot;, &quot;5p&quot;, &quot;8p&quot;))</code></pre>
+    scale_x_continuous(limits = c(7, 21), breaks = c(8,12,17,20), labels = c(&quot;8a&quot;, &quot;12p&quot;, &quot;5p&quot;, &quot;8p&quot;))</code></pre>
+<pre><code>Warning: Removed 4 rows containing missing values (position_stack).</code></pre>
 <p><img src="/post/2018-02-24-parking-meter-pilot_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <p>The revenue numbers show the 8pm spike is bigger than the counts indicated. Extending the metered hours to cover more of peak evening mall activity looks like an even better idea. The 8pm-10pm window would likely produce some high revenue numbers, assuming the evening rush has a similar pattern to the lunch time one.</p>
 </div>
@@ -208,7 +211,8 @@ group_by(dat, hour, day) %&gt;%
     ggplot(aes(hour, revenue, colour = day, group = day)) +
     geom_path(size = 1.5) +
     scale_color_d3()  +
-    scale_x_continuous(breaks = c(8,12,17,20), labels = c(&quot;8a&quot;, &quot;12p&quot;, &quot;5p&quot;, &quot;8p&quot;))</code></pre>
+    scale_x_continuous(limits = c(7, 21), breaks = c(8,12,17,20), labels = c(&quot;8a&quot;, &quot;12p&quot;, &quot;5p&quot;, &quot;8p&quot;))</code></pre>
+<pre><code>Warning: Removed 9 rows containing missing values (geom_path).</code></pre>
 <p><img src="/post/2018-02-24-parking-meter-pilot_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
 <p>This is great because we can see the evening meter revnue spike happen every single day, but the biggest spikes belong to Saturday, Friday, and Thursday - like we expected.</p>
 <p>Our other hypothesis of a steady increase in lunch time traffic through out the week is visable too. We see the most lunch traffic on Friday than other days - who doesn’t like a nice Friday office escape to enjoy a tasty lunch?</p>
@@ -218,9 +222,9 @@ group_by(dat, hour, day) %&gt;%
 <h4>Money meters</h4>
 <p>This pilot included 105 metered spaces around the downtown mall, and this data set identifies spaces by their <code>spacename</code>, of which there are 41. Each of these represents either one or multiple spaces and that info is stored in <code>metertype</code>. Unfortunatly there is no data indicating how many spaces belong to a given meter 😞. So we need to be careful when looking for high revenue meters, to make sure we aren’t just identifying the meters with the most spaces.</p>
 <pre class="r"><code>space_rev &lt;- group_by(dat, spacename, metertype) %&gt;%
-    summarise(revenue = sum(total))
+    summarise(total_revenue = sum(total))
 
-ggplot(space_rev, aes(spacename, revenue)) +
+ggplot(space_rev, aes(spacename, total_revenue)) +
     geom_col() +
     facet_grid(~metertype, scales = &quot;free_x&quot;, space = &quot;free_x&quot;) +
     theme(axis.text.x = element_text(angle = 90, vjust = .5)) # to be able to read it</code></pre>
@@ -271,7 +275,7 @@ leaflet(space_rev) %&gt;%
     widgetframe::frameWidget(height = &#39;400&#39;)</code></pre>
 <div id="htmlwidget-2" style="width:100%;height:400px;" class="widgetframe html-widget"></div>
 <script type="application/json" data-for="htmlwidget-2">{"x":{"url":"/post/2018-02-24-parking-meter-pilot_files/figure-html//widgets/widget_unnamed-chunk-8.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
-<p>That image looks more balanced than before: we don’t see the multi-space Market St bias. Now it looks like the meters were used evenly across locations, with the two best earning spots closest to Felleni’s on the corner of Market and 2nd NW. Which makes sense, Felleni’s is awesome.</p>
+<p>That image looks more balanced than before, now that we are looking at the total revenue per estimate spot. We don’t see the same multi-space Market St bias and now it looks like the meters were used evenly across locations. The two highest earning spots are on the corner of Market and 2nd NW, closest to Felleni’s. Which makes sense, Felleni’s is awesome.</p>
 </div>
 </div>
 <div id="conculsion" class="section level2">
