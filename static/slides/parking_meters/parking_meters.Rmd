@@ -11,6 +11,7 @@ library(geojsonio)
 library(spdep)
 library(leaflet)
 library(lubridate)
+library(scales)
 library(viridis)
 library(ggsci)
 library(magrittr)
@@ -26,10 +27,9 @@ library(tidyverse)
     - Vacancy (units?)
     - Online surveys
     
-- Finish the planned experiment
+- Cancelled the experiment
     - [City council minutes 2018-01-02](http://www.charlottesville.org/home/showdocument?id=60199)
 
-- What does the data say?
 
 ## Community survey 2017-11-28
 
@@ -196,8 +196,8 @@ leaflet(space_rev) %>%
 
 - Hard to define
 - Comparing apples to mystery fruit
-    - Previous data/reports aren't public
-- Computationally intensive
+- My strategy: interval overlap
+    - Computationally intensive
     - Hours of calculations
 
 ## Average occupancy per hour
@@ -207,10 +207,15 @@ dfl <- readRDS("dfl.RDS")
 
 dfl %>% group_by(spacename, hour) %>%
     summarise(pct_occ = sum(occ_bool) / n()) %>%
+    group_by(spacename) %>%
+    mutate(avg_occ = mean(pct_occ)) %>%
+    arrange(avg_occ) %>%
+    ungroup() %>%
+    mutate(spacename = as.factor(spacename) %>% fct_inorder()) %>%
     ggplot(aes(hour, spacename, fill = pct_occ)) +
     geom_tile() +
-    scale_fill_viridis() +
-    scale_x_continuous(breaks = c(8,12,17), labels(c("8:30a", "12:30p", "5:30p"))) +
+    scale_fill_viridis(labels = percent_format()) +
+    scale_x_continuous(breaks = c(8,12,17), labels = c("8:30a", "12:30p", "5:30p")) +
     labs(y = NULL, x = NULL,
          fill = "% Occupied")
 ```
@@ -227,9 +232,19 @@ dfl %>% group_by(spacename, hour) %>%
 
 ![](img/wtf.gif)
 
-## Future
+## Program Improvements
 
-- Raise on-street prices
+- Use SFpark as a template
+    - Demand based flexible pricing (Lyft model)
+    - Prices were capped
+    - Sometimes cap $ wasn't enough
+
+- Increase price!
+    - \$1.80 vs \$1.50 per hour
+    - Who cares about \$0.30?
+    - 1st hour in garage remains free
+
+## Future Analysis
 
 - Better anlysis requires more data
     - Business revenues (same period)
