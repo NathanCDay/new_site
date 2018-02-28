@@ -6,7 +6,7 @@ output: ioslides_presentation
 ---
 
 ```{r setup, include=FALSE, warning = F, message = F}
-knitr::opts_chunk$set(echo = FALSE, comment = "")
+knitr::opts_chunk$set(echo = FALSE, comment = "", fig.height = 4)
 library(geojsonio)
 library(spdep)
 library(leaflet)
@@ -17,50 +17,50 @@ library(magrittr)
 library(tidyverse)
 ```
 
-## Background
-
-- 105 metered spaces around the Downtown mall
-- Started September 5, 2017
-- City council cancels pilot on January 2, 2018 (planned to run until March 5th)
-- \$51K in revenue (meters cost \$50K)
+## Did it work {.build}
 
 ![](img/meter.gif)
 
-## More info
-
-- Goals
-    - Improve access to short term parking spaces
-    - Get long-term parkers to use the decks
-    - Use revenue for mall improvement projects
+- How do you quanitfy success?
+    - Revenue
+    - Vacancy (units?)
+    - Online surveys
     
-- Concerns
-    - Businnesses worried about meters decreasing patron traffic
-    - Also about employee parking
-    
+- Finish the planned experiment
+    - [City council minutes 2018-01-02](http://www.charlottesville.org/home/showdocument?id=60199)
+
+- What does the data say?
+
+## Community survey 2017-11-28
+
+[Full document](http://www.charlottesville.org/home/showdocument?id=59713)
+
+![](img/change_graph.png)
+
+## Are the garage prices good?
+![](img/garage_graph.png)
+
+## Are businesses supporting their employees?
+
+![](img/voucher_graph.png)
 
 
-## The meters
+## Program trends
 
-```{r read_in, cache = T}
-dat <- geojson_read("https://opendata.arcgis.com/datasets/d68e620e74e74ec1bd0184971e82ffaa_15.geojson",
-                    parse = TRUE)
+```{r data_indump}
+# for some reason markdown is timing out ???
+
+# dat <- geojson_read("https://opendata.arcgis.com/datasets/d68e620e74e74ec1bd0184971e82ffaa_15.geojson",
+#                     parse = TRUE)
+# saveRDS(dat, "in.RDS")
+
+dat <- readRDS("in.RDS") # work around
+
 
 dat %<>% .[["features"]] %>% .[[2]]
 
 names(dat) %<>% tolower()
 
-# * Locations ----
-locs <- distinct(dat, meter_lat, meter_long) # 41 of them
-
-leaflet(locs) %>%
-    addTiles() %>%
-    addMarkers(lat= ~meter_lat, lng= ~meter_long)
-
-```
-
-## Weekly revenues
-
-```{r}
 dat$date <- as.POSIXct(dat$date_payment, format = "%Y/%m/%d")
 
 tmp <- strsplit(dat$parkingendtime, " ") # split column into date, clock:time, AM/PM parts
@@ -78,6 +78,7 @@ dat %<>% filter(transactiontype != "Collect. Card")
 
 dat$week <- isoweek(dat$date) %>% as.factor()
 dat$day <- wday(dat$date, T)
+dat %<>% filter(day != "Sun")
 dat$hour <- hour(dat$time)
 
 week_rev <- group_by(dat, week, day) %>%
@@ -100,8 +101,8 @@ ggplot(rev_by_day, aes(day, revenue, fill = day)) +
     geom_col()
 ```
 
-- Sundays are dead
-- Increased use Thur-Sat
+- Steady increase to peak on Saturday
+- Pattern likely mirrors businees revenue
 
 ## Daily patterns
 
@@ -114,11 +115,11 @@ group_by(dat, hour, day) %>%
     scale_x_continuous(breaks = c(8,12,17,20), labels = c("8a", "12p", "5p", "8p"))
 ```
 
-- Every day spikes at lunch & dinner
+- Spikes everyday at lunch & dinner
 - A lot more lunch outings on Friday
-- Monday happy hour?
+- Is that a Monday happy hour peak?
 
-## \$tats
+## 💵 Talks
 
 Average paid meter fee:
 
@@ -141,27 +142,107 @@ week_rev <- group_by(dat, week) %>%
 mean(week_rev$rev) * 52
 ```
 
-## Wrap up
+## Spatial distribution
+
+```{r meter_revenue}
+space_rev <- group_by(dat, spacename, metertype, meter_lat, meter_long) %>%
+    summarise(revenue = sum(total))
+
+pal <- colorNumeric(
+    palette = "viridis",
+    domain = log2(space_rev$revenue))
+
+leaflet(space_rev) %>%
+    addProviderTiles("OpenStreetMap.BlackAndWhite") %>%
+    addCircleMarkers(lat= ~meter_lat, lng= ~meter_long,
+                     color = ~pal(log2(revenue)),
+                     radius = ~ifelse(metertype == "Singlespace", 10, 20)) %>%
+    addLegend("bottomright", pal = pal, values = ~log2(revenue),
+              labFormat = labelFormat(transform = function(x) 2^x),
+              title = "$USD Revenue")
+```
+
+- Multispot bias
+
+## Normalized to average spaces
+
+- Average 5.6 spaces per multimeter
+
+```{r averge_space}
+# table(space_rev$metertype)
+avg_spaces <- (105 - 28) / 13
+
+space_rev %<>% mutate(avg_space_revnue = ifelse(metertype == "Singlespace",
+                                                 revenue,
+                                                 revenue / avg_spaces))
+pal <- colorNumeric(
+    palette = "viridis",
+    domain = space_rev$avg_space_revnue)
+
+leaflet(space_rev) %>%
+    addProviderTiles("OpenStreetMap.BlackAndWhite") %>%
+    addCircleMarkers(lat= ~meter_lat, lng= ~meter_long,
+                     color = ~pal(avg_space_revnue),
+                     radius = ~ifelse(metertype == "Singlespace", 10, 20)) %>%
+    addLegend("bottomright", pal = pal, values = ~avg_space_revnue,
+              title = "$USD Revenue") %>%
+    widgetframe::frameWidget(height = '400')
+```
+
+- Balanced usage
+- Good design
+
+## But what about occupancy?
+
+- Hard to define
+- Comparing apples to mystery fruit
+    - Previous data/reports aren't public
+- Computationally intensive
+    - Hours of calculations
+
+## Average occupancy per hour
+
+```{r occ_graph, warning = F, message = F}
+dfl <- readRDS("dfl.RDS")
+
+dfl %>% group_by(spacename, hour) %>%
+    summarise(pct_occ = sum(occ_bool) / n()) %>%
+    ggplot(aes(hour, spacename, fill = pct_occ)) +
+    geom_tile() +
+    scale_fill_viridis() +
+    scale_x_continuous(breaks = c(8,12,17), labels(c("8:30a", "12:30p", "5:30p"))) +
+    labs(y = NULL, x = NULL,
+         fill = "% Occupied")
+```
+
+
+## Here we are today
 
 - City estimates they will take a loss due to secondary costs (vandalism, consultant)
 
 - Why did they cancel early?
     - On track for profit
     - Meters already paid for
+    - What report did they see?
 
 ![](img/wtf.gif)
 
-## Follow ups
+## Future
 
-- More data 
-    - How much was the consultant?
-    - What report did the city council see?
-    - Do businesses have data showing lost revenue?
+- Raise on-street prices
+
+- Better anlysis requires more data
+    - Business revenues (same period)
+    - Parking garage usage/revenues
+    - Total cost (consultants, maintanence, repair)
+    - Tickets written (same period)
     
-- More transparent government
-    - Open data for all city decisions
-    - Public support
-    - Less backroom, more accountability
+- Call for open data
+    - Make all government data/reports available
+    - Public input should be data driven not emotional
+    - Best if data is available real-time
+        - So the community can see it first hand
+    - Hire data pros to help
     
 ## Questions
 
