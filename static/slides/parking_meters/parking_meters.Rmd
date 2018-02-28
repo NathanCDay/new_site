@@ -40,7 +40,7 @@ library(tidyverse)
 ## Are the garage prices good?
 ![](img/garage_graph.png)
 
-## Are businesses supporting their employees?
+## Are employees using it?
 
 ![](img/voucher_graph.png)
 
@@ -234,7 +234,7 @@ dfl %>% group_by(spacename, hour) %>%
 
 ## Program Improvements
 
-- Use SFpark as a template
+- Use [SFpark](https://www.accessmagazine.org/fall-2016/market-priced-parking-in-theory-and-practice/) as a template
     - Demand based flexible pricing (Lyft model)
     - Prices were capped
     - Sometimes cap $ wasn't enough
@@ -253,7 +253,7 @@ dfl %>% group_by(spacename, hour) %>%
     - Tickets written (same period)
     
 - Call for open data
-    - Make all government data/reports available
+    - Make ALL government data/reports available
     - Public input should be data driven not emotional
     - Best if data is available real-time
         - So the community can see it first hand
