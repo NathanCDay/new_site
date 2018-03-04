@@ -237,7 +237,7 @@ dfl %>% group_by(spacename, hour) %>%
 - Use [SFpark](https://www.accessmagazine.org/fall-2016/market-priced-parking-in-theory-and-practice/) as a template
     - Demand based flexible pricing (Lyft model)
     - Prices were capped
-    - Sometimes cap $ wasn't enough
+    - Sometimes cap \$ wasn't enough
 
 - Increase price!
     - \$1.80 vs \$1.50 per hour

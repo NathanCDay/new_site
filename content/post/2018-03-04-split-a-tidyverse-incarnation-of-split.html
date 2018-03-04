@@ -1,0 +1,188 @@
+---
+title: split_() a tidyverse incarnation of split()
+author: Nate Day
+date: '2018-03-04'
+slug: split-a-tidyverse-incarnation-of-split
+categories:
+  - nse
+tags:
+  - tidyeval
+  - tidyverse
+  - rlang
+  - twitter
+---
+
+
+
+<div id="introduction" class="section level3">
+<h3>Introduction</h3>
+<p>For over a year now I have wanted to learn how to use R’s non-standard evaluation and dispite reading the <a href="https://developer.r-project.org/nonstandard-eval.pdf">developer rules</a> and Hadley’s <a href="http://adv-r.had.co.nz/Computing-on-the-language.html">Adv-R section</a> multiple times, I never really made any progress understanding it. Then I saw Edwin Thoen’s <a href="https://edwinth.github.io/blog/nse/">NSE/tidyveal post</a> and it kinda (key word) started to click. Edwin’s follow up about <a href="https://edwinth.github.io/blog/dplyr-recipes/">common use cases</a> was the turning point for me and I gradually started using things like <code>!!</code> and writing functions with my favorite <code>tidyverse</code> tools.</p>
+<p>I still don’t feel like I have a great handle on NSE, but when I saw <span class="citation">[@coolbutuseless's tweet]</span>(<a href="https://twitter.com/coolbutuseless/status/969853912990720005" class="uri">https://twitter.com/coolbutuseless/status/969853912990720005</a>) yesteday about <code>tidyverse</code> replacements for the deprecated <code>group_by %&gt;% dplyr::do()</code> I decided to try and build a <code>tidyverse</code> incarnation of <code>split()</code>, that captured bar column names to split on, similar to how <code>dplyr::select()</code> works. The way I do split-apply-combine now is with <code>data %&gt;% split(list(.$col1, .$col2), drop = TRUE) %&gt;% map_df()</code> and I use this all the time pretty much in every script. I’ve always just thought of the <code>.$</code> syntax as neccesary overhead to use this code template, but it turns out my <code>tidyverse</code> incarnation runs faster than <code>base::split()</code>!!!</p>
+<p>In additional to the resources above, I finally watched Lionel Henry’s <a href="https://www.rstudio.com/resources/webinars/tidy-eval/">Tidy Eval</a> presentation this morning and I couldn’t have written this function without it. If you are struggling to understand the wacky world of quosure, like me, he does a great walk-through. This method is an adpation of the <code>cement()</code> example function from his presentation.</p>
+</div>
+<div id="my-tidy-try-split_" class="section level3">
+<h3>My tidy try: <code>split_()</code></h3>
+<pre class="r"><code>library(rlang)
+library(tidyverse)
+
+library(rlang)
+library(tidyverse)
+
+split_ &lt;- function(data, ..., .drop = TRUE) {
+    vars &lt;- ensyms(...)
+    vars &lt;- map(vars, function(x) eval_tidy(x, data))
+    split(data, vars, drop = .drop)
+}</code></pre>
+<p>I don’t think I’ve spent this long writing three lines of code since I first learned about <code>ggplot()</code>. Getting this right took me a long time, because NSE is confusing and dealing with a list of <code>quosures</code> was opaque to me, until I watched Lionel’s walk through.</p>
+<p>The idea of using the <code>...</code> is to capture all of the unnamed argument passed into <code>split_()</code> and it is how other <code>tidyverse</code> staples like <code>dplyr::select()</code> work, so I could template my function off of those. This allows me to pass any number of column names in, but it doesn’t allow the tricks of <code>dplyr::vars()</code> like negation indexing (<code>-cyl</code>) or index ranges (<code>cyl:vs</code>), so that’s something to shoot for.</p>
+<p><code>rlang::ensyms()</code> is the plural form of <code>ensym()</code>, which allows multiple values to be captured. Both of these functions are similar to <code>rlang::enexpr()</code>, which captures raw expressions and saves them for evaluation later. The only diffence with the <code>ensym</code> varieties is that they check if the captured expression is either a string or symbol and then convert any strings to symbols. This gives us some flexibilty for passing in arguments either as quoted or bare column names, even though we likely want to always use bare ones.</p>
+<p>Then <code>purrr::map()</code> is iterating over each symbol in our list using <code>tidy_eval</code> to evaluate each on within the environment of <code>data</code>. Since <code>data</code> is a <code>data.frame()</code> that means we are getting back columns, which we will just keep in the list and pass to <code>base::split()</code> as the <code>f</code> argument. This function will fail if a name passed in <code>...</code> can’t be found in <code>names(data)</code>, but that’s consistant with other functions.</p>
+<pre class="r"><code>summarise(mtcars, avg = mean(Sepal.Length))</code></pre>
+<pre><code>## Error in summarise_impl(.data, dots): Evaluation error: object &#39;Sepal.Length&#39; not found.</code></pre>
+<pre class="r"><code>split_(mtcars, Sepal.Length)</code></pre>
+<pre><code>## Error in eval_tidy(x, data): object &#39;Sepal.Length&#39; not found</code></pre>
+<p>I set the default to <code>drop = TRUE</code>, because thats how I use <code>split</code> now, but kept the option to pass through via the <code>.drop</code> argument. I could expand with <code>split_()</code>’s other arguments. but this is about the NSE exploration.</p>
+<p>I am most definatly a tidy eval novice and the reason I wrote this up was so I would have to articulate what I know (or think I know) about how it does it’s dark magic. So I hope this helps, but I highly reccommend getting a more expert take on this topic from the links above.</p>
+</div>
+<div id="tests" class="section level3">
+<h3>Tests!!!</h3>
+<pre class="r"><code># adapted from the last example on ?purrr::map
+mtcars %&gt;%
+  split_(cyl, vs) %&gt;%
+  map_df(~ broom::tidy(lm(mpg ~ wt, data = .)),
+         .id = &quot;cyl&quot;)</code></pre>
+<pre><code>##   cyl        term    estimate  std.error  statistic      p.value
+## 1 4.0 (Intercept)  26.0000000        NaN        NaN          NaN
+## 2 6.0 (Intercept)  22.2020548 16.0628345  1.3822003 3.987238e-01
+## 3 6.0          wt  -0.5936073  5.8262287 -0.1018853 9.353608e-01
+## 4 8.0 (Intercept)  23.8680291  3.0054619  7.9415511 4.052705e-06
+## 5 8.0          wt  -2.1924379  0.7392393 -2.9658026 1.179281e-02
+## 6 4.1 (Intercept)  39.8900504  4.6086478  8.6554782 2.466760e-05
+## 7 4.1          wt  -5.7210148  1.9451751 -2.9411310 1.867730e-02
+## 8 6.1 (Intercept)  63.6497146 11.8654172  5.3643048 3.303888e-02
+## 9 6.1          wt -13.1389789  3.4998709 -3.7541325 6.419751e-02</code></pre>
+<p>I wonder if anyone has ever made a straight 8 engine…</p>
+</div>
+<div id="cleave_by" class="section level3">
+<h3>cleave_by()</h3>
+<p>When I went back to grab the link for the original tweet that got be started on this, <span class="citation">@coolbutuseless</span> (OP) had <a href="https://coolbutuseless.bitbucket.io/2018/03/04/cleave_by-a-tidyverse-style-split/">already built</a> another implemention of the same idea they called <a href="https://twitter.com/coolbutuseless/status/970250159400484865"><code>cleave_by()</code></a>!!! Here is their version, which looks like it might become part of tidyr:</p>
+<pre class="r"><code># https://coolbutuseless.bitbucket.io/2018/03/04/cleave_by-a-tidyverse-style-split/
+
+cleave_by &lt;- function(df, ...) {
+    stopifnot(inherits(df, &quot;data.frame&quot;))
+    
+    # use tidyeval to get the names ready for dplyr
+    grouping &lt;- quos(...)
+    
+    # Calculate a single number to represent each group
+    group_index &lt;- df %&gt;%
+        group_by(!!!grouping) %&gt;%
+        group_indices()
+    
+    # do the split by this single group_index variable and return it
+    split(df, group_index)
+}</code></pre>
+<p>And it looks like They also ran two series of benchmarks to compare runtimes for their <code>cleave_by()</code> and <code>base::split()</code>. So I figured I would throw <code>split_()</code> into the ring and see how it did.</p>
+<p>I want to point out that <span class="citation">@coolbutuseless</span>’s version has some nice features over the <code>base::split()</code> which they discuss in their blogpost and it’s a safer than my original attemp. Since these safety improvments, like class checking are extra function calls, I’m going to update my version, to match their behavior of class checking and NA retention.</p>
+<pre class="r"><code># updated v2
+split_ &lt;- function(data, ..., .drop = TRUE) {
+    stopifnot(inherits(data, &quot;data.frame&quot;))
+    vars &lt;- ensyms(...)
+    vars &lt;- map(vars, function(x) factor(eval_tidy(x, data), exclude = NULL))
+    split(data, vars, drop = .drop)
+}</code></pre>
+<p>Most of the code below is from <span class="citation">[@coolbuuseless's blog post]</span>(<a href="https://coolbutuseless.bitbucket.io/" class="uri">https://coolbutuseless.bitbucket.io/</a>) I just added the <code>ggplot</code> bit to approximate their plots.</p>
+<pre class="r"><code>set.seed(1)
+
+create_test_df &lt;- function(cols, rows, levels_per_var) {
+    data_source &lt;- letters[seq(levels_per_var)]
+    
+    create_column &lt;- function(...) {sample(data_source, size = rows, replace = TRUE)}
+    letters[seq(cols)] %&gt;% 
+        set_names(letters[seq(cols)]) %&gt;%
+        purrr::map_dfc(create_column) 
+}
+
+test_df &lt;- create_test_df(cols=10, rows=10, levels_per_var=2)
+
+library(microbenchmark)
+bench &lt;- microbenchmark(
+    split(test_df, test_df[, c(&#39;a&#39;                              )]),
+    split(test_df, test_df[, c(&#39;a&#39;, &#39;b&#39;                         )]),
+    split(test_df, test_df[, c(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;                    )]),
+    split(test_df, test_df[, c(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;               )]),
+    split(test_df, test_df[, c(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;, &#39;e&#39;          )]),
+    split(test_df, test_df[, c(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;, &#39;e&#39;, &#39;f&#39;     )]),
+    split(test_df, test_df[, c(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;, &#39;e&#39;, &#39;f&#39;, &#39;g&#39;)]),
+    cleave_by(test_df, a),
+    cleave_by(test_df, a, b),
+    cleave_by(test_df, a, b, c),
+    cleave_by(test_df, a, b, c, d),
+    cleave_by(test_df, a, b, c, d, e),
+    cleave_by(test_df, a, b, c, d, e, f),
+    cleave_by(test_df, a, b, c, d, e, f, g),
+    split_(test_df, a),
+    split_(test_df, a, b),
+    split_(test_df, a, b, c),
+    split_(test_df, a, b, c, d),
+    split_(test_df, a, b, c, d, e),
+    split_(test_df, a, b, c, d, e, f),
+    split_(test_df, a, b, c, d, e, f, g)
+)
+
+bench %&gt;%
+    mutate(func = gsub(&quot;\\(.*&quot;, &quot;&quot;, expr)) %&gt;%
+    arrange(expr) %&gt;%
+    group_by(func) %&gt;% 
+    mutate(split_vars = rep(1:7, each = 100)) -&gt; bench
+
+
+ggplot(bench, aes(split_vars, time, color = func)) +
+    stat_smooth(se = F)</code></pre>
+<pre><code>## `geom_smooth()` using method = &#39;loess&#39; and formula &#39;y ~ x&#39;</code></pre>
+<p><img src="/post/2018-03-04-split-a-tidyverse-incarnation-of-split_files/figure-html/test1-1.png" width="672" /></p>
+<p>Not too shabby and I can’t tell you why my incarnation works slightly faster than the others for lower numbers of <code>split_vars</code> except that I did what Lionel did. I think it’s interesting how <code>cleave_by()</code> is noticable quicker at higher <code>split_vars</code>, and I need to re-read the explination for a few more times before I get it.</p>
+<p>Here is test two, again all <span class="citation">[@coolbutuseless]</span>(<a href="https://coolbutuseless.bitbucket.io/" class="uri">https://coolbutuseless.bitbucket.io/</a>) plus my <code>ggplot</code> prep.</p>
+<pre class="r"><code>set.seed(2)
+
+test_df2  &lt;- create_test_df(cols=4, rows=40, levels_per_var= 2)
+test_df3  &lt;- create_test_df(cols=4, rows=40, levels_per_var= 3)
+test_df4  &lt;- create_test_df(cols=4, rows=40, levels_per_var= 4)
+test_df5  &lt;- create_test_df(cols=4, rows=40, levels_per_var= 5)
+test_df6  &lt;- create_test_df(cols=4, rows=40, levels_per_var= 6)  
+
+bench2 &lt;- microbenchmark(
+    split(test_df2 , test_df2[, c(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;)]),
+    split(test_df3 , test_df3[, c(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;)]),
+    split(test_df4 , test_df4[, c(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;)]),
+    split(test_df5 , test_df5[, c(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;)]),
+    split(test_df6 , test_df6[, c(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;)]),
+    cleave_by(test_df2, a, b, c),
+    cleave_by(test_df3, a, b, c),
+    cleave_by(test_df4, a, b, c),
+    cleave_by(test_df5, a, b, c),
+    cleave_by(test_df6, a, b, c),
+    split_(test_df2, a, b, c),
+    split_(test_df3, a, b, c),
+    split_(test_df4, a, b, c),
+    split_(test_df5, a, b, c),
+    split_(test_df6, a, b, c)
+)
+
+bench2 %&gt;%
+    mutate(func = gsub(&quot;\\(.*&quot;, &quot;&quot;, expr)) %&gt;%
+    arrange(expr) %&gt;%
+    group_by(func) %&gt;% 
+    mutate(num_levels = rep(2:6, each = 100)) -&gt; bench2
+
+
+ggplot(bench2, aes(num_levels, time, color = func)) +
+    stat_smooth(se = F)</code></pre>
+<pre><code>## `geom_smooth()` using method = &#39;loess&#39; and formula &#39;y ~ x&#39;</code></pre>
+<p><img src="/post/2018-03-04-split-a-tidyverse-incarnation-of-split_files/figure-html/test2-1.png" width="672" /></p>
+<p>In that second test the two tidy eval versions are almost identical and only slightly worse than <code>base::split()</code> at the lowest number of levels.</p>
+</div>
+<div id="conclusion" class="section level3">
+<h3>Conclusion</h3>
+<p>I’m excited to keep exploring <code>tidyeval</code> and I’d like understand why the performance varies slightly. But after a year of what felt like banging my head against the wall I’m finally starting to understand how to use <code>tidyeval</code>. Having tangible examples like <a href="https://edwinth.github.io/blog/dplyr-recipes/">Edwin’s common cases</a>, was a game changer for me, becasue it allowed me to really start practicing and playing with the <code>rlang</code> functions. Also huge thanks for the Twitter inspiration <span class="citation">@coolbutuseless</span>!</p>
+</div>
