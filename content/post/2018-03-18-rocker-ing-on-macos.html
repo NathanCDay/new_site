@@ -1,0 +1,89 @@
+---
+title: Rocker-ing on MacOS
+author: Nate Day
+date: '2018-03-18'
+slug: rocker-ing-on-macos
+categories:
+  - Cville Open Data
+tags:
+  - docker
+  - rstudio_server
+  - bash
+---
+
+
+
+<div id="rocker-rocks" class="section level2">
+<h2>Rocker rocks!</h2>
+<p>If you don’t know about <a href="https://github.com/rocker-org/rocker">Rocker</a> yet you are in for a treat. It is a collection of Docker images built specifically for the R community that allow novice Docker users, like myself, to quickly spin up images for reproducible analysis.</p>
+<p>The motivation for this post is the <a href="astrea.com">Astrea ML Challenge</a>, which requires a container as part of the results submission. Initially the challenge only had one option, a Python focused Anaconda image, so I reached out and convinced them to add a comparable option for R users, the <a href="https://hub.docker.com/r/rocker/rstudio/">rocker/rstudio</a> image.</p>
+<p>Since I asked for the alternative R environment! I wanted to markdown the step by step instructions for getting set up on <code>macOS</code>. This walk through assumes you have done the first two parts of <a href="https://docs.docker.com/get-started/">Getting Started with Docker</a> and have a working knowledge of <code>git</code> (nothing fancy).</p>
+</div>
+<div id="recomeneded-github-repo" class="section level2">
+<h2>Recomeneded GitHub Repo</h2>
+<p>This part is separate but parallel to the Docker container set up. Docker is meant to contain all things computing environment but not really scripts and data. So it’s good practive to keep these in a separate folder system. That could be locally, but in name of version control and open-source, we are using GitHub to track and publish our code.</p>
+<p>So if you want to do this part go to <a href="github.com">Github.com</a> and make a new repository, I called mine “Hauncher”. Then get the <code>Clone with HTTPS</code> link and run the following line on your computer in a new Terminal:</p>
+<pre class="bash"><code>git clone https://github.com/nathancday/hauncher.git ~/Desktop/hauncher</code></pre>
+<p>This will create a cloned copy of the new repository as a new directory “hauncher” sitting on your Desktop. This is where we will be saving all of the files we use inside of the Docker container.</p>
+</div>
+<div id="get-the-imagecontainer" class="section level2">
+<h2>Get the image/container</h2>
+<p>Images are the recipes that build out containers. Containers are the actual system process that runs stuff.</p>
+<p>I highly recommend using the <code>rocker/ropensci</code> image over the base <code>RStudio</code> image because it has a bunch of the required system level libraries and common R packages pre-installed, which will make your life easier.</p>
+<pre class="bash"><code>docker pull rocker/ropensci</code></pre>
+<p>This takes a minute the first time you <code>pull</code> so go get a cup of coffee or something.</p>
+<p>If you really want to start from scratch and use the basic <code>rocker/RStudio</code>, you can install external dependencies in your container with the <a href="https://github.com/rocker-org/rocker/wiki/Using-the-RStudio-image">intructions here</a>, but full warning its a PIA.</p>
+</div>
+<div id="run-the-image-as-a-container" class="section level2">
+<h2>Run the image as a container</h2>
+<p>Copy and replace the repo path into your terminal:</p>
+<pre class="bash"><code>docker run -d -p 8787:8787 -v /Users/nathanday/Desktop/Hauncher/:/home/rstudio/Hauncher rocker/rstudio</code></pre>
+<p>Now head to <a href="localhost:8787" class="uri">localhost:8787</a> in your favorite browser to see your new container in action.</p>
+<p>You should be greeted with a login screen, enter “rstudio” for both the username and password. And wallah you should be back at home in R Studio and see two folders <code>kitematic</code> and <code>hauncher</code> in your file explorer.</p>
+</div>
+<div id="install-packages-mod-your-container" class="section level2">
+<h2>Install packages / mod your container</h2>
+<p>Let’s make a new R script to install some extra packages we want and save it into our directory <code>hauncher</code>, My script is called <code>install.R</code> and has like in it:</p>
+<pre class="r"><code>install.packages(&quot;pacman&quot;)
+
+library(pacman)
+
+p_load(caret, forecast, tidyverse)</code></pre>
+<p>I really like using <code>library(pacman)</code> to do installs, because it’s a smooth wrapper around <code>install.packages()</code> and <code>devtools::install_github()</code>. So the first thing to do is download and load that that the conventional way. Then use one of its helper functions <code>pacman::p_load()</code> to install and load my three project essential packages in one line.</p>
+</div>
+<div id="save-your-container" class="section level2">
+<h2>Save your container</h2>
+<p>Before we close our container we want to make sure we save it, so all all of our newly installed packages are there next time we run it. To do this go back to the terminal and check which containers are running:</p>
+<pre class="bash"><code>docker ps</code></pre>
+<p>Find the container ID you want to save and copy the whole thing or remember the first few character (two is usually good enough for me) and run this line substituting your full or partial id for “54”.</p>
+<p>Note: The container ID will change each time you run the same image, because its really a process ID not permanent attribute.</p>
+<pre class="bash"><code>docker commit -m &quot;first commit; install.R&quot; 54 nathancday/hauncher:latest</code></pre>
+<p>Using <code>latest</code> as the tag name is nice because it’s the default, meaning you won’t need to type it out for <code>pull</code> or <code>push</code> commands.</p>
+<p>Now run:</p>
+<pre class="bash"><code>docker images</code></pre>
+<p>To check your available local images and you will see your new image saved.</p>
+</div>
+<div id="publish-to-docker-hub" class="section level2">
+<h2>Publish to Docker Hub</h2>
+<p>The last Docker thing to do is push your updated to image to Docker Hub, so other people can access it:</p>
+<pre class="bash"><code>docker push nathancday/hauncher</code></pre>
+<p>This is considerably faster than the original <code>pull</code> for us, because we are only uploading the modifications.</p>
+<p>Now anyone can start with exact same environment as us, with the same <code>pull</code>/<code>run</code> commands, isn’t that great?</p>
+</div>
+<div id="update-github" class="section level2">
+<h2>Update GitHub</h2>
+<p>The final step for a totally synced, containerized, reproducible analysis is to update our remote GitHub repo with the file changes we made locally, here its just the new <code>install.R</code> file.</p>
+<p>Back to the terminal we go:</p>
+<pre class="bash"><code>git status</code></pre>
+<p>Should show our new file as “untracked”.</p>
+<p>All we need to do it is add it, commit it, and push it.</p>
+<pre class="bash"><code>git add install.R
+git commit -m &quot;install.R file&quot;
+git push</code></pre>
+<p>And that’s it!</p>
+</div>
+<div id="wrap-up" class="section level2">
+<h2>Wrap up</h2>
+<p>I hope this helps you going with using Docker for reproducible projects. If you run into any problems, let me know I will do my best to help debug.</p>
+<p>You are welcome to follow along with our project’s progress on <a href="https://github.com/nathancday/hauncher">GitHub repo</a> and <a href="https://hub.docker.com/r/nathancday/hauncher/">Docker image</a>. We will be keeping our code open from start to finish, so updates are coming as we build our models in the next few weeks. Have fun rocker-ing!!!</p>
+</div>
