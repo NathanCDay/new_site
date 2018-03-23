@@ -157,10 +157,10 @@ If you've changed a running container and want to save it (and push to your Hub)
 docker ps 
 
 # commit kinda like git
-docker commit CONTAINER_ID user_name/repo_name 
+docker commit CONTAINER_ID user_name/repo_name # default tag is 'latest'
 
 # must be logged in to docker hub to push it
-docker push 
+docker push user_name/repo_name
 ```
 
 If you want to reproduce our code so far:
