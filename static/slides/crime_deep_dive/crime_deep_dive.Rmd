@@ -223,8 +223,9 @@ census %<>% mutate(frac_black = Black / Population,
 # pred column positions for ggpairs()
 pred_cols <- match(c("frac_drugs", "frac_vacant", "income", "frac_black"), names(census))
 
-library(GGally)
-ggpairs(census, columns = pred_cols)
+# bugg in GGally with new ggplot2::aes()
+# library(GGally)
+# ggpairs(census, columns = pred_cols)
 
 ```
 

@@ -57,27 +57,27 @@ crime_json &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/d1877e3
 <p>The data that we are after is in the second element <code>.$features</code>, but we can see from our <code>View()</code> look-in that it is formatted slightly weird. Let’s look at the top rows:</p>
 <pre class="r"><code>crime_df &lt;- crime_json[[&quot;features&quot;]]
 head(crime_df)</code></pre>
-<pre><code>##      type properties.RecordID               properties.Offense
-## 1 Feature                2001                    TOWED VEHICLE
-## 2 Feature                2002               ASSAULT-AGGRAVATED
-## 3 Feature                2003 LARCENY-THEFT FROM MOTOR VEHICLE
-## 4 Feature                2004                   ASSAULT-SIMPLE
-## 5 Feature                2005                    PROPERTY-LOST
-## 6 Feature                2006         PROPERTY-FOUND/RECOVERED
+<pre><code>##      type properties.RecordID        properties.Offense
+## 1 Feature                1001             TOWED VEHICLE
+## 2 Feature                1002             TOWED VEHICLE
+## 3 Feature                1003             TOWED VEHICLE
+## 4 Feature                1004 LARCENY-ALL OTHER LARCENY
+## 5 Feature                1005            ASSAULT-SIMPLE
+## 6 Feature                1006       TRAFFIC-HIT AND RUN
 ##   properties.IncidentID properties.BlockNumber properties.StreetName
-## 1             201303950                    200              WATER ST
-## 2             201303951                    800              HARDY DR
-## 3             201303952                    200             2ND ST NW
-## 4             201303954                   2100        ARLINGTON BLVD
-## 5             201303955                    900            EMMET ST N
-## 6             201303956                      0          ROCKCREEK RD
+## 1             201303364                    200              WATER ST
+## 2             201303365                    200              WATER ST
+## 3             201303366                    200              WATER ST
+## 4             201303367                   2200        ARLINGTON BLVD
+## 5             201303368                    700              RIDGE ST
+## 6             201303370                   1500              ROSA TER
 ##   properties.Agency properties.DateReported properties.HourReported
-## 1              CPD   2013/07/13 00:00:00+00                    0535
-## 2              CPD   2013/07/13 00:00:00+00                    1124
-## 3              CPD   2013/07/13 00:00:00+00                    1230
-## 4              CPD   2013/07/13 00:00:00+00                    1644
-## 5              CPD   2013/07/13 00:00:00+00                    1939
-## 6              CPD   2013/07/13 00:00:00+00                    2225
+## 1              CPD   2013/06/15 00:00:00+00                    0519
+## 2              CPD   2013/06/15 00:00:00+00                    0520
+## 3              CPD   2013/06/15 00:00:00+00                    0521
+## 4              CPD   2013/06/15 00:00:00+00                    0905
+## 5              CPD   2013/06/15 00:00:00+00                    1242
+## 6              CPD   2013/06/15 00:00:00+00                    1700
 ##   geometry
 ## 1       NA
 ## 2       NA

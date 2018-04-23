@@ -20,7 +20,8 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files/", "_cache$"]
     font = "Mina" # should match the name on Google Fonts!
     highlight = true
     highlightStyle = "atelier-seaside-light"
-    highlightLanguages = ["R"]
+    highlightLanguages = ["R", "bash"]
+    avatar = "profile.png"
 
 [[menu.main]]
     url = "/"

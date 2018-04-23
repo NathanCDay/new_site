@@ -305,6 +305,7 @@ ggplot(month_tib, aes(date, y, color = y)) +
          x = NULL,
          caption = &quot;Data[2012-08-16:2017-08-31]; Projections[2017-09-01:2018-10-31]&quot;) +
     theme(legend.position = &quot;none&quot;)</code></pre>
+<pre><code>## Don&#39;t know how to automatically pick scale for object of type NULL. Defaulting to continuous.</code></pre>
 <p><img src="/post/2017-11-12-cville-towing_files/figure-html/fin_plot-1.png" width="672" /></p>
 <p>We see the loess (dashed) trend moving back down towards the historical average in our projection, while the our total seasonal plus trend model is still climbing upward.</p>
 <p>I hope this outline is a useful template for jumping into the ODP Crime Data with R. I know there a lot of trends in the Crime Data set that deserve more exploration, so time to get busy. Hopefully this portal can be used to have fun and build a more informed and engaged community. See you at the next Meetup!</p>

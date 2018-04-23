@@ -11,7 +11,7 @@ tags:
   - api
 ---
 
-* [ioSlides ready to view in your browser](https://natedayta.com/slides/crime_deep_dive/crime_deep_dive.html)
+* [ioSlides ready to view in your browser, use your arrow keys](https://natedayta.com/slides/crime_deep_dive/crime_deep_dive.html)
 * [Code-along templates and source code to reproduce everything on GitHub](https://github.com/NathanCDay/data_dive)
 
 This talk was part of [Smart Cville's Data Deep Dive](https://www.smartcville.com/) series focusing on Charlottesville City's new [Open Data Portal](http://opendata.charlottesville.org/).
