@@ -1,0 +1,112 @@
+---
+title: gg_interaction_plot
+author: Nate Day
+date: '2018-04-30'
+slug: gg-interaction-plot
+categories:
+  - Modeling
+tags:
+  - ggplot2
+---
+
+
+
+<div id="intro" class="section level2">
+<h2>Intro</h2>
+<p>This function/post was inspired by reading <strong>Linear Models with R</strong> by Julain Faraway, which I highly reccomend.</p>
+<p>Interaction plots are powerful tools when building models when you have a single response of interest and mulltiple predictors to choose from. Being able to visually detect interactions between predictors is key for building good models. While this topic doesn’t come up until the end of the book in Chapter 16: Models with Several Factors, it is applicable to a ton of industries from quality control and clinical trials.</p>
+<p>Since I do a lot of modeling and am a huge fan of typing as little as I can, I set out to write a kind and light wrapper around the more “advanced” interaction plots Faraway builds with by hand with <code>ggplot2()</code>, something that I could use in my exploratory analysis workflow.</p>
+</div>
+<div id="pvc" class="section level2">
+<h2>PVC</h2>
+<p>Is a dataset in <code>library(faraway)</code>, that describes a PVC production study to test the effects of <code>resin</code> (manufacutring machine) and <code>operator</code> (employee) on <code>psize</code> (particle size). PVC particle size varies based on synthesis method and low variance in particle size is preferred. Different applications of piping can call for differnt particle sizes, so smaller or larger isn’t always better.</p>
+<pre class="r"><code>data(pvc, package = &quot;faraway&quot;)
+str(pvc)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    48 obs. of  3 variables:
+##  $ psize   : num  36.2 36.3 35.3 35 30.8 30.6 29.8 29.6 32 31.7 ...
+##  $ operator: Factor w/ 3 levels &quot;1&quot;,&quot;2&quot;,&quot;3&quot;: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ resin   : Factor w/ 8 levels &quot;1&quot;,&quot;2&quot;,&quot;3&quot;,&quot;4&quot;,..: 1 1 2 2 3 3 4 4 5 5 ...</code></pre>
+<p>I see 3 unique operators/employees and 8 types of resin railcars, the piece of equipment used to produce the PVC.</p>
+<p>Given that this study was about large manufacturing process, and let’s say we wanted the smallest particle size possible in our next batch using a single resin. We might not select the abosolute lowest resin in terms of mean, if there was a close second with a much smaller variance.</p>
+</div>
+<div id="faraways-method-1" class="section level2">
+<h2>Faraway’s method #1</h2>
+<p>With the base R plotting system we could do this.</p>
+<pre class="r"><code>par(mfcol = c(1,2))
+plot(psize ~ operator, pvc)
+plot(psize ~ resin, pvc)</code></pre>
+<p><img src="/post/2018-04-30-gg-interaction-plot_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<pre class="r"><code># or
+with(pvc, interaction.plot(operator, resin, psize))
+with(pvc, interaction.plot(resin, operator, psize))</code></pre>
+<p><img src="/post/2018-04-30-gg-interaction-plot_files/figure-html/unnamed-chunk-2-2.png" width="672" /></p>
+<p>Both of these options are fast but we don’t get to see the individual data points.</p>
+<p>Base plotting is great for speed and simple syntax, but if we want to start adding in custom colors and shapes, I think (and so does Faraway!) that it’s easier to move to <code>ggplot2</code>. Plus remembering how to use <code>par()</code> sucks</p>
+</div>
+<div id="faraways-method-2" class="section level2">
+<h2>Faraway’s method #2</h2>
+<p>Faraway proposes building plots almost exactly like this for a more informative interaction plot experience.</p>
+<pre class="r"><code>library(ggplot2)
+
+p &lt;- ggplot(pvc, aes(x = operator, y = psize, shape = resin)) +
+    geom_point(size = 3) +
+    scale_shape_manual(values = 49:56) + # need extra shapes
+    stat_summary(fun.y = &quot;mean&quot;, geom = &quot;line&quot;, aes(group = resin))
+
+p2 &lt;- ggplot(pvc, aes(x = resin, y = psize, shape = operator)) +
+    geom_point() +
+    stat_summary(fun.y = &quot;mean&quot;, geom = &quot;line&quot;, aes(group = operator))
+
+cowplot::plot_grid(p, p2, align = &quot;hv&quot;) # my adlib package for combining</code></pre>
+<p><img src="/post/2018-04-30-gg-interaction-plot_files/figure-html/better-1.png" width="672" /></p>
+<p>While it is a lot nicer to see both factors simultaneously. I don’t like that I’m still are stuck manually flipping variables, typing a bunch of custom code each time and combining the plots after the fact.</p>
+<p>So, hello to our newest function friend <code>gg_interaction_plot</code>!</p>
+</div>
+<div id="gg_interaction_plot" class="section level2">
+<h2><code>gg_interaction_plot()</code></h2>
+<p>This function’s goals were:</p>
+<ol style="list-style-type: decimal">
+<li>minimize typing (and inevitable typos) from switching variables</li>
+<li>be flexible</li>
+</ol>
+<pre class="r"><code>library(tidyverse)
+gg_interaction_plot(pvc, psize ~ operator + resin)</code></pre>
+<p><img src="/post/2018-04-30-gg-interaction-plot_files/figure-html/gg1-1.png" width="672" /></p>
+<p>I love <code>R</code>’s formula syntax and think using the same syntax as <code>lm()</code> makes a lot of sense for a modeling work flow. The only difference I made was switching the order, so that <code>data</code> comes first. This is a core pattern of <code>tidyverse</code> functions and makes working with <code>%&gt;%</code> easier.</p>
+<p>Consistantly parsing formulas is straight forward and by adding in a of sprinkle <code>aes_()</code>, to pass character strings into <code>ggplot()</code>, I now have access to quick and pretty plots!</p>
+</div>
+<div id="warpbreaks" class="section level2">
+<h2>Warpbreaks</h2>
+<p>Another example using <code>warpbreaks</code> which looks at industrial weaving and studies the effect of wool type and tension on the number of warp breaks per fixed length. The data set contains <code>breaks</code>, the response variable and two predictors <code>wool</code> and <code>tension</code>.</p>
+<pre class="r"><code>data(warpbreaks)
+warpbreaks %&gt;%
+    gg_interaction_plot(breaks ~ wool + tension)</code></pre>
+<p><img src="/post/2018-04-30-gg-interaction-plot_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+</div>
+<div id="src" class="section level2">
+<h2>src</h2>
+<pre class="r"><code>gg_interaction_plot &lt;- function(data, formula) {
+    
+    formula &lt;- as.formula(formula)
+    
+    y_var &lt;- as.character(formula[2])
+    
+    x_vars &lt;- as.character(formula[3]) %&gt;%
+        str_split(&quot; \\+ &quot;) %&gt;% unlist()
+    
+    data &lt;- mutate_at(data, x_vars, as.factor)
+    
+    shp_vars &lt;- rev(x_vars)
+
+    map2(x_vars, shp_vars,
+         ~ ggplot(data, aes_(y = as.name(y_var), x = as.name(..1), shape = as.name(..2))) +
+             geom_point(position = position_jitter(width = .1)) +
+             stat_summary(fun.y = &quot;mean&quot;, geom = &quot;line&quot;,
+                          aes_(group = as.name(..2), linetype = as.name(..2))) +
+             scale_shape_manual(values = 15:25) +
+             theme(legend.position = &quot;top&quot;, legend.direction = &quot;horizontal&quot;)) %&gt;%
+        cowplot::plot_grid(plotlist = ., align = &quot;hv&quot;)
+        
+}</code></pre>
+<p>Right now the function is limited to representing 11 factor levels (shapes) at a time, which is enough for most cases but not everything. Also the function currently coherces all predictor variables to factors, which might not always be the best representation, but if often a reasonalbe first step in model selection.</p>
+</div>
