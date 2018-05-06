@@ -21,7 +21,7 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files/", "_cache$"]
     highlight = true
     highlightStyle = "atelier-seaside-light"
     highlightLanguages = ["R", "bash"]
-    avatar = "profile.png"
+    avatar = "ggplot2.png"
 
 [[menu.main]]
     url = "/"
