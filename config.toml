@@ -13,6 +13,9 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files/", "_cache$"]
 [params]
     author = "Nate Day"
     description = "R focused data docs"
+    logo = "/images/ggplot2.png"
+    twitterAuthor = "@natedayta"
+    twitterSite = "https://twitter.com/natedayta"
     githubUsername = "NathanCDay"
     accent = "#006264"
     showBorder = true
