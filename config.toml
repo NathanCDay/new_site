@@ -1,6 +1,6 @@
 baseURL = "/"
 languageCode = "en-us"
-title = "NateDay-ta"
+title = "NateDayta"
 
 theme = "min_night"
 disqusShortname = ""#"nateday-me" # delete this to disable disqus comments
