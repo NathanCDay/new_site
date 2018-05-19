@@ -3,7 +3,7 @@ title: gg_interaction_plot
 author: Nate Day
 date: '2018-04-30'
 slug: gg-interaction-plot
-twitter_img: "/images/gg_interact/twitter_card.png"
+twitter_img: "images/gg_interact/twitter_card.png"
 description: "Friendly syntax for a investigating interaction in models."
 categories:
   - Modeling
