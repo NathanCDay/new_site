@@ -1,7 +1,6 @@
 baseURL = "https://www.natedayta.com/"
 languageCode = "en-us"
 title = "NateDayta"
-
 theme = "min_night"
 disqusShortname = ""#"nateday-me" # delete this to disable disqus comments
 googleAnalytics = "UA-112244351-1"
@@ -66,7 +65,7 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files/", "_cache$"]
     weight = 2
 
 [[menu.icon]]
-    url = "https://twitter.com/offallday/"
+    url = "https://twitter.com/natedayta/"
     name = "twitter"
     weight = 3
 
