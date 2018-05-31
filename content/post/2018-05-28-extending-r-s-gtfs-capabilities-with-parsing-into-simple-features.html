@@ -1,8 +1,8 @@
 ---
-title: gtfs_routes_sf() and friends
-description: Extracting simple features from GTFS data for tidyier transit system analysis
+title: Extending R's GTFS abilities with simple features
+description: Two functions to easily transition from library(gtfsr) into library(sf) for tidyier transit analysis.
 author: Nate Day
-date: '2018-05-28'
+date: '2018-05-31'
 slug: extending-gtfs-capabilities-with-parsing-into-simple-features
 twitter_img: "images/gtfs_sf/gtfs_sf.jpeg"
 categories:
@@ -18,83 +18,96 @@ tags:
 <script src="/rmarkdown-libs/widgetframe-binding/widgetframe.js"></script>
 
 
+<div id="tldr" class="section level5">
+<h5>TLDR</h5>
+<p>A gist, <a href="https://gist.github.com/nathancday/d50afccb762174d402f54486d3d328b6">gtfs_sf.R</a>, with two functions for building <code>sf</code> objects from <code>gtfs</code> objects.</p>
+</div>
 <div id="general-transit-feed-specification" class="section level2">
 <h2>General Transit Feed Specification</h2>
-<p>Originally Google Transit Feed Specification, GTFS was developed in <a href="https://en.wikipedia.org/wiki/General_Transit_Feed_Specification#History">2005 by Chris Harrelson</a> (a Googler at the time), to make trip planning on civic transit systems easier. By adopting a standardized system of files, local transit authorities could publish data that search tools could readily display for curious customers.</p>
-</div>
-<div id="librarygtfsr" class="section level2">
-<h2>library(gtfsr)</h2>
-<p>The <a href="https://ropensci.org/packages/">rOpenSci project</a> has blessed the <code>R</code> community with <a href="https://github.com/ropensci/gtfsr"><code>library(gtfsr)</code></a> a set of tools for reading, validating and visualizing GTFS data. Currently its only available on GitHub via <code>devtools::install_github(&quot;ropensci/gtfsr&quot;)</code> and I don’t know if a CRAN release is planned.</p>
+<p>Originally named Google Transit Feed Specification, GTFS was developed in <a href="https://en.wikipedia.org/wiki/General_Transit_Feed_Specification#History">2005 by Chris Harrelson</a> (a Googler at the time), to make trip planning on civic transit systems easier. By adopting a standardized system of files, local transit authorities could publish data that search tools could readily display for curious customers.</p>
+<p>To be flexible, GTFS data only requires certain specific fields in specific files, but has optional fields to pretty much cover any kind of public transit you can think of. Here is a list of <a href="https://developers.google.com/transit/gtfs/reference/#file_requirements">which fields and files</a> are must haves and which are just features.</p>
+<div id="librarygtfsr" class="section level3">
+<h3>library(gtfsr)</h3>
+<p>The <a href="https://ropensci.org/packages/">rOpenSci project’s</a> <a href="https://github.com/ropensci/gtfsr"><code>library(gtfsr)</code></a> is designed for reading, validating and visualizing GTFS data at a high-level. You can install from GitHub, via <code>devtools::install_github(&quot;ropensci/gtfsr&quot;)</code>.</p>
 <div id="gtfsrimport_gtfs" class="section level4">
 <h4><code>gtfsr::import_gtfs()</code></h4>
-<p>To be flexible, GTFS data only requires certain specific fields in specific files, to be considered valid. Here is a break down <a href="https://developers.google.com/transit/gtfs/reference/#file_requirements">the field definitions</a> demarkating which fields and file are must haves.</p>
-<p><code>gtfsr::import_gtfs()</code> does a great job handling this flexible structure and returns a special <code>S3 class</code> list object that contains a data frames, for each of the avaiable files. This function can read zipped files direcetly from <code>url</code> or from a local path.</p>
-<p>Here is read in for the Charlottesville Area Transit’s (CAT) GTFS feed, that I’ve stored in <a href="https://github.com/Smart-Cville/CID-2018-Regional-Transit-Challenge">this repo</a>.</p>
+<p>This function does a great job handling the flexible GTFS structure. Let’s read in my local Charlottesville Area Transit’s (CAT) GTFS feed as an example. I’m reading in from a url, but it also works with local paths, but you must specify <code>local = TRUE</code> as the second argument.</p>
+<p>The zipped data is avaialbe in <a href="https://github.com/Smart-Cville/CID-2018-Regional-Transit-Challenge">this repo</a>.</p>
 <pre class="r"><code>library(gtfsr)
 
 cat &lt;- gtfsr::import_gtfs(&quot;https://github.com/Smart-Cville/CID-2018-Regional-Transit-Challenge/blob/b6c714ec190f8843d6aa154fc74ed7be3bd5307f/data/2017_08_CharlottesvilleAreaTransit.zip?raw=true&quot;)</code></pre>
 <pre><code>## [1] &quot;agency.txt&quot;         &quot;calendar_dates.txt&quot; &quot;calendar.txt&quot;      
 ## [4] &quot;routes.txt&quot;         &quot;shapes.txt&quot;         &quot;stop_times.txt&quot;    
 ## [7] &quot;stops.txt&quot;          &quot;trips.txt&quot;</code></pre>
-<pre class="r"><code># lots of verbose warnings
-
-names(cat)</code></pre>
+<pre class="r"><code># lots of verbose warnings that I turned off for kniting porpoises</code></pre>
+<p>The function give us a special <code>S3 class</code> list object, called <code>gtfs</code>, that has a data frame, for each of the avaiable files.</p>
+<pre class="r"><code>class(cat)</code></pre>
+<pre><code>## [1] &quot;gtfs&quot;</code></pre>
+<pre class="r"><code>names(cat)</code></pre>
 <pre><code>## [1] &quot;agency_df&quot;         &quot;calendar_dates_df&quot; &quot;calendar_df&quot;      
 ## [4] &quot;routes_df&quot;         &quot;shapes_df&quot;         &quot;stop_times_df&quot;    
 ## [7] &quot;stops_df&quot;          &quot;trips_df&quot;</code></pre>
 </div>
 <div id="gtfsrmap_gtfs" class="section level4">
 <h4><code>gtfsr::map_gtfs()</code></h4>
-<p>This GTFS data include specific <code>route_color</code> values for each route in <code>cat$route_df</code>. Unfortunatly they don’t come with the ‘#’ prefix, so I’ll add it on now for easier plotting later.</p>
-<pre class="r"><code>library(magrittr) # viva the %&lt;&gt;%
+<p>A high-level mapping function built with <code>library(leaflet)</code>. It gives us ability to filter data by routes/shapes and provide custom colors and labels.</p>
+<p>In this specific data case, attempting to plot all routes results in an error about missing the <code>agency_id</code> field. So my work around it specify all of the routes.</p>
+<pre class="r"><code>library(magrittr)
 
-cat$routes_df$route_color %&lt;&gt;% paste0(&quot;#&quot;, .)</code></pre>
-<p><code>gtfsr:map_gtfs(()</code> builds its plots in <code>library(leaflet)</code> and gives users the high-level ability to plot all routes or just a specific subset. In this specific data case, attempting to plot all routes results in an error.</p>
-<pre class="r"><code>cat %&gt;% map_gtfs() # errors out</code></pre>
+cat %&gt;% map_gtfs() # errors out</code></pre>
 <pre><code>## Error in slice_impl(.data, dots): Evaluation error: object &#39;agency_id&#39; not found.</code></pre>
-<p>I’m going to open an issue and try to build a pull request to that fixes this bug. For now we can get around the missing <code>agency_id</code> by specifying all of the available <code>routes_ids</code>.</p>
-<pre class="r"><code>cat %&gt;% map_gtfs(., route_ids = .$routes_df$route_id,
-                 route_colors = .$routes_df$route_color) %&gt;%
-    widgetframe::frameWidget()</code></pre>
+<pre class="r"><code># work around
+cat %&gt;% map_gtfs(., route_ids = .$routes_df$route_id,
+                 route_colors = paste0(&quot;#&quot;, .$routes_df$route_color)) %&gt;%
+    # needed for web sharing only
+    widgetframe::frameWidget() # isolates leaflet:css, to prevent messing with webpage:css</code></pre>
 <div id="htmlwidget-1" style="width:100%;height:480px;" class="widgetframe html-widget"></div>
-<script type="application/json" data-for="htmlwidget-1">{"x":{"url":"/post/2018-05-28-extending-r-s-gtfs-capabilities-with-parsing-into-simple-features_files/figure-html//widgets/widget_unnamed-chunk-4.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
-<p>You can compare the results against the offical CAT app <a href="http://catpublic.etaspot.net/">here</a> and the official static map <a href="http://www.charlottesville.org/home/showdocument?id=54576">here</a>. Look pretty good if you ask me.</p>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"url":"/post/2018-05-28-extending-r-s-gtfs-capabilities-with-parsing-into-simple-features_files/figure-html//widgets/widget_unnamed-chunk-3.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+<p>You can compare the <code>library(gtfsr)</code> results against the current CAT <a href="http://catpublic.etaspot.net/">app</a> and <a href="http://www.charlottesville.org/home/showdocument?id=54576">static map</a>.</p>
+</div>
 </div>
 </div>
 <div id="extending-to-sf" class="section level2">
 <h2>Extending to <code>sf</code></h2>
-<p>The <code>gtfsr</code> package does a great job reading and showing data, but if you want to join in additional data sources or customize plots beyond colors or routes include you are out of luck.</p>
-<p><a href="https://en.wikipedia.org/wiki/Simple_Features">Simple Features</a> have been making big waves in the <a href="https://github.com/r-spatial">r-spatial</a> community via <code>library(sf)</code>(<a href="https://github.com/r-spatial/sf" class="uri">https://github.com/r-spatial/sf</a>). These special geometry enriched <code>data frames</code> make using R’s tabular data tools on spatial data straight forward. I previously used <code>sf</code> objects to <a href="/2017/12/30/drug-crime-analysis-with-library-sf/">explore drug crime</a> in Charlottesville.</p>
+<p>The <code>gtfsr</code> package does a great job reading and showing data, but if you want to join in additional data sources or customize plots beyond colors or routes, you are out of luck.</p>
+<p><a href="https://en.wikipedia.org/wiki/Simple_Features">Simple Features</a> have been making big waves in the <a href="https://github.com/r-spatial">r-spatial</a> community via <code>library(sf)</code>(<a href="https://github.com/r-spatial/sf" class="uri">https://github.com/r-spatial/sf</a>). These geometry enriched objects, behave a lot like data frames, which makes using R’s tools like <code>dplyr</code> and <code>data.table</code> on them, straight forward.</p>
+<p>I used <code>sf</code> objects in a earlier post to explore <a href="/2017/12/30/drug-crime-analysis-with-library-sf/">local drug crime patterns.</a></p>
 <div id="converting-routes-into-routes_sf" class="section level4">
 <h4>Converting routes into <code>routes_sf</code></h4>
-<p>Since GTFS data stores data in multiple files, you need to perform a series of joins to pull all of the necessary pieces to plot. <code>map_gfsr()</code> does this inside of the function, preventing users from accessing a routes object directly. Here is my solution to parse all for the routes in a <code>gtfs</code> object as a <code>sf</code> data frame.</p>
+<p>Because <code>cat</code> is a list with multiple data frames, we need to pick it apart into the needed pieces. To make a plot for routes, like <code>map_gtfs()</code>, we need:</p>
+<ol style="list-style-type: decimal">
+<li>key-value pairs from <code>cat$trips_df</code></li>
+<li>route meta information from <code>cat$routes_df</code></li>
+<li>shapes as lon/lat coordinates from <code>cat$shapes_df</code></li>
+</ol>
 <pre class="r"><code>library(sf)
 library(tidyverse)
 
 gtfs_routes_sf &lt;- function(gtfs) {
     
-    ## Gather keys for meta info ----
+    ## gather key-values first ----
     
-    # trips_df has the key value pairs for shape_df:route_df
+    # trips_df has route_id:shape_id
     shape_key &lt;- gtfs$trips_df %&gt;%
         select(route_id, shape_id) %&gt;%
         unique()
 
-    # extract route names
+    # routes_df has route_id:route_name
     route_key &lt;- gtfs$routes_df %&gt;%
         select(route_id, route_short_name) %&gt;%
-        mutate(route_short_name = paste(&quot;Route&quot;, route_short_name)) %&gt;%
+        mutate(route_short_name = paste(&quot;route&quot;, route_short_name)) %&gt;%
         inner_join(shape_key)
     
-    if ( !is.null(gtfs$routes_df$route_color) ) { # extract the preset colors
-        route_key %&lt;&gt;% inner_join(select(gtfs$routes_df, route_color, route_id))
+    # check for colors
+    if ( !is.null(gtfs$routes_df$route_color) ) { # extract if possible
+        route_key %&lt;&gt;% inner_join(select(gtfs$routes_df, route_color, route_id) )
     }
-    else { # make enough of colors from D3
+    else { # plan b is make some from my favorite pallette &#39;d3&#39;
         route_key %&lt;&gt;% mutate(route_color = rep(ggsci::pal_d3()(10),
                                                 length.out = nrow(route_key)))
     }
     
-    ## Build the SF object ----
+    ## build the sf object ----
     
     # exctract lon/lat values as matrix to build linestrings for each &quot;shape_id&quot;
     sfc &lt;- gtfs$shapes_df %&gt;% # long data frame
@@ -111,37 +124,55 @@ gtfs_routes_sf &lt;- function(gtfs) {
         inner_join(route_key)
     # plots fine ^^
     
-    # doesn&#39;t plot ??
-    # st_sf(route_key, geometry = sfc) 
+    # st_sf(route_key, geometry = sfc)
+    # doesn&#39;t plot ^^ and I can&#39;t explain it
 }</code></pre>
-<p>Ok that a lot of code, but does it actually work.</p>
-<p><code>library(leaflet)</code> is the engine behind <code>map_gfsr()</code> and it works out of the bag with <code>sf</code> objects. This means joining in new pieces of data like route ridership, works pretty much just like any old data frame.</p>
-<pre class="r"><code>cat_routes &lt;- gtfs_routes_sf(cat)
+<p>Ok that a lot of code, but does it actually work, I’ll show you.</p>
+<pre class="r"><code>cat_routes_sf &lt;- gtfs_routes_sf(cat)
 
-library(leaflet)
-library(htmltools)
+head(cat_routes_sf)</code></pre>
+<pre><code>## Simple feature collection with 6 features and 4 fields
+## geometry type:  LINESTRING
+## dimension:      XY
+## bbox:           xmin: -78.52748 ymin: 37.99908 xmax: -78.45434 ymax: 38.03335
+## epsg (SRID):    4326
+## proj4string:    +proj=longlat +datum=WGS84 +no_defs
+##   shape_id route_id route_short_name route_color
+## 1    80859    15288          route 1      f47721
+## 2    80860    15288          route 1      f47721
+## 3    81122    15288          route 1      f47721
+## 4    81149    15289          route 2      9c4e0f
+## 5    81150    15289          route 2      9c4e0f
+## 6    81151    15290          route 3      2b328a
+##                         geometry
+## 1 LINESTRING (-78.45512 38.02...
+## 2 LINESTRING (-78.48065 38.00...
+## 3 LINESTRING (-78.48065 38.00...
+## 4 LINESTRING (-78.4869 38.013...
+## 5 LINESTRING (-78.4869 38.013...
+## 6 LINESTRING (-78.52402 37.99...</code></pre>
+<p>And <code>library(leaflet)</code> works out of the box with <code>sf</code> objects, so that’s awesome.</p>
+<pre class="r"><code>library(leaflet)
 
-leaflet(cat_routes) %&gt;%
+leaflet(cat_routes_sf) %&gt;%
     addTiles() %&gt;%
-    addPolylines(color = ~route_color, popup = ~htmlEscape(route_short_name)) %&gt;%
-    addLegend(colors = ~unique(route_color), labels = ~unique(route_short_name)) %&gt;%
+    addPolylines(color = ~paste0(&quot;#&quot;, route_color),
+                 label = ~htmltools::htmlEscape(route_short_name)) %&gt;%
+    addLegend(colors = ~unique(paste0(&quot;#&quot;, route_color)),
+              labels = ~unique(route_short_name)) %&gt;%
     widgetframe::frameWidget()</code></pre>
 <div id="htmlwidget-2" style="width:100%;height:480px;" class="widgetframe html-widget"></div>
 <script type="application/json" data-for="htmlwidget-2">{"x":{"url":"/post/2018-05-28-extending-r-s-gtfs-capabilities-with-parsing-into-simple-features_files/figure-html//widgets/widget_unnamed-chunk-6.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="rinse-and-repeat-for-stops_sf" class="section level4">
 <h4>Rinse and repeat for <code>stops_sf()</code></h4>
-<p>The keying steps are slighly altered for extracting the stops data and the geomtetry type is <code>POINTS</code> instead of <code>LINESTRINGS</code> but the pattern is pretty much the same.</p>
+<p>The steps are slighly different but the pattern is the same.</p>
 <pre class="r"><code>gtfs_stops_sf &lt;- function(gtfs) {
-    
-    ## Gather keys again ----
-    
-    # trips_df has the key value pairs for shape_df:route_df
     shape_key &lt;- gtfs$trips_df %&gt;%
         select(trip_id, route_id, shape_id) %&gt;%
         unique()
     
-    # stop_times_df has stop sequence and arrive/depart time for specific stops
+    # stop_times_df also has stop sequence and arrive/depart time for specific stops
     stop_key &lt;- gtfs$stop_times_df %&gt;%
         select(trip_id, stop_id) %&gt;%
         unique() %&gt;%
@@ -151,45 +182,74 @@ leaflet(cat_routes) %&gt;%
         group_by(stop_id) %&gt;% # group_by() to stop_id 
         slice(1) # to slice() out the first row
     
-    if ( !is.null(gtfs$routes_df$route_color) ) { # extract the preset colors
-        stop_key %&lt;&gt;% inner_join(select(gtfs$routes_df, route_color, route_id))
-    }
-    else { # make enough of colors from D3
-        stop_key %&lt;&gt;% mutate(route_color = rep(ggsci::pal_d3()(10),
-                                                length.out = nrow(route_key)))
-    }
-    
-    # Same SF build pattern -----
+    if ( !is.null(gtfs$routes_df$route_color) ) {
+        stop_key %&lt;&gt;% inner_join(select(gtfs$routes_df, route_color, route_id)) }
+    else {stop_key %&lt;&gt;% mutate(route_color = rep(ggsci::pal_d3()(10), length.out = nrow(route_key))) }
     
     stops_sfc &lt;- gtfs$stops_df %&gt;%
         split(.$stop_id) %&gt;%
         map(~select(., stop_lon, stop_lat) %&gt;%
                 unlist() %&gt;%
-                st_point() ) %&gt;%
+                st_point() ) %&gt;% # point instead of linestring
         st_sfc()
     
     st_sf(stop_key, geometry = stops_sfc) %&gt;%
         inner_join(gtfs$stops_df)
-    
-}
+}</code></pre>
+<p>Now the fun part, making our new shiny <code>stops_sf</code> object.</p>
+<pre class="r"><code>cat_stops_sf &lt;- gtfs_stops_sf(cat)
 
-
-stops_sf &lt;- gtfs_stops_sf(cat)
-
-
-leaflet(cat_routes) %&gt;%
+head(cat_stops_sf)</code></pre>
+<pre><code>## Simple feature collection with 6 features and 15 fields
+## geometry type:  POINT
+## dimension:      XY
+## bbox:           xmin: -78.51638 ymin: 38.02906 xmax: -78.45877 ymax: 38.04909
+## epsg (SRID):    NA
+## proj4string:    NA
+##   trip_id stop_id route_id shape_id route_color stop_code
+## 1 2651606 1040662    15296    84777      ed228e     20096
+## 2 2651941 1041094    15297    84840      3dc4e5     20106
+## 3 2562851  701531    15294    82000      752b8f     10472
+## 4 2562851  701532    15294    82000      752b8f     10660
+## 5 2787405  701533    15300    88423      086d38     10687
+## 6 2546273  701534    15288    80859      f47721     11015
+##                                stop_name stop_desc stop_lat  stop_lon
+## 1                                   YMCA      &lt;NA&gt; 38.04909 -78.47792
+## 2      The Pantops Shopping Ctr at Roses      &lt;NA&gt; 38.03150 -78.45877
+## 3 Emmet St at the Central Grounds Garage      &lt;NA&gt; 38.03628 -78.50786
+## 4   Emmet St at the Snyder Tennis Courts      &lt;NA&gt; 38.03833 -78.50706
+## 5            Alderman Road at Stadium Rd      &lt;NA&gt; 38.02906 -78.51638
+## 6                E Water St at 3rd St SE      &lt;NA&gt; 38.02956 -78.48014
+##                     stop_url location_type parent_station stop_timezone
+## 1 http://www.CatchTheCAT.org             0           &lt;NA&gt;          &lt;NA&gt;
+## 2 http://www.CatchTheCAT.org             0           &lt;NA&gt;          &lt;NA&gt;
+## 3 http://www.CatchTheCAT.org             0           &lt;NA&gt;          &lt;NA&gt;
+## 4 http://www.CatchTheCAT.org             0           &lt;NA&gt;          &lt;NA&gt;
+## 5 http://www.CatchTheCAT.org             0           &lt;NA&gt;          &lt;NA&gt;
+## 6 http://www.CatchTheCAT.org             0           &lt;NA&gt;          &lt;NA&gt;
+##   wheelchair_boarding                   geometry
+## 1                  NA POINT (-78.47792 38.04909)
+## 2                  NA  POINT (-78.45877 38.0315)
+## 3                  NA POINT (-78.50786 38.03628)
+## 4                  NA POINT (-78.50706 38.03833)
+## 5                  NA POINT (-78.51638 38.02906)
+## 6                  NA POINT (-78.48014 38.02956)</code></pre>
+<p>All we need to do now is add the new points on top of our routes map. To make a map that looks a lot like to the result from <code>map_gtfs()</code>, we’ll tweak a few of the defaulys to <code>addCircleMarkers()</code>.</p>
+<pre class="r"><code>leaflet(cat_routes_sf) %&gt;%
     addTiles() %&gt;%
-    addPolylines(color = ~route_color, label = ~htmlEscape(route_short_name)) %&gt;%
-    addCircleMarkers(data = stops_sf, color = ~route_color, label = ~htmlEscape(stop_name),
-                     fillColor = &quot;black&quot;, radius = 4) %&gt;%
-    addLegend(colors = ~unique(route_color), labels = ~unique(route_short_name)) %&gt;%
+    addPolylines(color = ~paste0(&quot;#&quot;, route_color),
+                 label = ~htmltools::htmlEscape(route_short_name)) %&gt;%
+    addCircleMarkers(data = cat_stops_sf, fillColor = ~paste0(&quot;#&quot;, route_color),
+                     label = ~htmltools::htmlEscape(stop_name),
+                     color = &quot;black&quot;, radius = 5, weight = 3) %&gt;%
+    addLegend(colors = ~unique(paste0(&quot;#&quot;, route_color)),
+              labels = ~unique(route_short_name)) %&gt;%
     widgetframe::frameWidget()</code></pre>
 <div id="htmlwidget-3" style="width:100%;height:480px;" class="widgetframe html-widget"></div>
-<script type="application/json" data-for="htmlwidget-3">{"x":{"url":"/post/2018-05-28-extending-r-s-gtfs-capabilities-with-parsing-into-simple-features_files/figure-html//widgets/widget_unnamed-chunk-7.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-3">{"x":{"url":"/post/2018-05-28-extending-r-s-gtfs-capabilities-with-parsing-into-simple-features_files/figure-html//widgets/widget_unnamed-chunk-9.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <div id="wrap-up" class="section level2">
 <h2>Wrap up</h2>
-<p>So I have two new <code>sf</code> objects from the CAT <code>gtfs</code> data that allow me to reproduce the maps from <code>map_gtfs()</code>. But because of the power of <code>sf</code> now bringing in new variables is just like any other data frame joining</p>
-<p>I also uncovered a minor bug in <code>library(gtfsr)</code>, when it fails if no <code>agency_id</code> is found in the <code>gtfs</code> object. And I found some very bizzare behavior when tryign to construct the final <code>sf</code> object in <code>gtfs_routes_sf()</code>. I need to dig a little deeper on these, perhaps one might become an GitHub issue or better yet a pull request if I can figure it out :)</p>
+<p>Now we can build <code>sf</code> objects from <code>gtfs</code> data at-will. This gives us new plotting flexibility with <code>leaflet</code> and makes incoroprating new data sources simple. Exploring transit system patterns just got a little easier, so off we go for more data!</p>
 </div>
