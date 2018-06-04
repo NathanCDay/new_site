@@ -2,11 +2,11 @@
 title: Extending R's GTFS abilities with simple features
 description: Two functions to easily transition from library(gtfsr) into library(sf) for tidyier transit analysis.
 author: Nate Day
-date: '2018-05-31'
+date: '2018-06-02'
 slug: extending-gtfs-capabilities-with-parsing-into-simple-features
 twitter_img: "images/gtfs_sf/gtfs_sf.jpeg"
 categories:
-  - Civic Tech
+  - Civic Data
 tags:
   - sf
   - gtfsr
@@ -20,19 +20,19 @@ tags:
 
 <div id="tldr" class="section level5">
 <h5>TLDR</h5>
-<p>A gist, <a href="https://gist.github.com/nathancday/d50afccb762174d402f54486d3d328b6">gtfs_sf.R</a>, with two functions for building <code>sf</code> objects from <code>gtfs</code> objects.</p>
+<p><a href="https://gist.github.com/nathancday/d50afccb762174d402f54486d3d328b6">Two similar functions</a> for building <code>sf</code> objects of the routes and stops within a <code>gtfs</code> objects.</p>
 </div>
 <div id="general-transit-feed-specification" class="section level2">
 <h2>General Transit Feed Specification</h2>
-<p>Originally named Google Transit Feed Specification, GTFS was developed in <a href="https://en.wikipedia.org/wiki/General_Transit_Feed_Specification#History">2005 by Chris Harrelson</a> (a Googler at the time), to make trip planning on civic transit systems easier. By adopting a standardized system of files, local transit authorities could publish data that search tools could readily display for curious customers.</p>
-<p>To be flexible, GTFS data only requires certain specific fields in specific files, but has optional fields to pretty much cover any kind of public transit you can think of. Here is a list of <a href="https://developers.google.com/transit/gtfs/reference/#file_requirements">which fields and files</a> are must haves and which are just features.</p>
+<p>Originally named Google Transit Feed Specification, GTFS was developed in <a href="https://en.wikipedia.org/wiki/General_Transit_Feed_Specification#History">2005 by Chris Harrelson</a> (a Googler at the time), to make trip planning on civic transit systems easier.</p>
+<p>GTFS format is a standardized set of comma separated <code>txt</code> files, with specific names and fields. To be flexible (i.e. cover a lot of public transit options), not all files/fields are required. Here is <a href="https://developers.google.com/transit/gtfs/reference/#file_requirements">a comprehensive list breakdown.</a></p>
 <div id="librarygtfsr" class="section level3">
 <h3>library(gtfsr)</h3>
-<p>The <a href="https://ropensci.org/packages/">rOpenSci project’s</a> <a href="https://github.com/ropensci/gtfsr"><code>library(gtfsr)</code></a> is designed for reading, validating and visualizing GTFS data at a high-level. You can install from GitHub, via <code>devtools::install_github(&quot;ropensci/gtfsr&quot;)</code>.</p>
+<p>The <a href="https://ropensci.org/packages/">rOpenSci project’s</a> <a href="https://github.com/ropensci/gtfsr"><code>library(gtfsr)</code></a> is designed to make reading and visualizing GTFS data fast and easy. You can install the package from GitHub, via <code>devtools::install_github(&quot;ropensci/gtfsr&quot;)</code>.</p>
 <div id="gtfsrimport_gtfs" class="section level4">
 <h4><code>gtfsr::import_gtfs()</code></h4>
-<p>This function does a great job handling the flexible GTFS structure. Let’s read in my local Charlottesville Area Transit’s (CAT) GTFS feed as an example. I’m reading in from a url, but it also works with local paths, but you must specify <code>local = TRUE</code> as the second argument.</p>
-<p>The zipped data is avaialbe in <a href="https://github.com/Smart-Cville/CID-2018-Regional-Transit-Challenge">this repo</a>.</p>
+<p>This function does a great job handling the flexible GTFS structure. Here I’m reading in the local Charlottesville Area Transit’s (CAT) GTFS feed.</p>
+<p>The zipped data is available in <a href="https://github.com/Smart-Cville/CID-2018-Regional-Transit-Challenge">this Civic Innovation Day repo</a>.</p>
 <pre class="r"><code>library(gtfsr)
 
 cat &lt;- gtfsr::import_gtfs(&quot;https://github.com/Smart-Cville/CID-2018-Regional-Transit-Challenge/blob/b6c714ec190f8843d6aa154fc74ed7be3bd5307f/data/2017_08_CharlottesvilleAreaTransit.zip?raw=true&quot;)</code></pre>
@@ -40,7 +40,7 @@ cat &lt;- gtfsr::import_gtfs(&quot;https://github.com/Smart-Cville/CID-2018-Regi
 ## [4] &quot;routes.txt&quot;         &quot;shapes.txt&quot;         &quot;stop_times.txt&quot;    
 ## [7] &quot;stops.txt&quot;          &quot;trips.txt&quot;</code></pre>
 <pre class="r"><code># lots of verbose warnings that I turned off for kniting porpoises</code></pre>
-<p>The function give us a special <code>S3 class</code> list object, called <code>gtfs</code>, that has a data frame, for each of the avaiable files.</p>
+<p>The function returns to us a special <code>S3 class</code> list object, <code>gtfs</code>, that has a data frame, for each of the available files.</p>
 <pre class="r"><code>class(cat)</code></pre>
 <pre><code>## [1] &quot;gtfs&quot;</code></pre>
 <pre class="r"><code>names(cat)</code></pre>
@@ -50,8 +50,8 @@ cat &lt;- gtfsr::import_gtfs(&quot;https://github.com/Smart-Cville/CID-2018-Regi
 </div>
 <div id="gtfsrmap_gtfs" class="section level4">
 <h4><code>gtfsr::map_gtfs()</code></h4>
-<p>A high-level mapping function built with <code>library(leaflet)</code>. It gives us ability to filter data by routes/shapes and provide custom colors and labels.</p>
-<p>In this specific data case, attempting to plot all routes results in an error about missing the <code>agency_id</code> field. So my work around it specify all of the routes.</p>
+<p>A high-level mapping function built with <code>library(leaflet)</code>.</p>
+<p>In this specific case, attempting to plot all routes results in an error about missing the <code>agency_id</code> field. So my work around here is to explicitly specify all routes, which is easy via <code>%&gt;%</code> dot.</p>
 <pre class="r"><code>library(magrittr)
 
 cat %&gt;% map_gtfs() # errors out</code></pre>
@@ -70,16 +70,19 @@ cat %&gt;% map_gtfs(., route_ids = .$routes_df$route_id,
 <div id="extending-to-sf" class="section level2">
 <h2>Extending to <code>sf</code></h2>
 <p>The <code>gtfsr</code> package does a great job reading and showing data, but if you want to join in additional data sources or customize plots beyond colors or routes, you are out of luck.</p>
-<p><a href="https://en.wikipedia.org/wiki/Simple_Features">Simple Features</a> have been making big waves in the <a href="https://github.com/r-spatial">r-spatial</a> community via <code>library(sf)</code>(<a href="https://github.com/r-spatial/sf" class="uri">https://github.com/r-spatial/sf</a>). These geometry enriched objects, behave a lot like data frames, which makes using R’s tools like <code>dplyr</code> and <code>data.table</code> on them, straight forward.</p>
-<p>I used <code>sf</code> objects in a earlier post to explore <a href="/2017/12/30/drug-crime-analysis-with-library-sf/">local drug crime patterns.</a></p>
-<div id="converting-routes-into-routes_sf" class="section level4">
-<h4>Converting routes into <code>routes_sf</code></h4>
-<p>Because <code>cat</code> is a list with multiple data frames, we need to pick it apart into the needed pieces. To make a plot for routes, like <code>map_gtfs()</code>, we need:</p>
+<p><a href="https://en.wikipedia.org/wiki/Simple_Features">Simple Features</a> is making big waves in the <a href="https://github.com/r-spatial">r-spatial</a> community since <code>library(sf)</code>(<a href="https://github.com/r-spatial/sf" class="uri">https://github.com/r-spatial/sf</a>) introduced a new class of geometry enriched data frames.</p>
+<div id="extracting-routes-into-routes_sf" class="section level4">
+<h4>Extracting routes into <code>routes_sf</code></h4>
+<p>Because GTFS data is distributed across multiple files, we must pick apart the list of data frames to pull out the critical pieces.</p>
+<p>In order to reconstruct a plot similar to <code>map_gtfs()</code>, we need:</p>
 <ol style="list-style-type: decimal">
 <li>key-value pairs from <code>cat$trips_df</code></li>
 <li>route meta information from <code>cat$routes_df</code></li>
-<li>shapes as lon/lat coordinates from <code>cat$shapes_df</code></li>
+<li>shapes as Lon/lat coordinates from <code>cat$shapes_df</code></li>
 </ol>
+<ul>
+<li>Caution: the following function is long *</li>
+</ul>
 <pre class="r"><code>library(sf)
 library(tidyverse)
 
@@ -98,11 +101,11 @@ gtfs_routes_sf &lt;- function(gtfs) {
         mutate(route_short_name = paste(&quot;route&quot;, route_short_name)) %&gt;%
         inner_join(shape_key)
     
-    # check for colors
-    if ( !is.null(gtfs$routes_df$route_color) ) { # extract if possible
+    # check for colors :)
+    if ( !is.null(gtfs$routes_df$route_color) ) { # extract if they exist
         route_key %&lt;&gt;% inner_join(select(gtfs$routes_df, route_color, route_id) )
     }
-    else { # plan b is make some from my favorite pallette &#39;d3&#39;
+    else { # planB: build a pal from my favorite pallette &#39;d3&#39;
         route_key %&lt;&gt;% mutate(route_color = rep(ggsci::pal_d3()(10),
                                                 length.out = nrow(route_key)))
     }
@@ -127,7 +130,7 @@ gtfs_routes_sf &lt;- function(gtfs) {
     # st_sf(route_key, geometry = sfc)
     # doesn&#39;t plot ^^ and I can&#39;t explain it
 }</code></pre>
-<p>Ok that a lot of code, but does it actually work, I’ll show you.</p>
+<p>OK that a lot of code, but does it actually work?</p>
 <pre class="r"><code>cat_routes_sf &lt;- gtfs_routes_sf(cat)
 
 head(cat_routes_sf)</code></pre>
@@ -151,13 +154,14 @@ head(cat_routes_sf)</code></pre>
 ## 4 LINESTRING (-78.4869 38.013...
 ## 5 LINESTRING (-78.4869 38.013...
 ## 6 LINESTRING (-78.52402 37.99...</code></pre>
-<p>And <code>library(leaflet)</code> works out of the box with <code>sf</code> objects, so that’s awesome.</p>
+<p>Yea it does.</p>
+<p>Now all we need to do is viz it and since <code>library(leaflet)</code> already works out of the box with <code>sf</code> objects, it’s cake.</p>
 <pre class="r"><code>library(leaflet)
 
 leaflet(cat_routes_sf) %&gt;%
     addTiles() %&gt;%
     addPolylines(color = ~paste0(&quot;#&quot;, route_color),
-                 label = ~htmltools::htmlEscape(route_short_name)) %&gt;%
+                 label = ~as.character(route_short_name)) %&gt;%
     addLegend(colors = ~unique(paste0(&quot;#&quot;, route_color)),
               labels = ~unique(route_short_name)) %&gt;%
     widgetframe::frameWidget()</code></pre>
@@ -166,7 +170,7 @@ leaflet(cat_routes_sf) %&gt;%
 </div>
 <div id="rinse-and-repeat-for-stops_sf" class="section level4">
 <h4>Rinse and repeat for <code>stops_sf()</code></h4>
-<p>The steps are slighly different but the pattern is the same.</p>
+<p>The steps are slightly different but the pattern is the same (and it’s still long).</p>
 <pre class="r"><code>gtfs_stops_sf &lt;- function(gtfs) {
     shape_key &lt;- gtfs$trips_df %&gt;%
         select(trip_id, route_id, shape_id) %&gt;%
@@ -196,7 +200,7 @@ leaflet(cat_routes_sf) %&gt;%
     st_sf(stop_key, geometry = stops_sfc) %&gt;%
         inner_join(gtfs$stops_df)
 }</code></pre>
-<p>Now the fun part, making our new shiny <code>stops_sf</code> object.</p>
+<p>Now, make use and make <code>stops_sf</code> object.</p>
 <pre class="r"><code>cat_stops_sf &lt;- gtfs_stops_sf(cat)
 
 head(cat_stops_sf)</code></pre>
@@ -234,7 +238,8 @@ head(cat_stops_sf)</code></pre>
 ## 4                  NA POINT (-78.50706 38.03833)
 ## 5                  NA POINT (-78.51638 38.02906)
 ## 6                  NA POINT (-78.48014 38.02956)</code></pre>
-<p>All we need to do now is add the new points on top of our routes map. To make a map that looks a lot like to the result from <code>map_gtfs()</code>, we’ll tweak a few of the defaulys to <code>addCircleMarkers()</code>.</p>
+<p>Now we just have to combine our two layers, routes and stops.</p>
+<p>To make a map that looks a lot like to the result from <code>map_gtfs()</code>, I’m gonna tweak a few of the defaults to <code>addCircleMarkers()</code>.</p>
 <pre class="r"><code>leaflet(cat_routes_sf) %&gt;%
     addTiles() %&gt;%
     addPolylines(color = ~paste0(&quot;#&quot;, route_color),
@@ -247,9 +252,12 @@ head(cat_stops_sf)</code></pre>
     widgetframe::frameWidget()</code></pre>
 <div id="htmlwidget-3" style="width:100%;height:480px;" class="widgetframe html-widget"></div>
 <script type="application/json" data-for="htmlwidget-3">{"x":{"url":"/post/2018-05-28-extending-r-s-gtfs-capabilities-with-parsing-into-simple-features_files/figure-html//widgets/widget_unnamed-chunk-9.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+<p>👌</p>
 </div>
 </div>
 <div id="wrap-up" class="section level2">
 <h2>Wrap up</h2>
-<p>Now we can build <code>sf</code> objects from <code>gtfs</code> data at-will. This gives us new plotting flexibility with <code>leaflet</code> and makes incoroprating new data sources simple. Exploring transit system patterns just got a little easier, so off we go for more data!</p>
+<p>Now we can build <code>sf</code> objects from <code>gtfs</code> objects at-will!</p>
+<p>That gives us new plotting flexibility and makes incorporating new data more straight forward.</p>
+<p>Looks like exploring transit patterns in R just got a little easier! Now if only all transit data was already cleaned into GTFS …</p>
 </div>
