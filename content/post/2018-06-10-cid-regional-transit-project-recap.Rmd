@@ -1,0 +1,90 @@
+---
+title: 'Charlottesville Civic Innovation Day 2018'
+description: "A recap of the Regional Transit Challenge projects from the initial hack event."
+twitter_img: "images/2018-06-10-cid-regional-transit-project-recap/smart_cville_laptop.png"
+author: Nathan Day
+date: '2018-06-10'
+slug: cid-regional-transit-project-recap
+categories:
+  - Civic Tech
+tags: []
+---
+
+## Intro
+
+Last weekend saw the second annual Civic Innovation Day hosted for Charlottesville, Virginia, an all-day data event that pulls students and professionals together to answer a range of real community challenges. And as the project fellow for the [Regional Transit Challenge](https://www.smartcville.com/charlottesville-civic-innovation-day-2018/), I'm helping organize the effort to "create a platform for current and potential transit passengers to know what service options are available, and how to best access the services".
+
+This post is a summary of the solutions presented during the event. There is a [GitHub repo too](https://github.com/Smart-Cville/CID-2018-Regional-Transit-Challenge) with data and links to original presentations.
+
+## Updating the bus system
+##### Authors: Kurian, Caitlin, Yaxin, and Emily
+
+A low-tech signage design concept that improves rider experience with better information graphics at physical bus stops.
+
+Deck:
+
+<!--html_preserve-->
+<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vRo0vCTLNaZ6zT-_UUtQ1tpOOC8sZfiDa9qMW47recJzWOsuZUvcOY0pcf7ueZqHBN-6MkrRhEE6xRc/embed?start=false&loop=false&delayms=3000" frameborder="0" width="640" height="389" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+<!--/html_preserve-->
+
+[Original Presentation on Google Drive](https://docs.google.com/presentation/d/1YaRRpS7c1sZ0nJa48UyGmU0kfkCY_FJnXnzSNiYD1Zs/edit?usp=sharing)
+
+Design: 
+
+![](/images/2018-06-10-cid-regional-transit-project-recap/Frame2.png)
+
+[Prototypes on Figma](https://www.figma.com/file/EwL14peMBIfGrnl72Mad3s84/Bus-Stop-Signs)
+
+## Fragmented but Fixable
+
+#### Authors: Caroline Chong,  Rickey Guo, Sung Joon Park,  Edward Radion, and Yaman Shrestha
+
+A more unified mobile transit app experience, through focused development on top of the current CAT platform.
+
+Deck:
+
+<!--html_preserve-->
+<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vRlRe8NA6ICiWAquho09vR0E-okGev4aYRbkni1JUKAHaPbpgqoZZFpIKahIg3_bMaenru2SiwNS_oP/embed?start=false&loop=false&delayms=3000" frameborder="0" width="640" height="389" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+<!--/html_preserve-->
+
+
+## Vizualizing JAUNT service areas and CAT bus stops together
+
+#### Authors: Samantha Toet, Justin Masters, and Nathan Day.
+
+Integrating transit options into an interactive and mobile friendly [Leaflet map](https://leafletjs.com/). See the GitHub [repo for more code.](https://github.com/Smart-Cville/CID-2018-Regional-Transit-Challenge/blob/master/jaunt_leaflet.R)
+
+```{r leaflet, results='hide', warning=FALSE, message=FALSE}
+## R code for data cleaning ------------------------------------------------
+library(sf)
+library(tidyverse)
+path <- "~/future/cid/" # overhead to reproduce/knit
+
+# CAT stop coordinates
+cat_sf <- read.table(file=paste0(path, "data/CAT_2017_08_GTFS/stops.txt"), 
+                     sep=",", header = T) %>%
+    select(stop_lon, stop_lat) %>%
+    st_as_sf(coords = c("stop_lon", "stop_lat"))
+
+# JAUNT polygons arranged largest >>> smallest
+jaunt_sf <- st_read(paste0(path, "data/doc.kml")) %>%
+    select(-Description) %>%
+    mutate(aread = st_area(.) %>% unclass) %>%
+    arrange(desc(aread))
+```
+
+```{r map, warning=FALSE}
+## R's easy leaflet connect --------------------------------------------------
+library(mapview)
+
+widgetframe::frameWidget( # only needed for web
+    (mapview(jaunt_sf, zcol = "aread") +
+        mapview(cat_sf, col.region = "green"))@map
+    ) 
+```
+
+## Outro
+
+A big thank you to everyone who participated and contributed their skills to solving real local problems for Charlottesville. There are follow up meetings scheduled with the transit authority sponsors to map out the app/sign path forward. 
+
+Stay tuned.

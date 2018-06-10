@@ -1,0 +1,88 @@
+---
+title: 'Charlottesville Civic Innovation Day 2018'
+description: "A recap of the Regional Transit Challenge projects from the initial hack event."
+twitter_img: "images/2018-06-10-cid-regional-transit-project-recap/smart_cville_laptop.png"
+author: Nathan Day
+date: '2018-06-10'
+slug: cid-regional-transit-project-recap
+categories:
+  - Civic Tech
+tags: []
+---
+
+<script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
+<script src="/rmarkdown-libs/pymjs/pym.v1.js"></script>
+<script src="/rmarkdown-libs/widgetframe-binding/widgetframe.js"></script>
+
+
+<div id="intro" class="section level2">
+<h2>Intro</h2>
+<p>Last weekend saw the second annual Civic Innovation Day hosted for Charlottesville, Virginia, an all-day data event that pulls students and professionals together to answer a range of real community challenges. And as the project fellow for the <a href="https://www.smartcville.com/charlottesville-civic-innovation-day-2018/">Regional Transit Challenge</a>, I’m helping organize the effort to “create a platform for current and potential transit passengers to know what service options are available, and how to best access the services”.</p>
+<p>This post is a summary of the solutions presented during the event. There is a <a href="https://github.com/Smart-Cville/CID-2018-Regional-Transit-Challenge">GitHub repo too</a> with data and links to original presentations.</p>
+</div>
+<div id="updating-the-bus-system" class="section level2">
+<h2>Updating the bus system</h2>
+<div id="authors-kurian-caitlin-yaxin-and-emily" class="section level5">
+<h5>Authors: Kurian, Caitlin, Yaxin, and Emily</h5>
+<p>A low-tech signage design concept that improves rider experience with better information graphics at physical bus stops.</p>
+<p>Deck:</p>
+
+<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vRo0vCTLNaZ6zT-_UUtQ1tpOOC8sZfiDa9qMW47recJzWOsuZUvcOY0pcf7ueZqHBN-6MkrRhEE6xRc/embed?start=false&loop=false&delayms=3000" frameborder="0" width="640" height="389" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+
+<p><a href="https://docs.google.com/presentation/d/1YaRRpS7c1sZ0nJa48UyGmU0kfkCY_FJnXnzSNiYD1Zs/edit?usp=sharing">Original Presentation on Google Drive</a></p>
+<p>Design:</p>
+<div class="figure">
+<img src="/images/2018-06-10-cid-regional-transit-project-recap/Frame2.png" />
+
+</div>
+<p><a href="https://www.figma.com/file/EwL14peMBIfGrnl72Mad3s84/Bus-Stop-Signs">Prototypes on Figma</a></p>
+</div>
+</div>
+<div id="fragmented-but-fixable" class="section level2">
+<h2>Fragmented but Fixable</h2>
+<div id="authors-caroline-chong-rickey-guo-sung-joon-park-edward-radion-and-yaman-shrestha" class="section level4">
+<h4>Authors: Caroline Chong, Rickey Guo, Sung Joon Park, Edward Radion, and Yaman Shrestha</h4>
+<p>A more unified mobile transit app experience, through focused development on top of the current CAT platform.</p>
+<p>Deck:</p>
+
+<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vRlRe8NA6ICiWAquho09vR0E-okGev4aYRbkni1JUKAHaPbpgqoZZFpIKahIg3_bMaenru2SiwNS_oP/embed?start=false&loop=false&delayms=3000" frameborder="0" width="640" height="389" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+
+</div>
+</div>
+<div id="vizualizing-jaunt-service-areas-and-cat-bus-stops-together" class="section level2">
+<h2>Vizualizing JAUNT service areas and CAT bus stops together</h2>
+<div id="authors-samantha-toet-justin-masters-and-nathan-day." class="section level4">
+<h4>Authors: Samantha Toet, Justin Masters, and Nathan Day.</h4>
+<p>Integrating transit options into an interactive and mobile friendly <a href="https://leafletjs.com/">Leaflet map</a>. See the GitHub <a href="https://github.com/Smart-Cville/CID-2018-Regional-Transit-Challenge/blob/master/jaunt_leaflet.R">repo for more code.</a></p>
+<pre class="r"><code>## R code for data cleaning ------------------------------------------------
+library(sf)
+library(tidyverse)
+path &lt;- &quot;~/future/cid/&quot; # overhead to reproduce/knit
+
+# CAT stop coordinates
+cat_sf &lt;- read.table(file=paste0(path, &quot;data/CAT_2017_08_GTFS/stops.txt&quot;), 
+                     sep=&quot;,&quot;, header = T) %&gt;%
+    select(stop_lon, stop_lat) %&gt;%
+    st_as_sf(coords = c(&quot;stop_lon&quot;, &quot;stop_lat&quot;))
+
+# JAUNT polygons arranged largest &gt;&gt;&gt; smallest
+jaunt_sf &lt;- st_read(paste0(path, &quot;data/doc.kml&quot;)) %&gt;%
+    select(-Description) %&gt;%
+    mutate(aread = st_area(.) %&gt;% unclass) %&gt;%
+    arrange(desc(aread))</code></pre>
+<pre class="r"><code>## R&#39;s easy leaflet connect --------------------------------------------------
+library(mapview)
+
+widgetframe::frameWidget( # only needed for web
+    (mapview(jaunt_sf, zcol = &quot;aread&quot;) +
+        mapview(cat_sf, col.region = &quot;green&quot;))@map
+    ) </code></pre>
+<div id="htmlwidget-1" style="width:100%;height:480px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"url":"/post/2018-06-10-cid-regional-transit-project-recap_files/figure-html//widgets/widget_map.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<div id="outro" class="section level2">
+<h2>Outro</h2>
+<p>A big thank you to everyone who participated and contributed their skills to solving real local problems for Charlottesville. There are follow up meetings scheduled with the transit authority sponsors to map out the app/sign path forward.</p>
+<p>Stay tuned.</p>
+</div>
