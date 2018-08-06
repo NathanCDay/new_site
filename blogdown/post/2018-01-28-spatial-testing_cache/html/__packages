@@ -18,3 +18,8 @@ dplyr
 stringr
 forcats
 bindrcpp
+sp
+Matrix
+spData
+spdep
+tidycensus

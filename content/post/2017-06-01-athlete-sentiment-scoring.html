@@ -13,11 +13,9 @@ tags:
 
 
 
-<div id="sports-fan-baby" class="section level4">
-<h4><img src="/images/ass/sports.gif" alt="Sports fan baby" /></h4>
+<!-- ####![Sports fan baby](/images/ass/sports.gif) -->
 <p>With the season finals for the NBA and NHL dominating the sports-cast schedule, I decided to build a quick text analysis of athletes from the NBA, NHL, NASCAR, and PGA. I’ve always thought of hockey players as nicer than normal athletes and wanted to compare them against other sporting professionals. Let’s see how nice they actually are … eh?</p>
 <hr />
-</div>
 <div id="setup" class="section level2">
 <h2>Setup</h2>
 <pre class="r"><code># packages
@@ -120,7 +118,7 @@ sports %&lt;&gt;% filter(speaker != &quot;THE MODERATOR&quot;)</code></pre>
 <div id="read-ability" class="section level2">
 <h2>Read-ability</h2>
 <p><a href="https://github.com/trinker">Tyler Rinker</a> has developed a series of standardized text analysis packages that are available on CRAN. Here we are going to use two of his packages to quantify each athlete’s interview transcript with six readability systems.</p>
-<pre class="r"><code>library(syllable)
+<pre class="r"><code>library(syllable) # must be installed from GitHub as of 2018-08-05
 library(readability)
 
 read_scores &lt;- with(sports, readability(text, list(sport, speaker))) %&gt;%
@@ -137,9 +135,9 @@ ggplot(read_scores, aes(sport, score, color = sport)) +
 <p>Those two outliers are: Kyle Bush (NASCAR) and J.R. Smith (NBA). Let’s see why…</p>
 <pre class="r"><code>filter(sports, speaker %in% c(&quot;J.R. SMITH&quot;, &quot;KYLE BUSCH&quot;))</code></pre>
 <pre><code>## # A tibble: 2 x 3
-##    sport                                               text    speaker
-##    &lt;chr&gt;                                              &lt;chr&gt;      &lt;chr&gt;
-## 1    NBA            He drove the green, I&#39;ll tell you that. J.R. SMITH
+##   sport  text                                               speaker   
+##   &lt;chr&gt;  &lt;chr&gt;                                              &lt;chr&gt;     
+## 1 NBA    He drove the green, I&#39;ll tell you that.            J.R. SMITH
 ## 2 NASCAR I&#39;m not surprised about anything. Congratulations. KYLE BUSCH</code></pre>
 <pre class="r"><code># ahhh just sentences with some high &amp; low syllable words
 
@@ -181,8 +179,7 @@ ggplot(sents,aes(initials, sent, color = sport)) +
 <pre class="r"><code>filter(sents, sent &lt; -0.5) %&gt;%
     select(text) %&gt;%
     unlist()</code></pre>
-<pre><code>##                                                                                                                                                                                                                                    text 
-## &quot;Yeah, yesterday was pretty tough.  I didn&#39;t play 18 holes into the tough bit.  But yeah, I felt that if I played the same way, in a way where it wasn&#39;t really blowing that much, you could all of a sudden be a bit more aggressive.&quot;</code></pre>
+<pre><code>## character(0)</code></pre>
 <p>That makes sense, it does sound like he had a bad day. Golf can do that to anyone, even professionals.</p>
 <p>Let’s drop that statement as an outlier and drop any athletes with just a single sentiment value and re-investigate by sports</p>
 <pre class="r"><code>sents %&lt;&gt;% filter(sent &gt; -0.5) %&gt;%

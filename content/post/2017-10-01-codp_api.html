@@ -15,7 +15,6 @@ tags: ["github pages", "https", "custom domains"]
 ---
 
 <script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
-<script src="/rmarkdown-libs/blazy/blazy.min.js"></script>
 <script src="/rmarkdown-libs/pymjs/pym.v1.js"></script>
 <script src="/rmarkdown-libs/widgetframe-binding/widgetframe.js"></script>
 
@@ -57,27 +56,27 @@ crime_json &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/d1877e3
 <p>The data that we are after is in the second element <code>.$features</code>, but we can see from our <code>View()</code> look-in that it is formatted slightly weird. Let’s look at the top rows:</p>
 <pre class="r"><code>crime_df &lt;- crime_json[[&quot;features&quot;]]
 head(crime_df)</code></pre>
-<pre><code>##      type properties.RecordID        properties.Offense
-## 1 Feature                1001             TOWED VEHICLE
-## 2 Feature                1002             TOWED VEHICLE
-## 3 Feature                1003             TOWED VEHICLE
-## 4 Feature                1004 LARCENY-ALL OTHER LARCENY
-## 5 Feature                1005            ASSAULT-SIMPLE
-## 6 Feature                1006       TRAFFIC-HIT AND RUN
+<pre><code>##      type properties.RecordID       properties.Offense
+## 1 Feature                2001                 Burglary
+## 2 Feature                2002 Found/Recovered Property
+## 3 Feature                2003            Towed Vehicle
+## 4 Feature                2004                Vandalism
+## 5 Feature                2005       Lost/FoundProperty
+## 6 Feature                2006                Vandalism
 ##   properties.IncidentID properties.BlockNumber properties.StreetName
-## 1             201303364                    200              WATER ST
-## 2             201303365                    200              WATER ST
-## 3             201303366                    200              WATER ST
-## 4             201303367                   2200        ARLINGTON BLVD
-## 5             201303368                    700              RIDGE ST
-## 6             201303370                   1500              ROSA TER
+## 1          201300006692                    600            LOCUST AVE
+## 2          201300006693                   1600         BRANDYWINE DR
+## 3          201300006694                   1900    JEFFERSON PARK AVE
+## 4          201300006695                   1400         CHESAPEAKE ST
+## 5          201300006696                    900           PRESTON AVE
+## 6          201300006697                    200             5TH ST SW
 ##   properties.Agency properties.DateReported properties.HourReported
-## 1              CPD   2013/06/15 00:00:00+00                    0519
-## 2              CPD   2013/06/15 00:00:00+00                    0520
-## 3              CPD   2013/06/15 00:00:00+00                    0521
-## 4              CPD   2013/06/15 00:00:00+00                    0905
-## 5              CPD   2013/06/15 00:00:00+00                    1242
-## 6              CPD   2013/06/15 00:00:00+00                    1700
+## 1               CPD  2013/11/11 09:16:00+00                    0916
+## 2               CPD  2013/11/11 08:39:00+00                    0839
+## 3               CPD  2013/11/11 09:35:00+00                    0935
+## 4               CPD  2013/11/11 10:45:00+00                    1045
+## 5               CPD  2013/11/11 12:11:00+00                    1211
+## 6               CPD  2013/11/11 11:25:00+00                    1125
 ##   geometry
 ## 1       NA
 ## 2       NA

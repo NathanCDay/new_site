@@ -89,7 +89,7 @@ spdep::moran.mc(census_sp$frac_drugs, census_wnb, nsim = 999) # 999+1 simulation
 ## weights: census_wnb  
 ## number of simulations + 1: 1000 
 ## 
-## statistic = 0.21778, observed rank = 982, p-value = 0.018
+## statistic = 0.21778, observed rank = 990, p-value = 0.01
 ## alternative hypothesis: greater</code></pre>
 <pre class="r"><code>ggplot(census) + geom_sf(aes(fill = frac_drugs))</code></pre>
 <p><img src="/post/2018-01-28-spatial-testing_files/figure-html/moran-1.png" width="672" /></p>
@@ -205,7 +205,7 @@ ggplot(census) + geom_sf(aes(fill = resid))</code></pre>
 ## weights: census_wnb  
 ## number of simulations + 1: 100 
 ## 
-## statistic = -0.064084, observed rank = 48, p-value = 0.52
+## statistic = -0.064084, observed rank = 35, p-value = 0.65
 ## alternative hypothesis: greater</code></pre>
 <p>We see a small negative test statistic and we fail to reject the null hypothesis that the residuals are random spatially.</p>
 <p>When I first started playing around with the City’s Data Portal back when it launched in August 2017, I wasn’t sure what I would find, but I wanted to focus my #rstats skills on local problems Since I got interested in the crime data, I’ve taken two spatial data courses on Data Camp: <a href="https://www.datacamp.com/courses/spatial-statistics-in-r">Spatial Statistics in R</a> with Barry Rowlingson and <a href="https://www.datacamp.com/courses/spatial-analysis-in-r-with-sf-and-raster">Spatial Analysis in R with sf and raster</a> with Zev Ross, which were great and I highly reccommend.</p>

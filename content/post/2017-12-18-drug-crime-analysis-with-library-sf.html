@@ -14,7 +14,6 @@ slug: drug-crime-analysis-with-library-sf
 ---
 
 <script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
-<script src="/rmarkdown-libs/blazy/blazy.min.js"></script>
 <script src="/rmarkdown-libs/pymjs/pym.v1.js"></script>
 <script src="/rmarkdown-libs/widgetframe-binding/widgetframe.js"></script>
 
@@ -137,15 +136,15 @@ ggplot(census) +
 <pre><code>## Simple feature collection with 2 features and 3 fields
 ## geometry type:  POINT
 ## dimension:      XY
-## bbox:           xmin: -78.47746 ymin: 38.03041 xmax: -78.47746 ymax: 38.03041
+## bbox:           xmin: -78.5225 ymin: 38.01184 xmax: -78.45128 ymax: 38.06941
 ## epsg (SRID):    4326
 ## proj4string:    +proj=longlat +datum=WGS84 +no_defs
 ## # A tibble: 2 x 4
 ## # Groups:   type [2]
-##                              address        type number          geometry
-##                                &lt;chr&gt;       &lt;chr&gt;  &lt;int&gt;  &lt;simple_feature&gt;
-## 1 600 E MARKET ST Charlottesville VA  drug_crime    410 &lt;POINT (-78.4...&gt;
-## 2 600 E MARKET ST Charlottesville VA other_crime    635 &lt;POINT (-78.4...&gt;</code></pre>
+##   address                           type       number             geometry
+##   &lt;chr&gt;                             &lt;chr&gt;       &lt;int&gt;          &lt;POINT [°]&gt;
+## 1 600 E MARKET ST Charlottesville … drug_crime    410 (-78.47746 38.03041)
+## 2 600 E MARKET ST Charlottesville … other_cri…    635 (-78.47746 38.03041)</code></pre>
 <p>Something is going on in the 600 block of East Market, could it be the police station that’s located at 606 E Market St? Originally I wondered if this had something to do with the departments reporting practices, so SmartCville reached out to police department and they provided this response:</p>
 <blockquote>
 <p>“…when individuals walk in to the police department to file a report the physical address of the department (606 E Market Street) is often used in that initial report if no other known address is available at the time. This is especially true for incidents of found or lost property near the downtown mall where there is no true known incident location. The same is true for any warrant services that result in a police report occurring at the police department.”</p>
@@ -158,10 +157,10 @@ ggplot(census) +
 
 summarise(station_props, prop_total = number / n)</code></pre>
 <pre><code>## # A tibble: 2 x 2
-##          type prop_total
-##         &lt;chr&gt;      &lt;dbl&gt;
-## 1  drug_crime 0.22210184
-## 2 other_crime 0.02175626</code></pre>
+##   type        prop_total
+##   &lt;chr&gt;            &lt;dbl&gt;
+## 1 drug_crime      0.222 
+## 2 other_crime     0.0218</code></pre>
 <pre class="r"><code>with(station_props, prop.test(number, n))</code></pre>
 <pre><code>## 
 ##  2-sample test for equality of proportions with continuity

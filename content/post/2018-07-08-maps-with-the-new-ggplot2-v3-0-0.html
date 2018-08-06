@@ -1,0 +1,58 @@
+---
+title: Maps with the new ggplot2 v3.0.0
+author: Nate Day
+date: '2018-08-04'
+slug: maps-with-the-new-ggplot2-v3-0-0
+categories:
+  - Civic Data
+tags:
+  - ggplot2
+  - tidyverse
+---
+
+
+
+<p>In honor of <code>ggplot2</code> <a href="https://twitter.com/hadleywickham/status/1014511041609453568">turning version 3 on CRAN</a> I decided to make some maps of the 2010 census in Charlottesville, Virginia, to show off the new <code>geom_sf()</code> layer.</p>
+<div id="packages" class="section level4">
+<h4>Packages</h4>
+<pre class="r"><code>library(magrittr) # viva la %&lt;&gt;% 
+library(tidyverse)</code></pre>
+</div>
+<div id="theme-prep" class="section level4">
+<h4>Theme prep</h4>
+<p>Universal settings for all of my ggplot’s. These make typing easier and documents more consistant.</p>
+<pre class="r"><code>theme_set(cowplot::theme_map() +
+              theme(panel.grid.major=element_line(colour=&quot;transparent&quot;)))
+scale_fill_continuous &lt;- function(...) ggplot2::scale_fill_continuous(..., type = &quot;viridis&quot;)</code></pre>
+</div>
+<div id="census-data" class="section level4">
+<h4>Census Data</h4>
+<p>The tract level summary is available on the <a href="http://opendata.charlottesville.org/datasets/us-census-tract-area-2010">city’s ODP</a>. But you could also use the <a href=""><code>tidycensus</code></a> package for another city’s record.</p>
+<pre class="r"><code>tracts &lt;- sf::read_sf(&quot;https://opendata.arcgis.com/datasets/63f965c73ddf46429befe1132f7f06e2_15.geojson&quot;)
+
+tracts %&lt;&gt;% select(OBJECTID, area = AREA_, Population:Asian)</code></pre>
+<p>Let’s look at that census data now and since we have <code>geom_sf()</code> thowing on aesthetics is easy. Here I’ll use <code>tracts$Population</code> as <code>fill</code>.</p>
+<pre class="r"><code>ggplot(tracts, aes(fill = Population)) +
+    geom_sf()</code></pre>
+<p><img src="/post/2018-07-08-maps-with-the-new-ggplot2-v3-0-0_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p>Ok that’s pretty freaking easy. No suprise that the city’s largest population is around UVA’s grounds and the Corner.</p>
+<p>Lets’ use our favorite facets with <code>geom_sf()</code> to explore the racial distribution of Whites, Blacks, American Indians, and Asians in the city.</p>
+<pre class="r"><code>long_tracts &lt;- tracts %&gt;%
+    gather(&quot;race&quot;, &quot;pop&quot;, White:Asian)
+
+ggplot(long_tracts, aes(fill = pop)) +
+    geom_sf() +
+    facet_wrap(~ race)</code></pre>
+<p><img src="/post/2018-07-08-maps-with-the-new-ggplot2-v3-0-0_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>Damn, Charlottesville is really, really white.</p>
+<p>To make a better viz about the non-white population patterns it would be nice to free the fill scales in each facet. And because this is <code>ggplot()</code> now, I can use on my favorite grid helper tool, <code>cowplot::plot_grid()</code>. Any alternatives, like <a href="">gridextra</a>, <a href="">egg</a> or <a href="">patchwork</a>, are on the table too.</p>
+<pre class="r"><code>long_tracts %&gt;%
+    split(.$race) %&gt;%
+    map(~ ggplot(., aes(fill = pop)) +
+            geom_sf() +
+            facet_wrap(~race) ) %&gt;%
+    cowplot::plot_grid(plotlist = .)</code></pre>
+<p><img src="/post/2018-07-08-maps-with-the-new-ggplot2-v3-0-0_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>That’s pretty fast and now we have a much better picture of each race’s distribution in the city.</p>
+<p>Being able to manipulate and make maps with the <code>tidyverse</code> is awesome. Working with <code>ggplot2</code> layers is straight forward and there already exist a ton of accessory packages, like <code>cowplot</code> that make formatting these ggobjects straight forward too!</p>
+</div>

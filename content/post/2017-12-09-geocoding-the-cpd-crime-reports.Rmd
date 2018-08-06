@@ -13,7 +13,7 @@ description: Geocoding the Charlottesville Police Dept's crime reports with Goog
 slug: geocoding-the-cpd-crime-reports
 ---
 
-####![maps](/images/geocode_crime/maps.gif)
+<!-- ####![maps](/images/geocode_crime/maps.gif) -->
 
 ## Geocoding
 
@@ -104,7 +104,7 @@ res1a <- geocode(address_list[[1]]$address, source = "google", output = "all")
 res2a <- geocode(address_list[[2]]$address, source = "google", output = "all")
 ```
 
-```{r, hidden = TRUE}
+```{r, hidden = TRUE, eval = FALSE}
 res1a <- readRDS("~/future/cville_crime/res1a.RDS")
 res2a <- readRDS("~/future/cville_crime/res2a.RDS")
 ```

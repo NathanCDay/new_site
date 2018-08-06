@@ -11,7 +11,7 @@ tags:
   - sports
 ---
 
-####![Sports fan baby](/images/ass/sports.gif)
+<!-- ####![Sports fan baby](/images/ass/sports.gif) -->
 
 With the season finals for the NBA and NHL dominating the sports-cast schedule, I decided to build a quick text analysis of athletes from the NBA, NHL, NASCAR, and PGA. I've always thought of hockey players as nicer than normal athletes and wanted to compare them against other sporting professionals. Let's see how nice they actually are ... eh?
 
@@ -115,7 +115,7 @@ sports %<>% filter(speaker != "THE MODERATOR")
 [Tyler Rinker](https://github.com/trinker) has developed a series of standardized text analysis packages that are available on CRAN. Here we are going to use two of his packages to quantify each athlete's interview transcript with six readability systems.
 
 ```{r, fig.align='center'}
-library(syllable)
+library(syllable) # must be installed from GitHub as of 2018-08-05
 library(readability)
 
 read_scores <- with(sports, readability(text, list(sport, speaker))) %>%
