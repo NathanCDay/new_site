@@ -12,7 +12,7 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files/", "_cache$"]
 [params]
     author = "Nate Day"
     description = "R focused data docs"
-    logo = "images/favicon/android-chrome-192x192.png"
+    logo = "favicon/android-chrome-192x192.png"
     twitterAuthor = "@natedayta"
     twitterSite = "https://twitter.com/natedayta"
     githubUsername = "NathanCDay"
