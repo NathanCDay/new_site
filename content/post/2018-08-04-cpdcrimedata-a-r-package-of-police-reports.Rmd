@@ -36,6 +36,7 @@ tracts <- sf::read_sf("https://opendata.arcgis.com/datasets/63f965c73ddf46429bef
 
 tracts %<>% select(OBJECTID, area = AREA_, Population:Asian)
 ```
+
 Then convert `crime` to a `sf` object.
 
 ```{r sf_conversion}
