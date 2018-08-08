@@ -12,7 +12,7 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files/", "_cache$"]
 [params]
     author = "Nate Day"
     description = "R focused data docs"
-    logo = "favicon/android-chrome-192x192.png"
+    logo = "images/favicon/android-chrome-192x192.png"
     twitterAuthor = "@natedayta"
     twitterSite = "https://twitter.com/natedayta"
     githubUsername = "NathanCDay"
@@ -23,7 +23,6 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files/", "_cache$"]
     highlight = true
     highlightStyle = "atelier-seaside-light"
     highlightLanguages = ["R", "bash"]
-    avatar = "ggplot2.png"
 
 [[menu.main]]
     url = "/"
