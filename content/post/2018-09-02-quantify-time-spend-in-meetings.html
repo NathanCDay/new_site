@@ -1,0 +1,130 @@
+---
+title: Quantifying time in meetings
+description: Using Google Apps Script and R to analyze Google Calendars.
+twitter_img: "/post/2018-09-02-quantify-time-spend-in-meetings_files/meetings_twitter_card.png"
+author: Nate Day
+date: '2018-09-02'
+categories:
+  - Business Intelligence
+tags:
+  - googlesheets
+  - tidyverse
+slug: quantify-time-in-meetings
+---
+
+
+
+<pre class="r"><code>library(tidyverse)
+library(magrittr) # for the %&lt;&gt;%</code></pre>
+<div id="intro" class="section level2">
+<h2>Intro</h2>
+<p>I believe most employees are less productive during meetings. But I recognize meetings are essential for some business functions.</p>
+<p>So I think it’s important to measure how much time/money are spent on them. To see how much time my colleagues and I were spending in meetings, I scraped Google Calendars for August, with a combination of Google Apps Script and R.</p>
+<p>I wrote this up in case you wanted to check out how much time your company is spending in meetings too.</p>
+</div>
+<div id="the-meetings" class="section level2">
+<h2>The Meetings</h2>
+<p>In my company we use a combination of 3 calendars to schedule the majority of our meetings:</p>
+<ul>
+<li>Management</li>
+<li>BigConference</li>
+<li>SmallConference</li>
+</ul>
+<p>So I made three separate Sheet docs, one for each calendar. The big room seats 14 people and and the small seats 6.</p>
+<div id="scraping" class="section level3">
+<h3>Scraping</h3>
+<p>For scraping, I found this <a href="https://www.cloudbakers.com/blog/export-google-calendar-entries-to-a-google-spreadsheet">wonderful walkthrough</a> by Ashley Kelnhofer, with code by Justin Gale, that uses Google Apps Script to populate a Google Sheet with calendar events.</p>
+<p>I needed a guest record, so I hacked on a <code>for</code> loop, to return the event’s guest list, my tweaks are in a <a href="https://gist.github.com/nathancday/d168314100708235535e6967f5185acf">GIST here</a>.</p>
+</div>
+<div id="importing" class="section level3">
+<h3>Importing</h3>
+<p><a href="https://github.com/jennybc/googlesheets"><code>library(googlesheets)</code></a> is a great package by <a href="https://github.com/jennybc">Jenny Bryan</a> and it makes getting data out of your Google Sheets and into data frames simple. I like Google Sheets with R because it gives you an access point to get data from other Google Apps and makes sharing data easy without requiring Git skills.</p>
+<pre class="r"><code>library(googlesheets) # gs_verb()
+
+gs_auth()
+# oAuth2, so browser confirmation req&#39;d
+
+events &lt;- gs_ls() %&gt;%
+  select(sheet_title) %&gt;%
+  unlist() %&gt;%
+  keep(~ grepl(&quot;Calendar&quot;, .)) %&gt;%
+  set_names(., .) %&gt;%
+  map_df(~ gs_title(.) %&gt;% gs_read(), .id = &quot;cal&quot;)
+
+names(events) %&lt;&gt;% tolower() %&gt;% gsub(&quot; &quot;, &quot;_&quot;, .)
+names(events)</code></pre>
+<pre><code>##  [1] &quot;cal&quot;                 &quot;calendar_address&quot;    &quot;event_title&quot;        
+##  [4] &quot;event_description&quot;   &quot;event_location&quot;      &quot;event_start&quot;        
+##  [7] &quot;event_end&quot;           &quot;calculated_duration&quot; &quot;visibility&quot;         
+## [10] &quot;date_created&quot;        &quot;last_updated&quot;        &quot;mystatus&quot;           
+## [13] &quot;created_by&quot;          &quot;guest_email&quot;         &quot;all_day_event&quot;      
+## [16] &quot;recurring_event&quot;</code></pre>
+<p>Remember <code>guest_email</code> is the field I hacked together in Google Apps Script with <code>my_array.join()</code> and it looks like this, “myname@mail.com,yourname@mail.com”</p>
+</div>
+<div id="exploring" class="section level3">
+<h3>Exploring</h3>
+<p>A look at the duration distribution.</p>
+<pre class="r"><code>ggplot(events, aes(calculated_duration)) +
+  geom_histogram(bins = 10) +
+  labs(y = &quot;# Meetings&quot;, x = &quot;Meeting length (hours)&quot;)</code></pre>
+<p><img src="/post/2018-09-02-quantify-time-spend-in-meetings_files/figure-html/unnamed-chunk-2-1.png" width="576" style="display: block; margin: auto;" /></p>
+<p>Tells us most meetings are about an hour or less and that’s good to see that we are keeping things short. But we did have some meeting marathons, that were over 4 hours long.</p>
+<p>I was also currious if there was a difference between the two confernce rooms.</p>
+<pre class="r"><code>events %&gt;%
+  filter(grepl(&quot;Conference&quot;, cal)) %&gt;%
+  ggplot(aes(calculated_duration)) +
+    geom_histogram(bins = 10) +
+    facet_wrap(~cal) +
+    labs(y = &quot;# Meetings&quot;, x = &quot;Meeting length (hours)&quot;)</code></pre>
+<p><img src="/post/2018-09-02-quantify-time-spend-in-meetings_files/figure-html/unnamed-chunk-3-1.png" width="480" style="display: block; margin: auto;" /></p>
+<p>I see a lot more meetings used the big conference room, which might mean most of our meetings have a lot of attendees.</p>
+<p>To answer that we need to extract the individual emails that are currently packed as csvs in <code>guest_email</code>.</p>
+<pre class="r"><code>events %&lt;&gt;% separate_rows(guest_email, sep = &quot;,&quot;)</code></pre>
+<p>Dang, <code>tidyr::separate_rows()</code> is a great function and why I decided to to transport the data in this format. It is a useful pattern for bring array data into R from other languages.</p>
+<p>It turns out some of the “attendees” on the guest list are actually WebX robots, so I dropped them. There were also <code>NA</code> values, becasue some meetings didn’t have guest-lists, so those had to go too.</p>
+<pre class="r"><code>events %&lt;&gt;% filter(!grepl(&quot;google&quot;, guest_email), !is.na(guest_email))</code></pre>
+<p>Now to see if the meetings in the bigger room do actually have more people?</p>
+<pre class="r"><code>events %&gt;%
+  filter(grepl(&quot;Conference&quot;, cal)) %&gt;%
+  group_by(cal, event_start) %&gt;%
+  summarise(people = n()) %&gt;%
+  ggplot(aes(people)) +
+    geom_histogram(bins = 5) +
+    facet_wrap(~cal) +
+    labs(x = &quot;Attendees&quot;, y = &quot;# Meetings&quot;)</code></pre>
+<p><img src="/post/2018-09-02-quantify-time-spend-in-meetings_files/figure-html/unnamed-chunk-6-1.png" width="480" style="display: block; margin: auto;" /></p>
+<p>Sure enough the meetings in the big conference room do tend to be larger. But its good to see most of our meeting have less than 10 people.</p>
+<p><em>Note: that these guest lists included people calling in for meetings too. Just in case anyone is thinking we are breaking fire code by cramming 30+ people into a room for 14</em></p>
+<p>I think meetings work best with 4-5 peole, because at that size everyone is contributing to the discussion. Smaller groups also makes hearing quieter voices easier. I think people would be amazed at a what they get done with smaller meetings and larger email recaps.</p>
+<p>Finally let’s look at individual employees and see how many hours each spent in meetings for August. For reference August had 23 work-day for a total of 184 work-hours.</p>
+<p>This is what the company org chart looks like.</p>
+<div class="figure">
+<img src="/post/2018-09-02-quantify-time-spend-in-meetings_files/hs_org_chart.png" alt="org-chart" />
+<p class="caption">org-chart</p>
+</div>
+<p>And this bar chart shows each individual’s cumulative meeting hours for August.</p>
+<pre class="r"><code>cust_colors &lt;- c(&quot;#fcd432&quot;, &quot;#33b716&quot;, &quot;#0688ce&quot;, &quot;#e85906&quot;, &quot;#A9A9A9&quot;) %&gt;%
+  set_names(c(&quot;ceo&quot;, &quot;executive&quot;, &quot;director&quot;, &quot;staff&quot;, &quot;external&quot;))
+
+events %&gt;%
+  group_by(guest_email, job_title) %&gt;%
+  filter(n() &gt; 2) %&gt;% 
+  summarise(total_time = sum(calculated_duration)) %&gt;% 
+  ungroup() %&gt;%
+  mutate(guest_email = fct_reorder(guest_email, total_time),
+         job_title = factor(job_title, names(cust_colors))) %&gt;%
+  ggplot(aes(guest_email, total_time, label = guest_email, fill = job_title)) +
+    geom_col() +
+    scale_y_continuous(breaks = seq(10, 80, 10)) +
+    scale_fill_manual(values = cust_colors) +
+    labs(y = &quot;Hours in meetings&quot;, x = &quot;Employee&quot;) +
+    theme(axis.text.x = element_blank())</code></pre>
+<p><img src="/post/2018-09-02-quantify-time-spend-in-meetings_files/figure-html/unnamed-chunk-7-1.png" width="480" style="display: block; margin: auto;" /></p>
+<p>We can see 6 employees that spent over one full work week (40 hours) in meetings. One of the external consultants also logged 20 hours, which seemed like a lot for a part-time consulting position The relativly low hours for our CEO was suprising to see.</p>
+</div>
+</div>
+<div id="outro" class="section level2">
+<h2>Outro</h2>
+<p>I know this data is incomplete because of the events with missing guest lists and smaller meetings that don’t make it to the formal calendars, so this is really a lower estimate of the actual time spent meeting. I really don’t know what is a typical meeting spend for any size company, so if you end up doing a similar scrape, please share it!</p>
+<p>I got interested in this because I felt we were spending too much on meetings, but just capturing the event duration doesn’t say if the spend is worth it. I need a metric, maybe something like impact factor for journal articles, to quantify a meeting’s overall “usefullness”.</p>
+</div>
