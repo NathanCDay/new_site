@@ -1,0 +1,250 @@
+---
+title: Fizz Buzz Whatever in R
+author: Nate Day
+date: '2018-09-15'
+slug: fizz-buzz-whatever-in-r
+categories:
+  - Job Interview
+tags:
+  - old-school
+  - baseR
+---
+
+
+
+<div id="intro" class="section level2">
+<h2>Intro</h2>
+<p>The “Fizz-Buzz” problem is a classic of the computer scientist interview. It is designed to see if an [applicant can actually code](<a href="https://blog.codinghorror.com/why-cant-programmers-program/" class="uri">https://blog.codinghorror.com/why-cant-programmers-program/</a>. It is grounded in CS algorithm education and has become increasingly popular since its introduction in 2007. In a recent data science interview, I encountered this problem for the first time.</p>
+<p>I struggled to give the “right” answer, flailing away in the Google document I was granted as an “editor.” So this post is my retrospective solution, written in <code>R</code>, to understand and share the algorithm complexity discussion at the core of this question.</p>
+</div>
+<div id="fizz-buzz-whatever" class="section level2">
+<h2>Fizz, Buzz, Whatever</h2>
+<p>The problem space starts off with an array of integers.</p>
+<pre class="r"><code>integers &lt;- 1:15</code></pre>
+<p>Then a set of rules for each integer is given:</p>
+<ol style="list-style-type: decimal">
+<li>if evenly divisible by 3, replace with “fizz”.</li>
+<li>if evenly divisible by 5, replace with “buzz”.</li>
+</ol>
+<p>And a meta-rule:</p>
+<ol start="3" style="list-style-type: decimal">
+<li>if rules overlap, replace with the concatenation.</li>
+</ol>
+<p>So 15 would get replaced by “fizzbuzz”.</p>
+<p>With only these three rules, it is tempting to code this with conditionals. This is the “wrong” way but is exactly what I during the interview.</p>
+<pre class="r"><code>for (i in 1:length(integers)) {
+  if ( (i %% 3 == 0) &amp; (i %% 5 == 0) ) {
+    integers[i] &lt;- &quot;fizzbuzz&quot;
+  }
+  else if ( (i %% 3 == 0) ) {
+    integers[i] &lt;- &quot;fizz&quot;
+  }
+  else if ( (i %% 5 == 0) ) {
+    integers[i] &lt;- &quot;buzz&quot;
+  }
+}
+
+integers</code></pre>
+<pre><code>##  [1] &quot;1&quot;        &quot;2&quot;        &quot;fizz&quot;     &quot;4&quot;        &quot;buzz&quot;     &quot;fizz&quot;    
+##  [7] &quot;7&quot;        &quot;8&quot;        &quot;fizz&quot;     &quot;buzz&quot;     &quot;11&quot;       &quot;fizz&quot;    
+## [13] &quot;13&quot;       &quot;14&quot;       &quot;fizzbuzz&quot;</code></pre>
+<p>But then the interviewer asked me to add a new rule for integer replacement:</p>
+<ol start="3" style="list-style-type: decimal">
+<li>if evenly divisible by 7, replace with “whatever”.</li>
+</ol>
+<div class="figure">
+<img src="https://media.giphy.com/media/ZjjZKJSY4vO5W/giphy.gif" alt="meangirls-whatever-gif" />
+<p class="caption">meangirls-whatever-gif</p>
+</div>
+<p>My stressed brain said, “Just keep adding conditionals”. Because that will work right?</p>
+<pre class="r"><code>integers &lt;- 1:105
+
+for (i in 1:length(integers)) {
+  if ( (i %% 3 == 0) &amp; (i %% 5 == 0) &amp;&amp; (i %% 7 == 0)) {
+    integers[i] &lt;- &quot;fizzbuzzwhatever&quot;
+  }
+  else if ( (i %% 5 == 0) &amp;&amp; (i %% 7 == 0)) {
+    integers[i] &lt;- &quot;buzzwhatever&quot;
+  }
+  else if ( (i %% 3 == 0) &amp;&amp; (i %% 7 == 0)) {
+    integers[i] &lt;- &quot;fizzwhatever&quot;
+  }
+  else if ( (i %% 3 == 0) &amp;&amp; (i %% 7 == 0)) {
+    integers[i] &lt;- &quot;fizzwhatever&quot;
+  }
+  else if ( (i %% 3 == 0) &amp;&amp; (i %% 5 == 0)) {
+    integers[i] &lt;- &quot;fizzbuzz&quot;
+  }
+  else if ( (i %% 3 == 0) ) {
+    integers[i] &lt;- &quot;fizz&quot;
+  }
+  else if ( (i %% 5 == 0) ) {
+    integers[i] &lt;- &quot;buzz&quot;
+  }
+}
+
+integers</code></pre>
+<pre><code>##   [1] &quot;1&quot;                &quot;2&quot;                &quot;fizz&quot;            
+##   [4] &quot;4&quot;                &quot;buzz&quot;             &quot;fizz&quot;            
+##   [7] &quot;7&quot;                &quot;8&quot;                &quot;fizz&quot;            
+##  [10] &quot;buzz&quot;             &quot;11&quot;               &quot;fizz&quot;            
+##  [13] &quot;13&quot;               &quot;14&quot;               &quot;fizzbuzz&quot;        
+##  [16] &quot;16&quot;               &quot;17&quot;               &quot;fizz&quot;            
+##  [19] &quot;19&quot;               &quot;buzz&quot;             &quot;fizzwhatever&quot;    
+##  [22] &quot;22&quot;               &quot;23&quot;               &quot;fizz&quot;            
+##  [25] &quot;buzz&quot;             &quot;26&quot;               &quot;fizz&quot;            
+##  [28] &quot;28&quot;               &quot;29&quot;               &quot;fizzbuzz&quot;        
+##  [31] &quot;31&quot;               &quot;32&quot;               &quot;fizz&quot;            
+##  [34] &quot;34&quot;               &quot;buzzwhatever&quot;     &quot;fizz&quot;            
+##  [37] &quot;37&quot;               &quot;38&quot;               &quot;fizz&quot;            
+##  [40] &quot;buzz&quot;             &quot;41&quot;               &quot;fizzwhatever&quot;    
+##  [43] &quot;43&quot;               &quot;44&quot;               &quot;fizzbuzz&quot;        
+##  [46] &quot;46&quot;               &quot;47&quot;               &quot;fizz&quot;            
+##  [49] &quot;49&quot;               &quot;buzz&quot;             &quot;fizz&quot;            
+##  [52] &quot;52&quot;               &quot;53&quot;               &quot;fizz&quot;            
+##  [55] &quot;buzz&quot;             &quot;56&quot;               &quot;fizz&quot;            
+##  [58] &quot;58&quot;               &quot;59&quot;               &quot;fizzbuzz&quot;        
+##  [61] &quot;61&quot;               &quot;62&quot;               &quot;fizzwhatever&quot;    
+##  [64] &quot;64&quot;               &quot;buzz&quot;             &quot;fizz&quot;            
+##  [67] &quot;67&quot;               &quot;68&quot;               &quot;fizz&quot;            
+##  [70] &quot;buzzwhatever&quot;     &quot;71&quot;               &quot;fizz&quot;            
+##  [73] &quot;73&quot;               &quot;74&quot;               &quot;fizzbuzz&quot;        
+##  [76] &quot;76&quot;               &quot;77&quot;               &quot;fizz&quot;            
+##  [79] &quot;79&quot;               &quot;buzz&quot;             &quot;fizz&quot;            
+##  [82] &quot;82&quot;               &quot;83&quot;               &quot;fizzwhatever&quot;    
+##  [85] &quot;buzz&quot;             &quot;86&quot;               &quot;fizz&quot;            
+##  [88] &quot;88&quot;               &quot;89&quot;               &quot;fizzbuzz&quot;        
+##  [91] &quot;91&quot;               &quot;92&quot;               &quot;fizz&quot;            
+##  [94] &quot;94&quot;               &quot;buzz&quot;             &quot;fizz&quot;            
+##  [97] &quot;97&quot;               &quot;98&quot;               &quot;fizz&quot;            
+## [100] &quot;buzz&quot;             &quot;101&quot;              &quot;fizz&quot;            
+## [103] &quot;103&quot;              &quot;104&quot;              &quot;fizzbuzzwhatever&quot;</code></pre>
+<p>Wrong. Well, technically you <em>could</em> but its a PIA.</p>
+<p>If you have two rules, you need three conditionals. If you have three rules, you need seven conditionals. If you have four rules, you need twenty-five!</p>
+<p>The trap of conditionals is that the operations expand <a href="https://en.wikipedia.org/wiki/Factorial">factorially</a>, <code># conditionals = rules! + 1</code>. In big O notation that is <code>O(n!)</code>, <a href="https://en.wikipedia.org/wiki/Big_O_notation">which is literally the worst <code>O</code> possible</a>. For 12 rules you would need 479,001,600 conditionals!</p>
+<p>This <code>ggplot</code> compares the common big O values to appreciate the poor performance of <code>O(n!)</code>.</p>
+<p><img src="/post/2018-09-15-fizz-buzz-whatever-in-r_files/figure-html/ggplot_bigO-1.png" width="576" style="display: block; margin: auto;" /></p>
+<p>And that is the “goal” of this exercise, to see if you can find a solution with algorithim efficency in mind.</p>
+<blockquote>
+<p>In my data science experience the consideration of run time is at the end of product development. First we actually have to discover a solution, to an unknown problem. Only once we have something vialbe, then we can go back to re-factor and optimized code for memory/CPU usage.</p>
+</blockquote>
+</div>
+<div id="doing-it-right" class="section level2">
+<h2>Doing it right</h2>
+<p>To work around this conditional computation nightmare, you could use string concatination. Starting with empty strings and doing subsequent string joins for each rule, will reduce the time-complexity to <code>O(n)</code>.</p>
+<pre class="r"><code>integers &lt;- 1:105
+results &lt;- rep(&quot;&quot;, length.out = length(integers))
+
+fizz_idx &lt;- integers %% 3 == 0
+results &lt;- ifelse(fizz_idx, paste0(results, &quot;fizz&quot;), results)
+
+buzz_idx &lt;- integers %% 5 == 0
+results &lt;- ifelse(buzz_idx, paste0(results, &quot;buzz&quot;), results)
+
+whatever_idx &lt;- integers %% 7 == 0
+results &lt;- ifelse(whatever_idx, paste0(results, &quot;whatever&quot;), results)
+
+integer_idx &lt;- results == &quot;&quot;
+results &lt;- ifelse(integer_idx, integers, results)
+
+results</code></pre>
+<pre><code>##   [1] &quot;1&quot;                &quot;2&quot;                &quot;fizz&quot;            
+##   [4] &quot;4&quot;                &quot;buzz&quot;             &quot;fizz&quot;            
+##   [7] &quot;whatever&quot;         &quot;8&quot;                &quot;fizz&quot;            
+##  [10] &quot;buzz&quot;             &quot;11&quot;               &quot;fizz&quot;            
+##  [13] &quot;13&quot;               &quot;whatever&quot;         &quot;fizzbuzz&quot;        
+##  [16] &quot;16&quot;               &quot;17&quot;               &quot;fizz&quot;            
+##  [19] &quot;19&quot;               &quot;buzz&quot;             &quot;fizzwhatever&quot;    
+##  [22] &quot;22&quot;               &quot;23&quot;               &quot;fizz&quot;            
+##  [25] &quot;buzz&quot;             &quot;26&quot;               &quot;fizz&quot;            
+##  [28] &quot;whatever&quot;         &quot;29&quot;               &quot;fizzbuzz&quot;        
+##  [31] &quot;31&quot;               &quot;32&quot;               &quot;fizz&quot;            
+##  [34] &quot;34&quot;               &quot;buzzwhatever&quot;     &quot;fizz&quot;            
+##  [37] &quot;37&quot;               &quot;38&quot;               &quot;fizz&quot;            
+##  [40] &quot;buzz&quot;             &quot;41&quot;               &quot;fizzwhatever&quot;    
+##  [43] &quot;43&quot;               &quot;44&quot;               &quot;fizzbuzz&quot;        
+##  [46] &quot;46&quot;               &quot;47&quot;               &quot;fizz&quot;            
+##  [49] &quot;whatever&quot;         &quot;buzz&quot;             &quot;fizz&quot;            
+##  [52] &quot;52&quot;               &quot;53&quot;               &quot;fizz&quot;            
+##  [55] &quot;buzz&quot;             &quot;whatever&quot;         &quot;fizz&quot;            
+##  [58] &quot;58&quot;               &quot;59&quot;               &quot;fizzbuzz&quot;        
+##  [61] &quot;61&quot;               &quot;62&quot;               &quot;fizzwhatever&quot;    
+##  [64] &quot;64&quot;               &quot;buzz&quot;             &quot;fizz&quot;            
+##  [67] &quot;67&quot;               &quot;68&quot;               &quot;fizz&quot;            
+##  [70] &quot;buzzwhatever&quot;     &quot;71&quot;               &quot;fizz&quot;            
+##  [73] &quot;73&quot;               &quot;74&quot;               &quot;fizzbuzz&quot;        
+##  [76] &quot;76&quot;               &quot;whatever&quot;         &quot;fizz&quot;            
+##  [79] &quot;79&quot;               &quot;buzz&quot;             &quot;fizz&quot;            
+##  [82] &quot;82&quot;               &quot;83&quot;               &quot;fizzwhatever&quot;    
+##  [85] &quot;buzz&quot;             &quot;86&quot;               &quot;fizz&quot;            
+##  [88] &quot;88&quot;               &quot;89&quot;               &quot;fizzbuzz&quot;        
+##  [91] &quot;whatever&quot;         &quot;92&quot;               &quot;fizz&quot;            
+##  [94] &quot;94&quot;               &quot;buzz&quot;             &quot;fizz&quot;            
+##  [97] &quot;97&quot;               &quot;whatever&quot;         &quot;fizz&quot;            
+## [100] &quot;buzz&quot;             &quot;101&quot;              &quot;fizz&quot;            
+## [103] &quot;103&quot;              &quot;104&quot;              &quot;fizzbuzzwhatever&quot;</code></pre>
+<p>Only 4 <code>ifelse</code> array updates are needed, instead of the 7 from conditional-land. Now we have to touch the vector <code># rules + 1</code> times or <code>O(n)</code>. Because <code>bigO</code> is estimated as <code>n</code> approaches infinity, the constant gets dwarfed by <code># rules</code> and is dropped to simplify the formula.</p>
+<p>While this code is good in terms of operation time, it does suffer from pattern repitition. And when writing code <a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself">you don’t want to repeat yourself</a>.</p>
+</div>
+<div id="polishing-things-up" class="section level2">
+<h2>Polishing things up</h2>
+<p>So, to go all the way here and write some <a href="https://xkcd.com/844/">real “good”&quot; code</a>, I’m re-packaging the rules as key-value pairs. The function <code>replace_with_rules()</code> will handle the string-mashing and iternation, so we can replace the previously repitious code with a loop.</p>
+<pre class="r"><code>rules &lt;- c(&quot;fizz&quot; = 3, &quot;buzz&quot; = 5, &quot;whatever&quot; = 7)
+
+replace_with_rules &lt;- function(values, rules) {
+  container &lt;- rep(&quot;&quot;, length.out = length(values))
+  
+  for (name in names(rules)) {
+    idx &lt;- values %% rules[name] == 0
+    container &lt;- ifelse(idx, paste0(container, name), container)
+  }
+  
+  idx &lt;- container == &quot;&quot;
+  container &lt;- ifelse(idx, values, container)
+  
+  return(container)
+}
+
+replace_with_rules(1:105, rules)</code></pre>
+<pre><code>##   [1] &quot;1&quot;                &quot;2&quot;                &quot;fizz&quot;            
+##   [4] &quot;4&quot;                &quot;buzz&quot;             &quot;fizz&quot;            
+##   [7] &quot;whatever&quot;         &quot;8&quot;                &quot;fizz&quot;            
+##  [10] &quot;buzz&quot;             &quot;11&quot;               &quot;fizz&quot;            
+##  [13] &quot;13&quot;               &quot;whatever&quot;         &quot;fizzbuzz&quot;        
+##  [16] &quot;16&quot;               &quot;17&quot;               &quot;fizz&quot;            
+##  [19] &quot;19&quot;               &quot;buzz&quot;             &quot;fizzwhatever&quot;    
+##  [22] &quot;22&quot;               &quot;23&quot;               &quot;fizz&quot;            
+##  [25] &quot;buzz&quot;             &quot;26&quot;               &quot;fizz&quot;            
+##  [28] &quot;whatever&quot;         &quot;29&quot;               &quot;fizzbuzz&quot;        
+##  [31] &quot;31&quot;               &quot;32&quot;               &quot;fizz&quot;            
+##  [34] &quot;34&quot;               &quot;buzzwhatever&quot;     &quot;fizz&quot;            
+##  [37] &quot;37&quot;               &quot;38&quot;               &quot;fizz&quot;            
+##  [40] &quot;buzz&quot;             &quot;41&quot;               &quot;fizzwhatever&quot;    
+##  [43] &quot;43&quot;               &quot;44&quot;               &quot;fizzbuzz&quot;        
+##  [46] &quot;46&quot;               &quot;47&quot;               &quot;fizz&quot;            
+##  [49] &quot;whatever&quot;         &quot;buzz&quot;             &quot;fizz&quot;            
+##  [52] &quot;52&quot;               &quot;53&quot;               &quot;fizz&quot;            
+##  [55] &quot;buzz&quot;             &quot;whatever&quot;         &quot;fizz&quot;            
+##  [58] &quot;58&quot;               &quot;59&quot;               &quot;fizzbuzz&quot;        
+##  [61] &quot;61&quot;               &quot;62&quot;               &quot;fizzwhatever&quot;    
+##  [64] &quot;64&quot;               &quot;buzz&quot;             &quot;fizz&quot;            
+##  [67] &quot;67&quot;               &quot;68&quot;               &quot;fizz&quot;            
+##  [70] &quot;buzzwhatever&quot;     &quot;71&quot;               &quot;fizz&quot;            
+##  [73] &quot;73&quot;               &quot;74&quot;               &quot;fizzbuzz&quot;        
+##  [76] &quot;76&quot;               &quot;whatever&quot;         &quot;fizz&quot;            
+##  [79] &quot;79&quot;               &quot;buzz&quot;             &quot;fizz&quot;            
+##  [82] &quot;82&quot;               &quot;83&quot;               &quot;fizzwhatever&quot;    
+##  [85] &quot;buzz&quot;             &quot;86&quot;               &quot;fizz&quot;            
+##  [88] &quot;88&quot;               &quot;89&quot;               &quot;fizzbuzz&quot;        
+##  [91] &quot;whatever&quot;         &quot;92&quot;               &quot;fizz&quot;            
+##  [94] &quot;94&quot;               &quot;buzz&quot;             &quot;fizz&quot;            
+##  [97] &quot;97&quot;               &quot;whatever&quot;         &quot;fizz&quot;            
+## [100] &quot;buzz&quot;             &quot;101&quot;              &quot;fizz&quot;            
+## [103] &quot;103&quot;              &quot;104&quot;              &quot;fizzbuzzwhatever&quot;</code></pre>
+</div>
+<div id="outro" class="section level2">
+<h2>Outro</h2>
+<p>I learned a lot about classic computer science interview questions from this writing this post. But I am not sure the value of this type of interview. To me writing good code is something much bigger (and harder) than “psuedo-coding”. I can empatheize with employeers who are trying to quickly evaluate canidates, but I think rehashing design patterns is a good metric of communication and creative thinking skills.</p>
+<p>Instead asking about a candidate had to re-factor a piece of code, or share the design details of a personal project would be more useful. These questions shift the focus from the technical details to the conceptual.</p>
+<p>At the very least technical coding during job interviews should be done in the candidates editor of choice. Good coders will have no problem showing people their work on the fly, but I have never met a coder who picks Google Docs over VIM or Emacs!</p>
+</div>

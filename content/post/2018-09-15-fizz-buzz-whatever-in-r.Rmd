@@ -1,0 +1,181 @@
+---
+title: Fizz Buzz Whatever in R
+author: Nate Day
+date: '2018-09-15'
+slug: fizz-buzz-whatever-in-r
+categories:
+  - Job Interview
+tags:
+  - old-school
+  - baseR
+---
+
+## Intro
+
+The "Fizz-Buzz" problem is a classic of the computer scientist interview. It is designed to see if an [applicant can actually code](https://blog.codinghorror.com/why-cant-programmers-program/. It is grounded in CS algorithm education and has become increasingly popular since its introduction in 2007. In a recent data science interview, I encountered this problem for the first time.
+
+I struggled to give the "right" answer, flailing away in the Google document I was granted as an "editor." So this post is my retrospective solution, written in `R`, to understand and share the algorithm complexity discussion at the core of this question.
+
+## Fizz, Buzz, Whatever
+
+The problem space starts off with an array of integers.
+
+```{r integer_setup}
+integers <- 1:15
+```
+
+Then a set of rules for each integer is given:
+
+1.  if evenly divisible by 3, replace with "fizz".
+2.  if evenly divisible by 5, replace with "buzz".
+
+And a meta-rule:
+
+3.  if rules overlap, replace with the concatenation.
+
+So 15 would get replaced by "fizzbuzz".
+
+With only these three rules, it is tempting to code this with conditionals. This is the "wrong" way but is exactly what I during the interview.
+
+```{r conditional_bads}
+for (i in 1:length(integers)) {
+  if ( (i %% 3 == 0) & (i %% 5 == 0) ) {
+    integers[i] <- "fizzbuzz"
+  }
+  else if ( (i %% 3 == 0) ) {
+    integers[i] <- "fizz"
+  }
+  else if ( (i %% 5 == 0) ) {
+    integers[i] <- "buzz"
+  }
+}
+
+integers
+```
+
+But then the interviewer asked me to add a new rule for integer replacement:
+
+3. if evenly divisible by 7, replace with "whatever".
+
+![meangirls-whatever-gif](https://media.giphy.com/media/ZjjZKJSY4vO5W/giphy.gif)
+
+My stressed brain said,  "Just keep adding conditionals". Because that will work right?
+
+```{r more_bads}
+integers <- 1:105
+
+for (i in 1:length(integers)) {
+  if ( (i %% 3 == 0) & (i %% 5 == 0) && (i %% 7 == 0)) {
+    integers[i] <- "fizzbuzzwhatever"
+  }
+  else if ( (i %% 5 == 0) && (i %% 7 == 0)) {
+    integers[i] <- "buzzwhatever"
+  }
+  else if ( (i %% 3 == 0) && (i %% 7 == 0)) {
+    integers[i] <- "fizzwhatever"
+  }
+  else if ( (i %% 3 == 0) && (i %% 7 == 0)) {
+    integers[i] <- "fizzwhatever"
+  }
+  else if ( (i %% 3 == 0) && (i %% 5 == 0)) {
+    integers[i] <- "fizzbuzz"
+  }
+  else if ( (i %% 3 == 0) ) {
+    integers[i] <- "fizz"
+  }
+  else if ( (i %% 5 == 0) ) {
+    integers[i] <- "buzz"
+  }
+}
+
+integers
+```
+
+Wrong. Well, technically you *could* but its a PIA.
+
+If you have two rules, you need three conditionals. If you have three rules, you need seven conditionals. If you have four rules, you need twenty-five!
+
+The trap of conditionals is that the operations expand [factorially](https://en.wikipedia.org/wiki/Factorial), `# conditionals = rules! + 1`. In big O notation that is `O(n!)`, [which is literally the worst `O` possible](https://en.wikipedia.org/wiki/Big_O_notation). For 12 rules you would need 479,001,600 conditionals!
+
+This `ggplot` compares the common big O values to appreciate the poor performance of `O(n!)`.
+
+```{r ggplot_bigO, echo=F, fig.height=4, fig.width=6, fig.align='center'}
+library(ggplot2)
+dat <- data.frame(rules = 1:12)
+
+ggplot(dat, aes(x = rules)) +
+  geom_line(aes(y = log(rules), color = "O(log(n))"), size = 3, alpha = .6) +
+  geom_line(aes(y = rules, color = "O(n)"), size = 3, alpha = .6) +
+  geom_line(aes(y = rules^2, color = "O(n^2)"), size = 3, alpha = .6) +
+  geom_line(aes(y = factorial(rules), color = "O(n!)"), size = 3, alpha = .6) +
+  scale_color_manual(values = c("forestgreen", "brown2", "lawngreen", "darkorange"),
+                     breaks = c("O(n!)", "O(n^2)", "O(n)", "O(log(n))")) +
+  coord_cartesian(ylim = c(0,500), xlim = c(0,11.5)) +
+  labs(x = "Rules", y = "Conditionals", color = NULL)
+```
+
+
+And that is the "goal" of this exercise, to see if you can find a solution with algorithim efficency in mind.
+
+> In my data science experience the consideration of run time is at the end of product development. First we actually have to discover a solution, to an unknown problem. Only once we have something vialbe, then we can go back to re-factor and optimized code for memory/CPU usage.
+
+## Doing it right
+
+To work around this conditional computation nightmare, you could use string concatination. Starting with empty strings and doing subsequent string joins for each rule, will reduce the time-complexity to `O(n)`.
+
+```{r}
+integers <- 1:105
+results <- rep("", length.out = length(integers))
+
+fizz_idx <- integers %% 3 == 0
+results <- ifelse(fizz_idx, paste0(results, "fizz"), results)
+
+buzz_idx <- integers %% 5 == 0
+results <- ifelse(buzz_idx, paste0(results, "buzz"), results)
+
+whatever_idx <- integers %% 7 == 0
+results <- ifelse(whatever_idx, paste0(results, "whatever"), results)
+
+integer_idx <- results == ""
+results <- ifelse(integer_idx, integers, results)
+
+results
+```
+
+Only 4 `ifelse` array updates are needed, instead of the 7 from conditional-land. Now we have to touch the vector `# rules + 1` times or `O(n)`. Because `bigO` is estimated as `n` approaches infinity, the constant gets dwarfed by `# rules` and is dropped to simplify the formula.
+
+While this code is good in terms of operation time, it does suffer from pattern repitition. And when writing code [you don't want to repeat yourself](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
+
+## Polishing things up
+
+So, to go all the way here and write some [real "good"" code](https://xkcd.com/844/), I'm re-packaging the rules as key-value pairs. The function `replace_with_rules()` will handle the string-mashing and iternation, so we can replace the previously repitious code with a loop.
+
+```{r playing_better}
+rules <- c("fizz" = 3, "buzz" = 5, "whatever" = 7)
+
+replace_with_rules <- function(values, rules) {
+  container <- rep("", length.out = length(values))
+  
+  for (name in names(rules)) {
+    idx <- values %% rules[name] == 0
+    container <- ifelse(idx, paste0(container, name), container)
+  }
+  
+  idx <- container == ""
+  container <- ifelse(idx, values, container)
+  
+  return(container)
+}
+
+replace_with_rules(1:105, rules)
+```
+
+## Outro
+
+I learned a lot about classic computer science interview questions from this writing this post. But I am not sure the value of this type of interview. To me writing good code is something much bigger (and harder) than "psuedo-coding". I can empatheize with employeers who are trying to quickly evaluate canidates, but I think rehashing design patterns is a good metric of communication and creative thinking skills.
+
+Instead asking about a candidate had to re-factor a piece of code, or share the design details of a personal project would be more useful. These questions shift the focus from the technical details to the conceptual.
+
+At the very least technical coding during job interviews should be done in the candidates editor of choice. Good coders will have no problem showing people their work on the fly, but I have never met a coder who picks Google Docs over VIM or Emacs!
+
+
