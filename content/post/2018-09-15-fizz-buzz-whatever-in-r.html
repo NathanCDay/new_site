@@ -1,13 +1,13 @@
 ---
-title: Fizz Buzz Whatever in R
+title: Understanding the Fizz-Buzz-Whatever problem with R
 author: Nate Day
 date: '2018-09-15'
-slug: fizz-buzz-whatever-in-r
 categories:
-  - Job Interview
+  - algorithms
 tags:
-  - old-school
   - baseR
+  - runtime
+slug: fizz-buzz-whatever-in-r
 ---
 
 
@@ -15,7 +15,7 @@ tags:
 <div id="intro" class="section level2">
 <h2>Intro</h2>
 <p>The “Fizz-Buzz” problem is a classic of the computer scientist interview. It is designed to see if an [applicant can actually code](<a href="https://blog.codinghorror.com/why-cant-programmers-program/" class="uri">https://blog.codinghorror.com/why-cant-programmers-program/</a>. It is grounded in CS algorithm education and has become increasingly popular since its introduction in 2007. In a recent data science interview, I encountered this problem for the first time.</p>
-<p>I struggled to give the “right” answer, flailing away in the Google document I was granted as an “editor.” So this post is my retrospective solution, written in <code>R</code>, to understand and share the algorithm complexity discussion at the core of this question.</p>
+<p>I struggled to give the “right” answer, flailing away in the Google document I was granted as an “editor.” So this post is my retrospective solution, written with <code>R</code> in an actual IDE (RStudio), to understand and share the algorithm complexity discussion at the core of this question.</p>
 </div>
 <div id="fizz-buzz-whatever" class="section level2">
 <h2>Fizz, Buzz, Whatever</h2>
@@ -124,14 +124,14 @@ integers</code></pre>
 <p>The trap of conditionals is that the operations expand <a href="https://en.wikipedia.org/wiki/Factorial">factorially</a>, <code># conditionals = rules! + 1</code>. In big O notation that is <code>O(n!)</code>, <a href="https://en.wikipedia.org/wiki/Big_O_notation">which is literally the worst <code>O</code> possible</a>. For 12 rules you would need 479,001,600 conditionals!</p>
 <p>This <code>ggplot</code> compares the common big O values to appreciate the poor performance of <code>O(n!)</code>.</p>
 <p><img src="/post/2018-09-15-fizz-buzz-whatever-in-r_files/figure-html/ggplot_bigO-1.png" width="576" style="display: block; margin: auto;" /></p>
-<p>And that is the “goal” of this exercise, to see if you can find a solution with algorithim efficency in mind.</p>
+<p>And that is the “goal” of this exercise, to see if you can find a solution with algorithm efficiency in mind.</p>
 <blockquote>
 <p>In my data science experience the consideration of run time is at the end of product development. First we actually have to discover a solution, to an unknown problem. Only once we have something vialbe, then we can go back to re-factor and optimized code for memory/CPU usage.</p>
 </blockquote>
 </div>
 <div id="doing-it-right" class="section level2">
 <h2>Doing it right</h2>
-<p>To work around this conditional computation nightmare, you could use string concatination. Starting with empty strings and doing subsequent string joins for each rule, will reduce the time-complexity to <code>O(n)</code>.</p>
+<p>To work around this conditional computation nightmare, you could use string concatenation. Starting with empty strings and doing subsequent string joins for each rule, will reduce the time-complexity to <code>O(n)</code>.</p>
 <pre class="r"><code>integers &lt;- 1:105
 results &lt;- rep(&quot;&quot;, length.out = length(integers))
 
@@ -184,11 +184,11 @@ results</code></pre>
 ## [100] &quot;buzz&quot;             &quot;101&quot;              &quot;fizz&quot;            
 ## [103] &quot;103&quot;              &quot;104&quot;              &quot;fizzbuzzwhatever&quot;</code></pre>
 <p>Only 4 <code>ifelse</code> array updates are needed, instead of the 7 from conditional-land. Now we have to touch the vector <code># rules + 1</code> times or <code>O(n)</code>. Because <code>bigO</code> is estimated as <code>n</code> approaches infinity, the constant gets dwarfed by <code># rules</code> and is dropped to simplify the formula.</p>
-<p>While this code is good in terms of operation time, it does suffer from pattern repitition. And when writing code <a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself">you don’t want to repeat yourself</a>.</p>
+<p>While this code is good in terms of operation time, it does suffer from pattern repetition. And when writing code <a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself">you don’t want to repeat yourself</a>.</p>
 </div>
 <div id="polishing-things-up" class="section level2">
 <h2>Polishing things up</h2>
-<p>So, to go all the way here and write some <a href="https://xkcd.com/844/">real “good”&quot; code</a>, I’m re-packaging the rules as key-value pairs. The function <code>replace_with_rules()</code> will handle the string-mashing and iternation, so we can replace the previously repitious code with a loop.</p>
+<p>So, to go all the way here and write some <a href="https://xkcd.com/844/">real “good”&quot; code</a>, I’m re-packaging the rules as key-value pairs. The function <code>replace_with_rules()</code> will handle the string-mashing and iteration, so we can replace the previously repetitious code with a loop.</p>
 <pre class="r"><code>rules &lt;- c(&quot;fizz&quot; = 3, &quot;buzz&quot; = 5, &quot;whatever&quot; = 7)
 
 replace_with_rules &lt;- function(values, rules) {
@@ -244,7 +244,7 @@ replace_with_rules(1:105, rules)</code></pre>
 </div>
 <div id="outro" class="section level2">
 <h2>Outro</h2>
-<p>I learned a lot about classic computer science interview questions from this writing this post. But I am not sure the value of this type of interview. To me writing good code is something much bigger (and harder) than “psuedo-coding”. I can empatheize with employeers who are trying to quickly evaluate canidates, but I think rehashing design patterns is a good metric of communication and creative thinking skills.</p>
+<p>I learned a lot about classic computer science interview questions from this writing this post. But I am not sure the value of this type of interview. To me writing good code is something much bigger (and harder) than “pseudo-coding”. I can empathize with employees who are trying to quickly evaluate candidates, but I think rehashing design patterns is a good metric of communication and creative thinking skills.</p>
 <p>Instead asking about a candidate had to re-factor a piece of code, or share the design details of a personal project would be more useful. These questions shift the focus from the technical details to the conceptual.</p>
 <p>At the very least technical coding during job interviews should be done in the candidates editor of choice. Good coders will have no problem showing people their work on the fly, but I have never met a coder who picks Google Docs over VIM or Emacs!</p>
 </div>

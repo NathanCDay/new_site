@@ -1,0 +1,96 @@
+---
+title: How to float ggplot2’s geom_label()
+author: Nate Day
+date: '2018-11-15'
+slug: how-to-float-ggplot2-s-geom-label
+twitter_img: "post/2018-11-15-how-to-float-ggplot2-s-geom-label_files/floated_labels_twittercard.png"
+categories:
+  - data viz
+tags:
+  - ggplot2
+---
+
+
+```{r setup, include=F}
+knitr::opts_chunk$set(message = F, warning = F)
+ggplot2::theme_set(ggplot2::theme_bw())
+```
+
+
+Adding labels to a `ggplot` can be a nice way to display summary statistics and complement a visualization. But positioning these can be annoying.
+
+This post is about how I take advantage of `ggplot2`'s positioning of inifinity, to make labels always "float" at the edge of plots. This is similar to the concept of [floating elements in web design](https://developer.mozilla.org/en-US/docs/Web/CSS/float).
+
+### Doing it with a demo
+
+```{r iris_Inf}
+library(tidyverse)
+
+group_stats <- iris %>%
+  group_by(Species) %>%
+  summarise(lab = mean(Sepal.Length))
+
+ggplot(iris, aes(x = Species, y = Sepal.Length)) +
+  geom_point(alpha = .25) +
+  geom_label(data = group_stats, aes(label = lab, y = Inf), vjust = 1)
+```
+
+The secret sauce is pairing `x/y = Inf` and `vjust = 1`.
+
+You can use `-Inf` the same way with `vjust = 0`.
+
+```{r iris_negInf}
+ggplot(iris, aes(x = Species, y = Sepal.Length)) +
+  geom_point(alpha = .25) +
+  geom_label(data = group_stats, aes(label = lab, y = -Inf), vjust = 0)
+```
+
+If you use a value outside of 0:1, you can continue moving the text further away from the edges, but these are the combinations to keep the labels always touching the edge.
+
+If you accidentally use the wrong direction of `vjust`, you can actually push your labels beyond the edges of the plotting area, causing them to disappear. Notice no warning is raised.
+
+```{r}
+ggplot(iris, aes(x = Species, y = Sepal.Length)) +
+  geom_point(alpha = .25) +
+  geom_label(data = group_stats, aes(label = lab, y = Inf), vjust = -1)
+```
+
+### Preventing labels from hiding the data
+
+In the second plot, where I used `-Inf`, my labels actually covered up the lowest data point for `setosa`. This can become a bigger problem in facetted plots when the labels consume more of the plotting area and the panelled variables cover different ranges.
+
+Using all four measured variables of `iris` for a demonstration.
+
+```{r}
+iris_long <- gather(iris, "key", "value", - Species)
+
+group_stats2 <- iris_long %>%
+  group_by(Species, key) %>%
+  summarise(lab = mean(value))
+
+ggplot(iris_long, aes(x = Species, y = value)) +
+  geom_point(alpha = .25) +
+  geom_label(data = group_stats2, aes(label = lab, y = -Inf), vjust = 0) +
+  facet_wrap(~key, scales = "free_y")
+```
+
+To prevent this I adjust `ggplot`'s default axis expansion margins.
+
+```{r}
+ggplot(iris_long, aes(x = Species, y = value)) +
+  geom_point(alpha = .25) +
+  geom_label(data = group_stats2, aes(label = lab, y = -Inf), vjust = 0) +
+  scale_y_continuous(expand = c(.25, .05)) + # default is c(.05, .05)
+  facet_wrap(~key, scales = "free_y")
+```
+
+The vector being passed to `expand =` extends the axis limits by 20% from the lowest value and 5% from the uppermost. For continuous variables the default is to expand 5% on each side, to ensure a no ` geoms` are plotted too close to the edge.
+
+And now you know how to nicely float labels in your ggplot's! What you put in those labels us up to you. I often use labels for percentage change and/or p-values, adjusting for multiple comparrisons of course :)
+
+```{r}
+devtools::session_info()
+```
+
+
+

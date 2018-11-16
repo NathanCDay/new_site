@@ -1,20 +1,20 @@
 ---
-title: Fizz Buzz Whatever in R
+title: Understanding the Fizz-Buzz-Whatever problem with R
 author: Nate Day
 date: '2018-09-15'
-slug: fizz-buzz-whatever-in-r
 categories:
-  - Job Interview
+  - algorithms
 tags:
-  - old-school
   - baseR
+  - runtime
+slug: fizz-buzz-whatever-in-r
 ---
 
 ## Intro
 
 The "Fizz-Buzz" problem is a classic of the computer scientist interview. It is designed to see if an [applicant can actually code](https://blog.codinghorror.com/why-cant-programmers-program/. It is grounded in CS algorithm education and has become increasingly popular since its introduction in 2007. In a recent data science interview, I encountered this problem for the first time.
 
-I struggled to give the "right" answer, flailing away in the Google document I was granted as an "editor." So this post is my retrospective solution, written in `R`, to understand and share the algorithm complexity discussion at the core of this question.
+I struggled to give the "right" answer, flailing away in the Google document I was granted as an "editor." So this post is my retrospective solution, written with `R` in an actual IDE (RStudio), to understand and share the algorithm complexity discussion at the core of this question.
 
 ## Fizz, Buzz, Whatever
 
@@ -115,13 +115,13 @@ ggplot(dat, aes(x = rules)) +
 ```
 
 
-And that is the "goal" of this exercise, to see if you can find a solution with algorithim efficency in mind.
+And that is the "goal" of this exercise, to see if you can find a solution with algorithm efficiency in mind.
 
 > In my data science experience the consideration of run time is at the end of product development. First we actually have to discover a solution, to an unknown problem. Only once we have something vialbe, then we can go back to re-factor and optimized code for memory/CPU usage.
 
 ## Doing it right
 
-To work around this conditional computation nightmare, you could use string concatination. Starting with empty strings and doing subsequent string joins for each rule, will reduce the time-complexity to `O(n)`.
+To work around this conditional computation nightmare, you could use string concatenation. Starting with empty strings and doing subsequent string joins for each rule, will reduce the time-complexity to `O(n)`.
 
 ```{r}
 integers <- 1:105
@@ -144,11 +144,11 @@ results
 
 Only 4 `ifelse` array updates are needed, instead of the 7 from conditional-land. Now we have to touch the vector `# rules + 1` times or `O(n)`. Because `bigO` is estimated as `n` approaches infinity, the constant gets dwarfed by `# rules` and is dropped to simplify the formula.
 
-While this code is good in terms of operation time, it does suffer from pattern repitition. And when writing code [you don't want to repeat yourself](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
+While this code is good in terms of operation time, it does suffer from pattern repetition. And when writing code [you don't want to repeat yourself](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
 ## Polishing things up
 
-So, to go all the way here and write some [real "good"" code](https://xkcd.com/844/), I'm re-packaging the rules as key-value pairs. The function `replace_with_rules()` will handle the string-mashing and iternation, so we can replace the previously repitious code with a loop.
+So, to go all the way here and write some [real "good"" code](https://xkcd.com/844/), I'm re-packaging the rules as key-value pairs. The function `replace_with_rules()` will handle the string-mashing and iteration, so we can replace the previously repetitious code with a loop.
 
 ```{r playing_better}
 rules <- c("fizz" = 3, "buzz" = 5, "whatever" = 7)
@@ -172,7 +172,7 @@ replace_with_rules(1:105, rules)
 
 ## Outro
 
-I learned a lot about classic computer science interview questions from this writing this post. But I am not sure the value of this type of interview. To me writing good code is something much bigger (and harder) than "psuedo-coding". I can empatheize with employeers who are trying to quickly evaluate canidates, but I think rehashing design patterns is a good metric of communication and creative thinking skills.
+I learned a lot about classic computer science interview questions from this writing this post. But I am not sure the value of this type of interview. To me writing good code is something much bigger (and harder) than "pseudo-coding". I can empathize with employees who are trying to quickly evaluate candidates, but I think rehashing design patterns is a good metric of communication and creative thinking skills.
 
 Instead asking about a candidate had to re-factor a piece of code, or share the design details of a personal project would be more useful. These questions shift the focus from the technical details to the conceptual.
 
