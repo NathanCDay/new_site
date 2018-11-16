@@ -233,3 +233,8 @@ Now we can build `sf` objects from `gtfs` objects at-will!
 That gives us new plotting flexibility and makes incorporating new data more straight forward.
 
 Looks like exploring transit patterns in R just got a little easier! Now if only all transit data was already cleaned into GTFS ...
+
+```{r}
+devtools::session_info()
+```
+
