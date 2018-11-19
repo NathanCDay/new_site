@@ -1,0 +1,89 @@
+---
+title: Geocoded crime reports for Charlottesville Virginia
+author: Nate Day
+date: '2018-11-18'
+slug: geocoded-crime-reports-for-charlottesville-virginia
+categories:
+  - Civic Data
+tags:
+  - packages
+  - sf
+  - tidyverse
+---
+
+
+
+<div id="cpdcrimedata" class="section level2">
+<h2>cpdcrimedata</h2>
+<p>Is a R data package, with a geocoded version of the <a href="http://opendata.charlottesville.org/datasets/crime-data">Charlottesville Police Department’s public Assistant Reports</a> for the last five years.</p>
+<p>To install the package from <a href="https://github.com/nathancday/cpdcrimedata">GitHub</a>:</p>
+<pre class="r"><code>devtools::install_github(&quot;nathancday/cpdcrimedata&quot;)
+
+library(cpdcrimedata)</code></pre>
+<p>The primary dataset is <code>cpd_crime</code>, the <a href="http://opendata.charlottesville.org/datasets/crime-data">original report’s</a> 9 columns, plus 4 new ones related to geocoding:</p>
+<ul>
+<li><code>formatted_address</code> - address used in the successful GoogleAPI geocode</li>
+<li><code>lat</code> - lattitude value returned</li>
+<li><code>lon</code> - longitude value returned</li>
+<li><code>loc_type</code> - type of location returned</li>
+</ul>
+<pre class="r"><code>data(cpd_crime)</code></pre>
+<p><code>cpd_crime</code> has</p>
+<pre class="r"><code>names(cpd_crime)</code></pre>
+<pre><code>##  [1] &quot;RecordID&quot;          &quot;Offense&quot;           &quot;IncidentID&quot;       
+##  [4] &quot;BlockNumber&quot;       &quot;StreetName&quot;        &quot;Agency&quot;           
+##  [7] &quot;DateReported&quot;      &quot;HourReported&quot;      &quot;address&quot;          
+## [10] &quot;lat&quot;               &quot;lon&quot;               &quot;formatted_address&quot;
+## [13] &quot;loc_type&quot;</code></pre>
+<p>Since the original dataset is left untouched it has all of the orignal warts and wrinkles. You will likely need to a little extra data cleaning.</p>
+</div>
+<div id="a-use-case" class="section level2">
+<h2>A use case</h2>
+<p>Let’s look at 6 most frequent offense labels.</p>
+<pre class="r"><code>library(tidyverse)
+
+topn &lt;- cpd_crime %&gt;%
+  mutate(Offense = fct_infreq(Offense)) %&gt;%
+  filter(Offense %in% levels(Offense)[1:6]) %&gt;%
+  droplevels()
+
+levels(topn$Offense)</code></pre>
+<pre><code>## [1] &quot;Towed Vehicle&quot;                   &quot;Assault Simple&quot;                 
+## [3] &quot;Hit and Run&quot;                     &quot;Vandalism&quot;                      
+## [5] &quot;Larceny - All Other&quot;             &quot;Assist Citizen - Mental/TDO/ECO&quot;</code></pre>
+<p>Since this dataset has not be cleaned, it contains both records that were not succesfully geocoded and several that were geocoded but outside of the Charlottesville City limits. To seeing the spatial distribution of crime reports in the city, the first step is to remove these “bad” records.</p>
+<pre class="r"><code>library(sf)
+
+# get a census map of charlottesville
+cville_census &lt;- st_read(&quot;https://opendata.arcgis.com/datasets/63f965c73ddf46429befe1132f7f06e2_15.geojson&quot;) %&gt;%
+  select(Tract)</code></pre>
+<pre><code>## Reading layer `OGRGeoJSON&#39; from data source `https://opendata.arcgis.com/datasets/63f965c73ddf46429befe1132f7f06e2_15.geojson&#39; using driver `GeoJSON&#39;
+## Simple feature collection with 12 features and 353 fields
+## geometry type:  POLYGON
+## dimension:      XY
+## bbox:           xmin: -78.52364 ymin: 38.00959 xmax: -78.44631 ymax: 38.0706
+## epsg (SRID):    4326
+## proj4string:    +proj=longlat +datum=WGS84 +no_defs</code></pre>
+<pre class="r"><code>topn &lt;- topn %&gt;% 
+  filter_at(vars(lat, lon), all_vars(!is.na(.))) %&gt;%
+  st_as_sf(coords = c(&quot;lon&quot;, &quot;lat&quot;), crs = st_crs(cville_census)) %&gt;%
+  st_join(cville_census, left = F)</code></pre>
+<p>Now we can plot with <code>ggplot2/sf</code>. Since <code>geom_sf()</code> can be prohibitably slow with ~9000 data points, I’m using a work-around with <code>stat_bin_2d</code>.</p>
+<pre class="r"><code># making columns for stat_bin_2d() from geometry values
+topn &lt;- do.call(rbind, st_geometry(topn)) %&gt;% 
+  as_tibble() %&gt;%
+  setNames(c(&quot;lon&quot;,&quot;lat&quot;)) %&gt;%
+  bind_cols(topn)
+
+ggplot(cville_census) +
+  geom_sf() +
+  stat_bin_2d(data = topn, aes(lon, lat), bins = 10, alpha = .5) +
+  scale_fill_viridis_c(option = &quot;A&quot;) +
+  facet_wrap(~Offense)</code></pre>
+<p><img src="/post/2018-11-18-geocoded-crime-reports-for-charlottesville-virginia_files/figure-html/plot-1.png" width="672" /></p>
+</div>
+<div id="going-forward" class="section level2">
+<h2>Going forward</h2>
+<p>Having this dataset as a R package has made my life easier and I hope someone else finds it useful too. In the future I may opt to do more data cleaning and most of that probably be working on the offense labels.</p>
+<p>I’m intereseted in converting other Charlottesville data into R packages (possibly one big meta-package) to make civic data analysis with #rstats more accessible/shareable. If you have ideas for other local datasets that could benefit from a package tune-up, send me an email or <a href="https://github.com/nathancday/cpdcrimedata/issues">open an issue</a></p>
+</div>
