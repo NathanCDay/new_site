@@ -1,8 +1,9 @@
 ---
 title: Geocoded crime reports for Charlottesville Virginia
 author: Nate Day
-date: '2018-11-18'
+date: '2018-11-27'
 slug: geocoded-crime-reports-for-charlottesville-virginia
+twitter_img: "post/2018-11-18-geocoded-crime-reports-for-charlottesville-virginia_files/cpdcrimedata_twittercard.png"
 categories:
   - Civic Data
 tags:
@@ -19,39 +20,136 @@ tags:
 <p>To install the package from <a href="https://github.com/nathancday/cpdcrimedata">GitHub</a>:</p>
 <pre class="r"><code>devtools::install_github(&quot;nathancday/cpdcrimedata&quot;)
 
-library(cpdcrimedata)</code></pre>
-<p>The primary dataset is <code>cpd_crime</code>, the <a href="http://opendata.charlottesville.org/datasets/crime-data">original report’s</a> 9 columns, plus 4 new ones related to geocoding:</p>
+library(cpdcrimedata)
+
+library(tidyverse) # for manipulation tools</code></pre>
+<p>The primary dataset is <code>cpd_crime</code>, the <a href="http://opendata.charlottesville.org/datasets/crime-data">original report’s</a> 9 columns (UpperCamel), plus 4 new ones (lower_snake) related to geocoding:</p>
 <ul>
-<li><code>formatted_address</code> - address used in the successful GoogleAPI geocode</li>
+<li><code>formatted_address</code> - address used in the successful GoogleAPI query</li>
 <li><code>lat</code> - lattitude value returned</li>
 <li><code>lon</code> - longitude value returned</li>
 <li><code>loc_type</code> - type of location returned</li>
 </ul>
-<pre class="r"><code>data(cpd_crime)</code></pre>
-<p><code>cpd_crime</code> has</p>
-<pre class="r"><code>names(cpd_crime)</code></pre>
+<pre class="r"><code>data(cpd_crime)
+
+names(cpd_crime)</code></pre>
 <pre><code>##  [1] &quot;RecordID&quot;          &quot;Offense&quot;           &quot;IncidentID&quot;       
 ##  [4] &quot;BlockNumber&quot;       &quot;StreetName&quot;        &quot;Agency&quot;           
 ##  [7] &quot;DateReported&quot;      &quot;HourReported&quot;      &quot;address&quot;          
 ## [10] &quot;lat&quot;               &quot;lon&quot;               &quot;formatted_address&quot;
 ## [13] &quot;loc_type&quot;</code></pre>
-<p>Since the original dataset is left untouched it has all of the orignal warts and wrinkles. You will likely need to a little extra data cleaning.</p>
-</div>
-<div id="a-use-case" class="section level2">
-<h2>A use case</h2>
-<p>Let’s look at 6 most frequent offense labels.</p>
+<pre class="r"><code>map(cpd_crime, ~ table(.) %&gt;% sort(decreasing = T) %&gt;% head)</code></pre>
+<pre><code>## $RecordID
+## .
+## 1 2 3 4 5 6 
+## 1 1 1 1 1 1 
+## 
+## $Offense
+## .
+##                   Towed Vehicle                  Assault Simple 
+##                            2627                            2605 
+##                     Hit and Run                       Vandalism 
+##                            2221                            1929 
+##             Larceny - All Other Assist Citizen - Mental/TDO/ECO 
+##                            1801                            1625 
+## 
+## $IncidentID
+## .
+## 201000073238 201300002276 201300002481 201300003848 201300004323 
+##            1            1            1            1            1 
+## 201300004460 
+##            1 
+## 
+## $BlockNumber
+## .
+##  100  200  600  700  500  400 
+## 3956 2676 2296 1895 1846 1803 
+## 
+## $StreetName
+## .
+##        E MARKET ST          W MAIN ST         EMMET ST N 
+##               1841               1342               1143 
+##          E MAIN ST JEFFERSON PARK AVE        PRESTON AVE 
+##                685                672                557 
+## 
+## $Agency
+##   CPD 
+## 30352 
+## 
+## $DateReported
+## .
+## 2016-01-22 2016-09-24 2017-10-16 2015-08-31 2015-10-31 2016-10-14 
+##         48         38         38         37         37         37 
+## 
+## $HourReported
+## .
+## 1500 1600 1400 1700 1100 0500 
+##  264  263  219  204  176  173 
+## 
+## $address
+## .
+##  600 E MARKET ST Charlottesville VA 700 PROSPECT AVE Charlottesville VA 
+##                                1148                                 489 
+##   1100 5TH ST SW Charlottesville VA     800 HARDY DR Charlottesville VA 
+##                                 351                                 328 
+##   400 GARRETT ST Charlottesville VA  1100 EMMET ST N Charlottesville VA 
+##                                 319                                 314 
+## 
+## $lat
+## .
+## 38.0304127 38.0245896 38.0513687   38.01713 38.0334203 38.0279731 
+##       1167        489        395        352        328        319 
+## 
+## $lon
+## .
+## -78.4774586 -78.4946679 -78.5000734  -78.497806 -78.4902161 -78.4803241 
+##        1167         489         395         352         328         319 
+## 
+## $formatted_address
+## .
+##  600 E Market St, Charlottesville, VA 22902, USA 
+##                                             1167 
+## 700 Prospect Ave, Charlottesville, VA 22903, USA 
+##                                              489 
+##  1100 Emmet St N, Charlottesville, VA 22903, USA 
+##                                              395 
+##   1100 5th St SW, Charlottesville, VA 22902, USA 
+##                                              352 
+##     800 Hardy Dr, Charlottesville, VA 22903, USA 
+##                                              328 
+##   400 Garrett St, Charlottesville, VA 22902, USA 
+##                                              319 
+## 
+## $loc_type
+## .
+## RANGE_INTERPOLATED            ROOFTOP   GEOMETRIC_CENTER 
+##              16495              13436                369 
+##        APPROXIMATE 
+##                  3</code></pre>
+<p>The original data is left untouched.</p>
+<p>It has all of the orignal warts and wrinkles and you will likely need to a little extra data cleaning. The <code>Offense</code> column has a lot of variants for similar labels.</p>
+<pre class="r"><code>cpd_crime$Offense %&gt;%
+  keep(~ grepl(&quot;larceny&quot;, ., ignore.case = T)) %&gt;%
+  table()</code></pre>
+<pre><code>## .
+##             Larceny - All Other Larceny - From Coin Oper Device 
+##                            1801                               8 
+##    Larceny - From Motor Vehicle   Larceny - Of Veh Parts/Access 
+##                            1169                             265 
+##        Larceny - Pocket Picking       Larceny - Purse Snatching 
+##                              34                              15 
+##           Larceny - Shoplifitng   Larceny - Theft from Building 
+##                             692                             815</code></pre>
+<div id="making-a-plot" class="section level3">
+<h3>Making a plot</h3>
+<p>Let’s look at 6 most frequent offense labels we saw up above, with <code>ggplot2</code>.</p>
 <pre class="r"><code>library(tidyverse)
 
 topn &lt;- cpd_crime %&gt;%
   mutate(Offense = fct_infreq(Offense)) %&gt;%
-  filter(Offense %in% levels(Offense)[1:6]) %&gt;%
-  droplevels()
-
-levels(topn$Offense)</code></pre>
-<pre><code>## [1] &quot;Towed Vehicle&quot;                   &quot;Assault Simple&quot;                 
-## [3] &quot;Hit and Run&quot;                     &quot;Vandalism&quot;                      
-## [5] &quot;Larceny - All Other&quot;             &quot;Assist Citizen - Mental/TDO/ECO&quot;</code></pre>
-<p>Since this dataset has not be cleaned, it contains both records that were not succesfully geocoded and several that were geocoded but outside of the Charlottesville City limits. To seeing the spatial distribution of crime reports in the city, the first step is to remove these “bad” records.</p>
+  filter(Offense %in% levels(Offense)[1:6])</code></pre>
+<p>By design this dataset contains all of the records in the original, including records were not able to be geocoded. Several addresses were geocoded as outside of the city limits and some are very far away!</p>
+<p>To see the spatial distribution of police reports in the city, these “bad” records need to go. Here I’m using <a href="">US Census maps from the CODP</a>, as the geographic mask to keep only the locations in the city.</p>
 <pre class="r"><code>library(sf)
 
 # get a census map of charlottesville
@@ -69,21 +167,26 @@ cville_census &lt;- st_read(&quot;https://opendata.arcgis.com/datasets/63f965c73
   st_as_sf(coords = c(&quot;lon&quot;, &quot;lat&quot;), crs = st_crs(cville_census)) %&gt;%
   st_join(cville_census, left = F)</code></pre>
 <p>Now we can plot with <code>ggplot2/sf</code>. Since <code>geom_sf()</code> can be prohibitably slow with ~9000 data points, I’m using a work-around with <code>stat_bin_2d</code>.</p>
-<pre class="r"><code># making columns for stat_bin_2d() from geometry values
-topn &lt;- do.call(rbind, st_geometry(topn)) %&gt;% 
+<pre class="r"><code># add the coordinates as a data frame s for ggplot()
+topn &lt;- st_coordinates(topn) %&gt;% 
   as_tibble() %&gt;%
   setNames(c(&quot;lon&quot;,&quot;lat&quot;)) %&gt;%
   bind_cols(topn)
 
+# stat_bin() is a good alt geom
 ggplot(cville_census) +
   geom_sf() +
-  stat_bin_2d(data = topn, aes(lon, lat), bins = 10, alpha = .5) +
-  scale_fill_viridis_c(option = &quot;A&quot;) +
-  facet_wrap(~Offense)</code></pre>
+  stat_density_2d(data = topn, aes(lon, lat, fill = stat(level)),
+                  alpha = .5, geom = &quot;polygon&quot;) +
+  scale_fill_viridis_c(option = &quot;A&quot;, name = &quot;# reports&quot;) +
+  coord_sf(datum = NA) +
+  facet_wrap(~Offense) +
+  theme_void()</code></pre>
 <p><img src="/post/2018-11-18-geocoded-crime-reports-for-charlottesville-virginia_files/figure-html/plot-1.png" width="672" /></p>
+</div>
 </div>
 <div id="going-forward" class="section level2">
 <h2>Going forward</h2>
-<p>Having this dataset as a R package has made my life easier and I hope someone else finds it useful too. In the future I may opt to do more data cleaning and most of that probably be working on the offense labels.</p>
-<p>I’m intereseted in converting other Charlottesville data into R packages (possibly one big meta-package) to make civic data analysis with #rstats more accessible/shareable. If you have ideas for other local datasets that could benefit from a package tune-up, send me an email or <a href="https://github.com/nathancday/cpdcrimedata/issues">open an issue</a></p>
+<p>Having this dataset as a R package is making my life easier. It was a good learning experiance for me to put this thing together and I pushed myself to get it set up on for CI with Travis! I’m looking forward to keeping this dataset</p>
+<p>Intereseted in converting other Charlottesville data into R packages (possibly one big meta-package) to make civic data analysis with #rstats more accessible/shareable? If you have ideas for other local datasets that could benefit from a package tune-up, send me an email or <a href="https://github.com/nathancday/cpdcrimedata/issues">open an issue</a></p>
 </div>

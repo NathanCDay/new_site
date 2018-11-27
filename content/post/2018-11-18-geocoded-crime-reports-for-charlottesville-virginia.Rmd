@@ -1,8 +1,9 @@
 ---
 title: Geocoded crime reports for Charlottesville Virginia
 author: Nate Day
-date: '2018-11-18'
+date: '2018-11-27'
 slug: geocoded-crime-reports-for-charlottesville-virginia
+twitter_img: "post/2018-11-18-geocoded-crime-reports-for-charlottesville-virginia_files/cpdcrimedata_twittercard.png"
 categories:
   - Civic Data
 tags:
@@ -21,42 +22,51 @@ To install the package from [GitHub](https://github.com/nathancday/cpdcrimedata)
 devtools::install_github("nathancday/cpdcrimedata")
 
 library(cpdcrimedata)
+
+library(tidyverse) # for manipulation tools
 ```
 
-The primary dataset is `cpd_crime`, the [original report's](http://opendata.charlottesville.org/datasets/crime-data) 9 columns, plus 4 new ones related to geocoding:
+The primary dataset is `cpd_crime`, the [original report's](http://opendata.charlottesville.org/datasets/crime-data) 9 columns (UpperCamel), plus 4 new ones (lower_snake) related to geocoding:
 
-* `formatted_address` - address used in the successful GoogleAPI geocode
+* `formatted_address` - address used in the successful GoogleAPI query
 * `lat` - lattitude value returned
 * `lon` - longitude value returned
 * `loc_type` - type of location returned
 
 ```{r}
 data(cpd_crime)
+
+names(cpd_crime)
+
+map(cpd_crime, ~ table(.) %>% sort(decreasing = T) %>% head)
 ```
-`cpd_crime` has 
+
+The original data is left untouched.
+
+It has all of the orignal warts and wrinkles and you will likely need to a little extra data cleaning. The `Offense` column has a lot of variants for similar labels.
 
 ```{r}
-names(cpd_crime)
+cpd_crime$Offense %>%
+  keep(~ grepl("larceny", ., ignore.case = T)) %>%
+  table()
 ```
 
-Since the original dataset is left untouched it has all of the orignal warts and wrinkles.  You will likely need to a little extra data cleaning.
 
-## A use case
+### Making a plot
 
-Let's look at 6 most frequent offense labels.
+Let's look at 6 most frequent offense labels we saw up above, with `ggplot2`.
 
 ```{r explore, message = F}
 library(tidyverse)
 
 topn <- cpd_crime %>%
   mutate(Offense = fct_infreq(Offense)) %>%
-  filter(Offense %in% levels(Offense)[1:6]) %>%
-  droplevels()
-
-levels(topn$Offense)
+  filter(Offense %in% levels(Offense)[1:6])
 ```
 
-Since this dataset has not be cleaned, it contains both records that were not succesfully geocoded and several that were geocoded but outside of the Charlottesville City limits. To seeing the spatial distribution of crime reports in the city, the first step is to remove these "bad" records.
+By design this dataset contains all of the records in the original, including records were not able to be geocoded. Several addresses were geocoded as outside of the city limits and some are very far away! 
+
+To see the spatial distribution of police reports in the city, these "bad" records need to go. Here I'm using [US Census maps from the CODP](), as the geographic mask to keep only the locations in the city.
 
 ```{r spatial_join, message = F, warning = F}
 library(sf)
@@ -74,21 +84,25 @@ topn <- topn %>%
 Now we can plot with `ggplot2/sf`. Since `geom_sf()` can be prohibitably slow with ~9000 data points, I'm using a work-around with `stat_bin_2d`.
 
 ```{r plot}
-# making columns for stat_bin_2d() from geometry values
-topn <- do.call(rbind, st_geometry(topn)) %>% 
+# add the coordinates as a data frame s for ggplot()
+topn <- st_coordinates(topn) %>% 
   as_tibble() %>%
   setNames(c("lon","lat")) %>%
   bind_cols(topn)
 
+# stat_bin() is a good alt geom
 ggplot(cville_census) +
   geom_sf() +
-  stat_bin_2d(data = topn, aes(lon, lat), bins = 10, alpha = .5) +
-  scale_fill_viridis_c(option = "A") +
-  facet_wrap(~Offense)
+  stat_density_2d(data = topn, aes(lon, lat, fill = stat(level)),
+                  alpha = .5, geom = "polygon") +
+  scale_fill_viridis_c(option = "A", name = "# reports") +
+  coord_sf(datum = NA) +
+  facet_wrap(~Offense) +
+  theme_void()
 ```
 
 ## Going forward
 
-Having this dataset as a R package has made my life easier and I hope someone else finds it useful too. In the future I may opt to do more data cleaning and most of that probably be working on the offense labels.
+Having this dataset as a R package is making my life easier. It was a good learning experiance for me to put this thing together and I pushed myself to get it set up on for CI with Travis! I'm looking forward to keeping this dataset 
 
-I'm intereseted in converting other Charlottesville data into R packages (possibly one big meta-package) to make civic data analysis with #rstats more accessible/shareable. If you have ideas for other local datasets that could benefit from a package tune-up, send me an email or [open an issue](https://github.com/nathancday/cpdcrimedata/issues)
+Intereseted in converting other Charlottesville data into R packages (possibly one big meta-package) to make civic data analysis with #rstats more accessible/shareable? If you have ideas for other local datasets that could benefit from a package tune-up, send me an email or [open an issue](https://github.com/nathancday/cpdcrimedata/issues)
