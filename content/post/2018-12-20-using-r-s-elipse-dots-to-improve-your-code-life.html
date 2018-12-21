@@ -1,0 +1,108 @@
+---
+title: Using R’s elipse/dots/... to improve your code-life
+author: Nate Day
+date: '2018-12-20'
+slug: using-r-s-elipse-dots-to-improve-your-code-life
+categories:
+  - code
+tags:
+  - baseR
+---
+
+
+
+<div id="intro" class="section level2">
+<h2>Intro</h2>
+<p>If you spend a considerable ammount of time writing R code for anlysis, you probably have a few favorite functions that get reused in most of your scripts, for me <code>table()</code> and <code>dir()</code> are two of my staples. If you are content with the default behavior, you can stop reading right now, but if you are like me and you want to tweak the basic behavior a bit, you are in the right place.</p>
+<p>In R the ellipse, <code>...</code>, is used by functions to capture an unknown number of argmunts, as in <code>?table()</code>, or to pass arguments through to some underlying function, as in <code>?print()</code>. This post capitalizes on the later, to customize the behavior of a function, while still retaining all of the flexibility in the original.</p>
+<p>You could customize a function by defining all of the original arguments explicity inside the function body or adding all of the same arguments. But doing this restricts useability and forces you to always keep up with changes to the original function, but using <code>...</code> can save you.</p>
+</div>
+<div id="tabla-adjusted-arguments-for-a-na-friendly-version-of-table" class="section level2">
+<h2><code>tabla()</code>: adjusted arguments for a <code>NA</code> friendly version of <code>table()</code></h2>
+<p>When I’m doing analysis I think of <code>NA</code> values as canaries in a coal mine, they are useful indicators. They could be saying something went wrong in read-in, or they could point to a deeper problem in the data recording. Either way I want to know about them. That is why the default behavior of <code>table()</code> is so troublesome to me, because it just silently ignores them, sweeping them under the proverbial rug.</p>
+<pre class="r"><code>data_with_NAs &lt;- data.frame(
+  species = sample(c(&quot;dog&quot;, &quot;cat&quot;, NA), 20, TRUE, c(.4,.4,.2))
+  )
+
+table(data_with_NAs$species)</code></pre>
+<pre><code>## 
+## cat dog 
+##   6  10</code></pre>
+<pre class="r"><code>table(data_with_NAs$species, useNA = &quot;ifany&quot;)</code></pre>
+<pre><code>## 
+##  cat  dog &lt;NA&gt; 
+##    6   10    4</code></pre>
+<p>Ok, so the good news is the authors of <code>table()</code> thoughfully included the option to control the counting of <code>NA</code> values, but the bad news is I have to type that extra argument each time if I want to see them. If you are only using a function once or constantly altering the argumnets for differnt behavior, no big deal, this isn’t worth it.</p>
+<p>But if you are using it every day, maybe even multiple times a day, it’s time you wrote a wrapper. Wrappers are great because they are super easy to write and give you that fine tune control of your code that improved your overall experience. I named my wrapper <code>tabla()</code>, part homage to the original and part word mash-up with <code>NA</code>.</p>
+<pre class="r"><code>tabla &lt;- function(...) {
+  table(..., useNA = &#39;ifany&#39;)
+}
+
+tabla(data_with_NAs$species)</code></pre>
+<pre><code>## 
+##  cat  dog &lt;NA&gt; 
+##    6   10    4</code></pre>
+<p>It’s literally that easy, now you have a custom wrapper around <code>table()</code> that treats <code>NA</code> values like first class citezens! It’s a little jankey though because if you try to re-assign the <code>useNA =</code> argument you will meet a warning.</p>
+<pre class="r"><code>tabla(data_with_NAs$species, useNA = &quot;no&quot;)</code></pre>
+<pre><code>## Error in table(..., useNA = &quot;ifany&quot;): formal argument &quot;useNA&quot; matched by multiple actual arguments</code></pre>
+<p>Don’t worry, we can fix it. I want to point out that this scenario rarely occurs, I mean why did I write the custom wrapper in the first place? Wouldn’t it be easier to use <code>table()</code> off the shelf? Yes and yes, but in case you care (a lot) about writing high-quality functions or want to make share your wrapper with others and want to retain ALL of the original function abilities, you can add a little more code eliminate this problem for good.</p>
+<pre class="r"><code>tabla2 &lt;- function(...) {
+  call &lt;- as.list(match.call())[-1]
+  custom_args &lt;- list(useNA = &quot;ifany&quot;)
+  overlap_args &lt;-  names(call) %in% names(custom_args)
+  
+  if (!any(overlap_args)) call &lt;- c(call, custom_args)
+  
+  do.call(table, call)
+}
+
+tabla2(data_with_NAs$species, useNA = &quot;no&quot;)</code></pre>
+<pre><code>## 
+## cat dog 
+##   6  10</code></pre>
+</div>
+<div id="der-a-restricted-output-version-of-dirlist.files" class="section level2">
+<h2><code>der()</code>: a restricted output version of <code>dir()/list.files()</code></h2>
+<p>If you work with Microsoft Excel files and R, you have probably encountered the temporary files that Excel spawns into your file system while an Excel document is open. These file are prefixed with a “~” to differentiate them, but <code>dir</code> returns them.</p>
+<pre class="r"><code>dir(&quot;~/Binfo/PA/PAD/PAD07/PAD0702/albumin/data/&quot;, &quot;Plate&quot;)</code></pre>
+<pre><code>## [1] &quot;~$PAD0702_Albumin_Plate1_Table.xlsx&quot;
+## [2] &quot;PAD0702_Albumin_Plate1_Table.xlsx&quot;  
+## [3] &quot;PAD0702_Albumin_Plate2_Table.xlsx&quot;  
+## [4] &quot;PAD0702_Albumin_Plate3_Table.xlsx&quot;  
+## [5] &quot;PAD0702_Albumin_Plate4_Table.xlsx&quot;  
+## [6] &quot;PAD0702_Albumin_Plate5_Table.xlsx&quot;  
+## [7] &quot;PAD0702_Albumin_Plate6_Table.xlsx&quot;</code></pre>
+<p>The errors arise when the temporary files are passed to read-in functions like, <code>openxlsx::read_xlsx()</code> and <code>readxl::read_excel()</code>. Since I am constantly working with data in Excel files, I often find myself with a file open (for visual inspection) and trying to read in the same file via a Rscript. This is a common pattern I use over and over in analysis scripts, but that fails once I have one of the Excel files in <code>data/</code> open on my machine.</p>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## ── Attaching packages ────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.2.1 ──</code></pre>
+<pre><code>## ✔ ggplot2 3.1.0.9000     ✔ purrr   0.2.5     
+## ✔ tibble  1.4.2          ✔ dplyr   0.7.8     
+## ✔ tidyr   0.8.2          ✔ stringr 1.3.1     
+## ✔ readr   1.2.1          ✔ forcats 0.3.0</code></pre>
+<pre><code>## ── Conflicts ───────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ✖ dplyr::filter() masks stats::filter()
+## ✖ dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>raw_data &lt;- dir(&quot;~/Binfo/PA/PAD/PAD07/PAD0702/albumin/data/&quot;, &quot;Plate&quot;, full.names = TRUE) %&gt;%
+  map_df(openxlsx::read.xlsx, .id = &quot;file_name&quot;)</code></pre>
+<pre><code>## Warning in unzip(xlsxFile, exdir = xmlDir): error 1 in extracting from zip
+## file</code></pre>
+<pre><code>## Error in file(con, &quot;r&quot;): invalid &#39;description&#39; argument</code></pre>
+<p>To navigate around this, I created a version of <code>dir()</code> that doesn’t return file names containing the dreaded “~”, while at the same time keeping all of the original arguments available to use. To do this I use the <code>...</code> to pass all of the argument through to <code>dir()</code> and then remove the undesirable results.</p>
+<pre class="r"><code>der &lt;- function(...) {
+  files &lt;- dir(...)
+  files[!grepl(&quot;~&quot;, files)]
+}
+
+der(&quot;~/Binfo/PA/PAD/PAD07/PAD0702/albumin/data/&quot;, &quot;Plate&quot;, full.names = TRUE)</code></pre>
+<pre><code>## [1] &quot;/Users/nathanday/Binfo/PA/PAD/PAD07/PAD0702/albumin/data//PAD0702_Albumin_Plate1_Table.xlsx&quot;
+## [2] &quot;/Users/nathanday/Binfo/PA/PAD/PAD07/PAD0702/albumin/data//PAD0702_Albumin_Plate2_Table.xlsx&quot;
+## [3] &quot;/Users/nathanday/Binfo/PA/PAD/PAD07/PAD0702/albumin/data//PAD0702_Albumin_Plate3_Table.xlsx&quot;
+## [4] &quot;/Users/nathanday/Binfo/PA/PAD/PAD07/PAD0702/albumin/data//PAD0702_Albumin_Plate4_Table.xlsx&quot;
+## [5] &quot;/Users/nathanday/Binfo/PA/PAD/PAD07/PAD0702/albumin/data//PAD0702_Albumin_Plate5_Table.xlsx&quot;
+## [6] &quot;/Users/nathanday/Binfo/PA/PAD/PAD07/PAD0702/albumin/data//PAD0702_Albumin_Plate6_Table.xlsx&quot;</code></pre>
+<p>Problem solved, temporary Excel files are no longer returned! No more errors from my read-in functions and I am back to analyzing data.</p>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>I really like using <code>...</code> whenever I wrap another function, because they save so a lot of typing and keep all of the flexibility. If you find youself writing custom wrappers I highly reccommend using the <code>...</code> because not only it will make your life easier, but it gives users of your function the freedom to pass in their own custom arguments to the underlying function, a win-win. There is a reason you see it all over the place in R, because it’s super useful.</p>
+</div>
