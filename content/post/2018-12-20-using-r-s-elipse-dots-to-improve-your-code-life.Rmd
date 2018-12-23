@@ -1,8 +1,8 @@
 ---
-title: Using R’s elipse/dots/... to improve your code-life
+title: Writing better wrappers with R’s ... (aka dots/ellipse)
 author: Nate Day
 date: '2018-12-20'
-slug: using-r-s-elipse-dots-to-improve-your-code-life
+slug: using-r-s-elipse-dots-to-write better wrappers
 categories:
   - code
 tags:
@@ -11,15 +11,19 @@ tags:
 
 ## Intro
 
-If you spend a considerable ammount of time writing R code for anlysis, you probably have a few favorite functions that get reused in most of your scripts, for me `table()` and `dir()` are two of my staples. If you are content with the default behavior, you can stop reading right now, but if you are like me and you want to tweak the basic behavior a bit, you are in the right place.
+Writing wrapper functions can be a nice way to improve your coding experience. Wrappers let you customize function behavior, maybe with by providing non-default arguments automatically or tidying up the results before they get returned. This post is how I used R's `...` (I read it as "dots", but the formal definition is "ellipse") to make custom versions `table()` and `dir()`.
 
-In R the ellipse, `...`, is used by functions to capture an unknown number of argmunts, as in `?table()`, or to pass arguments through to some underlying function, as in `?print()`. This post capitalizes on the later, to customize the behavior of a function, while still retaining all of the flexibility in the original.
+In R the ellipse, `...`, is used by functions for one of two things.
 
-You could customize a function by defining all of the original arguments explicity inside the function body or adding all of the same arguments. But doing this restricts useability and forces you to always keep up with changes to the original function, but using `...` can save you.
+* to capture an unknown number of argmunts, as in `?table()`
+
+* or to pass arguments through to some underlying function, as in `?print()`.
+
+The main reason I use `...` over explicitly defining arguments, is because it keeps all of the original function arguments available for use without me typing each one out in the new wrapper.
 
 ## `tabla()`: adjusted arguments for a `NA` friendly version of `table()`
 
-When I'm doing analysis I think of `NA` values as canaries in a coal mine, they are useful indicators. They could be saying something went wrong in read-in, or they could point to a deeper problem in the data recording. Either way I want to know about them. That is why the default behavior of `table()` is so troublesome to me, because it just silently ignores them, sweeping them under the proverbial rug.
+When I'm doing analysis I think of `NA` values as [canaries in a coal mine](https://en.wiktionary.org/wiki/canary_in_a_coal_mine), they are valuable warning signs that something might be wrong. That is why the default behavior of `table()` is so troublesome for me, because it just *silently* ignores them, sweeping them under the rug.
 
 ```{r table_bad}
 data_with_NAs <- data.frame(
@@ -31,9 +35,7 @@ table(data_with_NAs$species)
 table(data_with_NAs$species, useNA = "ifany")
 ```
 
-Ok, so the good news is the authors of `table()` thoughfully included the option to control the counting of `NA` values, but the bad news is I have to type that extra argument each time if I want to see them. If you are only using a function once or constantly altering the argumnets for differnt behavior, no big deal, this isn't worth it.
-
-But if you are using it every day, maybe even multiple times a day, it's time you wrote a wrapper. Wrappers are great because they are super easy to write and give you that fine tune control of your code that improved your overall experience. I named my wrapper `tabla()`, part homage to the original and part word mash-up with `NA`.
+The authors of `table()` thoughfully included the option to control the counting of `NA` values, even if they set the default to hide them. If this was a function I only used once in a while, I'd just suck it up add type the extra agrument each time. But since I use `table()` repeatedly during data input/clean-up and it gets old real fast adding `useNA = "ifany"` each time. So I wrote a wrapper, `tabla()`:
 
 ```{r tabla_good}
 tabla <- function(...) {
@@ -43,46 +45,42 @@ tabla <- function(...) {
 tabla(data_with_NAs$species)
 ```
 
-It's literally that easy, now you have a custom wrapper around `table()` that treats `NA` values like first class citezens! It's a little jankey though because if you try to re-assign the `useNA = ` argument you will meet a warning.
+That was super simple and now I have a version that treats `NA` values like first class citezens! It is a little jankey though because if you try to re-assign the `useNA = ` argument you will meet an error about mutliple matches.
 
 ```{r tabla_warning, error = T}
 tabla(data_with_NAs$species, useNA = "no")
 ```
 
-Don't worry, we can fix it. I want to point out that this scenario rarely occurs, I mean why did I write the custom wrapper in the first place? Wouldn't it be easier to use `table()` off the shelf? Yes and yes, but in case you care (a lot) about writing high-quality functions or want to make share your wrapper with others and want to retain ALL of the original function abilities, you can add a little more code eliminate this problem for good.
+Don't worry, we can fix it. By using `match.call()` to get all of the arguments passed in, we can handle conflicts as they come up and leave that error message behind.
 
 ```{r tabla_better}
-tabla2 <- function(...) {
-  call <- as.list(match.call())[-1]
-  custom_args <- list(useNA = "ifany")
-  overlap_args <-  names(call) %in% names(custom_args)
+tabla <- function(...) {
+  call <- as.list(match.call())[-1] # first position if function_name
   
+  custom_args <- list(useNA = "ifany") # could extend this list for more customization
+  
+  overlap_args <-  names(call) %in% names(custom_args) # handle overlapping args
   if (!any(overlap_args)) call <- c(call, custom_args)
   
-  do.call(table, call)
+  do.call(table, call) # execture table() with custom settings
 }
 
-tabla2(data_with_NAs$species, useNA = "no")
+tabla(data_with_NAs$species, useNA = "no")
 ```
+
+Now we have a *high-quality* wrapper around `table()` that you could confidently share with anyone interested in a better `NA` counting experience!
 
 ## `der()`: a restricted output version of `dir()/list.files()`
 
-If you work with Microsoft Excel files and R, you have probably encountered the temporary files that Excel spawns into your file system while an Excel document is open. These file are prefixed with a "~" to differentiate them, but `dir` returns them.
+If you work with Microsoft Excel files programatically, you have probably encountered the temporary files that Excel spawns into your file system while an Excel document is open. These temp files are prefixed with a "~" to differentiate them, but `dir` returns them anyway, just like they were normal files.
 
 ```{r}
 dir("~/Binfo/PA/PAD/PAD07/PAD0702/albumin/data/", "Plate")
 ```
 
-The errors arise when the temporary files are passed to read-in functions like, `openxlsx::read_xlsx()` and `readxl::read_excel()`. Since I am constantly working with data in Excel files, I often find myself with a file open (for visual inspection) and trying to read in the same file via a Rscript. This is a common pattern I use over and over in analysis scripts, but that fails once I have one of the Excel files in `data/` open on my machine.
+The problem is read-in functions like, `openxlsx::read_xlsx()` and `readxl::read_excel()` can't parse the tempory files like they can normal files. And since I often find myself with a file open, for visual inspection, while trying to read the same file into R via script, I am constantly tripping over these read-in errors.
 
-```{r dir_fail, error = T}
-library(tidyverse)
-
-raw_data <- dir("~/Binfo/PA/PAD/PAD07/PAD0702/albumin/data/", "Plate", full.names = TRUE) %>%
-  map_df(openxlsx::read.xlsx, .id = "file_name")
-```
-
-To navigate around this, I created a version of `dir()` that doesn't return file names containing the dreaded "~", while at the same time keeping all of the original arguments available to use. To do this I use the `...` to pass all of the argument through to `dir()` and then remove the undesirable results.
+Using `...` I created `der()` so that it drops the dreaded temporary files before it returns the results. Because the `...` allow everything of the arguments to pass through to `dir()`, I still have access to the original arguments of `dir()` when I need them.
 
 ```{r der_rescue}
 der <- function(...) {
@@ -93,8 +91,8 @@ der <- function(...) {
 der("~/Binfo/PA/PAD/PAD07/PAD0702/albumin/data/", "Plate", full.names = TRUE)
 ```
 
-Problem solved, temporary Excel files are no longer returned! No more errors from my read-in functions and I am back to analyzing data.
+Problem solved, temporary Excel files are no longer returned! No more errors from my read-in functions and now I can happily open an Excel file and read it in as a data frame at the same time, talk about living the life.
 
 ## Conclusion
 
-I really like using `...` whenever I wrap another function, because they save so a lot of typing and keep all of the flexibility. If you find youself writing custom wrappers I highly reccommend using the `...` because not only it will make your life easier, but it gives users of your function the freedom to pass in their own custom arguments to the underlying function, a win-win. There is a reason you see it all over the place in R, because it's super useful.
+I really like using `...` whenever I wrap another function. I think using `...` in wrapper functions is a great idea because not only does it save typing and it also keeps all of the original function available for the end-user. There is a reason you see `...` all over the place in exported R functions, because it's super useful. So next time you want to write a custom wrapper, try using `...`, you'll like it!
