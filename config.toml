@@ -10,8 +10,8 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files/", "_cache$"]
     post = "/:year/:month/:day/:slug/"
 
 [params]
-    author = "Nate Day"
-    description = "R focused data docs"
+    author = "Nate"
+    description = "Random sample of rstats stuff"
     logo = "images/favicon/android-chrome-192x192.png"
     twitterAuthor = "@natedayta"
     twitterSite = "https://twitter.com/natedayta"
@@ -19,7 +19,7 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files/", "_cache$"]
     accent = "#006264"
     showBorder = true
     backgroundColor = "#f5f5f5"
-    font = "Mina" # should match the name on Google Fonts!
+    font = "Open Sans" # should match the name on Google Fonts!
     highlight = true
     highlightStyle = "atelier-seaside-light"
     highlightLanguages = ["R", "bash"]

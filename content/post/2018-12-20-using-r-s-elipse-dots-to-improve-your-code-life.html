@@ -1,8 +1,9 @@
 ---
 title: Writing better wrappers with R’s ... (aka dots/ellipse)
 author: Nate Day
-date: '2018-12-20'
+date: '2018-12-31'
 slug: using-r-s-elipse-dots-to-write better wrappers
+twitter_img: "/post/2018-12-31-using-r-s-elipse-dots-to-improve-your-code-life_files/dots_post_pic.jpg"
 categories:
   - code
 tags:
@@ -13,17 +14,17 @@ tags:
 
 <div id="intro" class="section level2">
 <h2>Intro</h2>
-<p>Writing wrapper functions can be a nice way to improve your coding experience. Wrappers let you customize function behavior, maybe with by providing non-default arguments automatically or tidying up the results before they get returned. This post is how I used R’s <code>...</code> (I read it as “dots”, but the formal definition is “ellipse”) to make custom versions <code>table()</code> and <code>dir()</code>.</p>
+<p>Writing wrapper functions can be a nice way to improve your coding experience. Wrappers let you customize function behavior, maybe with by providing non-default arguments automatically or tidying up the results before they get returned, either way wrappers are making your code more efficient. This post is how to use R’s <code>...</code> (I read it as “dots”, but the formal definition is “ellipse”) to build custom versions <code>table()</code> and <code>dir()</code>.</p>
 <p>In R the ellipse, <code>...</code>, is used by functions for one of two things.</p>
 <ul>
 <li><p>to capture an unknown number of argmunts, as in <code>?table()</code></p></li>
 <li><p>or to pass arguments through to some underlying function, as in <code>?print()</code>.</p></li>
 </ul>
-<p>The main reason I use <code>...</code> over explicitly defining arguments, is because it keeps all of the original function arguments available for use without me typing each one out in the new wrapper.</p>
+<p>The main reason to use <code>...</code> over explicitly defining arguments, is to keep all of the original function arguments available, without explicitly defining each one in the new wrapper.</p>
 </div>
-<div id="tabla-adjusted-arguments-for-a-na-friendly-version-of-table" class="section level2">
-<h2><code>tabla()</code>: adjusted arguments for a <code>NA</code> friendly version of <code>table()</code></h2>
-<p>When I’m doing analysis I think of <code>NA</code> values as <a href="https://en.wiktionary.org/wiki/canary_in_a_coal_mine">canaries in a coal mine</a>, they are valuable warning signs that something might be wrong. That is why the default behavior of <code>table()</code> is so troublesome for me, because it just <em>silently</em> ignores them, sweeping them under the rug.</p>
+<div id="tabla-a-na-friendly-version-of-table" class="section level2">
+<h2><code>tabla()</code>: a <code>NA</code> friendly version of <code>table()</code></h2>
+<p>When I’m doing analysis I think of <code>NA</code> values as <a href="https://en.wiktionary.org/wiki/canary_in_a_coal_mine">canaries in a coal mine</a>, they are valuable warning signs that something might be wrong. That is why the default behavior of <code>table()</code> is so troublesome for me, because it just <em>silently</em> drops them!</p>
 <pre class="r"><code>data_with_NAs &lt;- data.frame(
   species = sample(c(&quot;dog&quot;, &quot;cat&quot;, NA), 20, TRUE, c(.4,.4,.2))
   )
@@ -31,12 +32,12 @@ tags:
 table(data_with_NAs$species)</code></pre>
 <pre><code>## 
 ## cat dog 
-##   7  10</code></pre>
+##   8   7</code></pre>
 <pre class="r"><code>table(data_with_NAs$species, useNA = &quot;ifany&quot;)</code></pre>
 <pre><code>## 
 ##  cat  dog &lt;NA&gt; 
-##    7   10    3</code></pre>
-<p>The authors of <code>table()</code> thoughfully included the option to control the counting of <code>NA</code> values, even if they set the default to hide them. If this was a function I only used once in a while, I’d just suck it up add type the extra agrument each time. But since I use <code>table()</code> repeatedly during data input/clean-up and it gets old real fast adding <code>useNA = &quot;ifany&quot;</code> each time. So I wrote a wrapper, <code>tabla()</code>:</p>
+##    8    7    5</code></pre>
+<p>The authors of <code>table()</code> thoughfully included the option to control the counting of <code>NA</code> values, even if they did set the default to hide them. If this was a function I only used once in a while, I’d just suck it up and type the extra agrument each time. But since I use <code>table()</code> repeatedly during data input/clean-up, it gets old real fast adding <code>useNA = &quot;ifany&quot;</code> each time. So I wrote <code>tabla()</code>, a wrapper with alternate defaults.</p>
 <pre class="r"><code>tabla &lt;- function(...) {
   table(..., useNA = &#39;ifany&#39;)
 }
@@ -44,7 +45,7 @@ table(data_with_NAs$species)</code></pre>
 tabla(data_with_NAs$species)</code></pre>
 <pre><code>## 
 ##  cat  dog &lt;NA&gt; 
-##    7   10    3</code></pre>
+##    8    7    5</code></pre>
 <p>That was super simple and now I have a version that treats <code>NA</code> values like first class citezens! It is a little jankey though because if you try to re-assign the <code>useNA =</code> argument you will meet an error about mutliple matches.</p>
 <pre class="r"><code>tabla(data_with_NAs$species, useNA = &quot;no&quot;)</code></pre>
 <pre><code>## Error in table(..., useNA = &quot;ifany&quot;): formal argument &quot;useNA&quot; matched by multiple actual arguments</code></pre>
@@ -63,12 +64,12 @@ tabla(data_with_NAs$species)</code></pre>
 tabla(data_with_NAs$species, useNA = &quot;no&quot;)</code></pre>
 <pre><code>## 
 ## cat dog 
-##   7  10</code></pre>
+##   8   7</code></pre>
 <p>Now we have a <em>high-quality</em> wrapper around <code>table()</code> that you could confidently share with anyone interested in a better <code>NA</code> counting experience!</p>
 </div>
-<div id="der-a-restricted-output-version-of-dirlist.files" class="section level2">
-<h2><code>der()</code>: a restricted output version of <code>dir()/list.files()</code></h2>
-<p>If you work with Microsoft Excel files programatically, you have probably encountered the temporary files that Excel spawns into your file system while an Excel document is open. These temp files are prefixed with a “~” to differentiate them, but <code>dir</code> returns them anyway, just like they were normal files.</p>
+<div id="der-an-excel-friendly-dir" class="section level2">
+<h2><code>der()</code>: an Excel friendly <code>dir()</code></h2>
+<p>If you work with Microsoft Excel files programatically, you have probably encountered the temporary files that Excel spawns into your file system while an Excel document is open. These temp files are prefixed with “~” to differentiate them, but <code>dir()</code> returns them anyway, just like they were normal files.</p>
 <pre class="r"><code>dir(&quot;~/Binfo/PA/PAD/PAD07/PAD0702/albumin/data/&quot;, &quot;Plate&quot;)</code></pre>
 <pre><code>## [1] &quot;~$PAD0702_Albumin_Plate1_Table.xlsx&quot;
 ## [2] &quot;PAD0702_Albumin_Plate1_Table.xlsx&quot;  
@@ -77,8 +78,8 @@ tabla(data_with_NAs$species, useNA = &quot;no&quot;)</code></pre>
 ## [5] &quot;PAD0702_Albumin_Plate4_Table.xlsx&quot;  
 ## [6] &quot;PAD0702_Albumin_Plate5_Table.xlsx&quot;  
 ## [7] &quot;PAD0702_Albumin_Plate6_Table.xlsx&quot;</code></pre>
-<p>The problem is read-in functions like, <code>openxlsx::read_xlsx()</code> and <code>readxl::read_excel()</code> can’t parse the tempory files like they can normal files. And since I often find myself with a file open, for visual inspection, while trying to read the same file into R via script, I am constantly tripping over these read-in errors.</p>
-<p>Using <code>...</code> I created <code>der()</code> so that it drops the dreaded temporary files before it returns the results. Because the <code>...</code> allow everything of the arguments to pass through to <code>dir()</code>, I still have access to the original arguments of <code>dir()</code> when I need them.</p>
+<p>The problem is read-in functions like, <code>openxlsx::read_xlsx()</code> and <code>readxl::read_excel()</code> can’t parse the tempory files. And since I often have a file open for visual inspection, when I try to read it in to R, these errors are constantly causing problems.</p>
+<p>So I wrote <code>der()</code>, a wrapper that drops the dreaded temporary files from the results. Because the <code>...</code> allow everything to pass through to <code>dir()</code>, I still have access to the original arguments when I need them.</p>
 <pre class="r"><code>der &lt;- function(...) {
   files &lt;- dir(...)
   files[!grepl(&quot;~&quot;, files)]
@@ -91,9 +92,9 @@ der(&quot;~/Binfo/PA/PAD/PAD07/PAD0702/albumin/data/&quot;, &quot;Plate&quot;, f
 ## [4] &quot;/Users/nathanday/Binfo/PA/PAD/PAD07/PAD0702/albumin/data//PAD0702_Albumin_Plate4_Table.xlsx&quot;
 ## [5] &quot;/Users/nathanday/Binfo/PA/PAD/PAD07/PAD0702/albumin/data//PAD0702_Albumin_Plate5_Table.xlsx&quot;
 ## [6] &quot;/Users/nathanday/Binfo/PA/PAD/PAD07/PAD0702/albumin/data//PAD0702_Albumin_Plate6_Table.xlsx&quot;</code></pre>
-<p>Problem solved, temporary Excel files are no longer returned! No more errors from my read-in functions and now I can happily open an Excel file and read it in as a data frame at the same time, talk about living the life.</p>
+<p>Problem solved, temporary Excel files are no longer returned! No more errors from the read-in functions and now I can happily open an Excel file and read it in to R at the same time, talk about living the life.</p>
 </div>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>
-<p>I really like using <code>...</code> whenever I wrap another function. I think using <code>...</code> in wrapper functions is a great idea because not only does it save typing and it also keeps all of the original function available for the end-user. There is a reason you see <code>...</code> all over the place in exported R functions, because it’s super useful. So next time you want to write a custom wrapper, try using <code>...</code>, you’ll like it!</p>
+<p>Using <code>...</code> are an argument in wrapper functions is a great idea because it keeps all of the original arguments available for the end-user. There is a reason you see <code>...</code> all over the place in exported R functions, because it’s super useful.</p>
 </div>

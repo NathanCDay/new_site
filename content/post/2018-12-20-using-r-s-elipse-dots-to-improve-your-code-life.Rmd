@@ -1,8 +1,9 @@
 ---
 title: Writing better wrappers with R’s ... (aka dots/ellipse)
 author: Nate Day
-date: '2018-12-20'
+date: '2018-12-31'
 slug: using-r-s-elipse-dots-to-write better wrappers
+twitter_img: "/post/2018-12-31-using-r-s-elipse-dots-to-improve-your-code-life_files/dots_post_pic.jpg"
 categories:
   - code
 tags:
@@ -11,7 +12,7 @@ tags:
 
 ## Intro
 
-Writing wrapper functions can be a nice way to improve your coding experience. Wrappers let you customize function behavior, maybe with by providing non-default arguments automatically or tidying up the results before they get returned. This post is how I used R's `...` (I read it as "dots", but the formal definition is "ellipse") to make custom versions `table()` and `dir()`.
+Writing wrapper functions can be a nice way to improve your coding experience. Wrappers let you customize function behavior, maybe with by providing non-default arguments automatically or tidying up the results before they get returned, either way wrappers are making your code more efficient. This post is how to use R's `...` (I read it as "dots", but the formal definition is "ellipse") to build custom versions `table()` and `dir()`.
 
 In R the ellipse, `...`, is used by functions for one of two things.
 
@@ -19,11 +20,11 @@ In R the ellipse, `...`, is used by functions for one of two things.
 
 * or to pass arguments through to some underlying function, as in `?print()`.
 
-The main reason I use `...` over explicitly defining arguments, is because it keeps all of the original function arguments available for use without me typing each one out in the new wrapper.
+The main reason to use `...` over explicitly defining arguments, is to keep all of the original function arguments available, without explicitly defining each one in the new wrapper.
 
-## `tabla()`: adjusted arguments for a `NA` friendly version of `table()`
+## `tabla()`: a `NA` friendly version of `table()`
 
-When I'm doing analysis I think of `NA` values as [canaries in a coal mine](https://en.wiktionary.org/wiki/canary_in_a_coal_mine), they are valuable warning signs that something might be wrong. That is why the default behavior of `table()` is so troublesome for me, because it just *silently* ignores them, sweeping them under the rug.
+When I'm doing analysis I think of `NA` values as [canaries in a coal mine](https://en.wiktionary.org/wiki/canary_in_a_coal_mine), they are valuable warning signs that something might be wrong. That is why the default behavior of `table()` is so troublesome for me, because it just *silently* drops them!
 
 ```{r table_bad}
 data_with_NAs <- data.frame(
@@ -35,7 +36,7 @@ table(data_with_NAs$species)
 table(data_with_NAs$species, useNA = "ifany")
 ```
 
-The authors of `table()` thoughfully included the option to control the counting of `NA` values, even if they set the default to hide them. If this was a function I only used once in a while, I'd just suck it up add type the extra agrument each time. But since I use `table()` repeatedly during data input/clean-up and it gets old real fast adding `useNA = "ifany"` each time. So I wrote a wrapper, `tabla()`:
+The authors of `table()` thoughfully included the option to control the counting of `NA` values, even if they did set the default to hide them. If this was a function I only used once in a while, I'd just suck it up and type the extra agrument each time. But since I use `table()` repeatedly during data input/clean-up, it gets old real fast adding `useNA = "ifany"` each time. So I wrote `tabla()`, a wrapper with alternate defaults.
 
 ```{r tabla_good}
 tabla <- function(...) {
@@ -70,17 +71,17 @@ tabla(data_with_NAs$species, useNA = "no")
 
 Now we have a *high-quality* wrapper around `table()` that you could confidently share with anyone interested in a better `NA` counting experience!
 
-## `der()`: a restricted output version of `dir()/list.files()`
+## `der()`: an Excel friendly `dir()`
 
-If you work with Microsoft Excel files programatically, you have probably encountered the temporary files that Excel spawns into your file system while an Excel document is open. These temp files are prefixed with a "~" to differentiate them, but `dir` returns them anyway, just like they were normal files.
+If you work with Microsoft Excel files programatically, you have probably encountered the temporary files that Excel spawns into your file system while an Excel document is open. These temp files are prefixed with "~" to differentiate them, but `dir()` returns them anyway, just like they were normal files.
 
 ```{r}
 dir("~/Binfo/PA/PAD/PAD07/PAD0702/albumin/data/", "Plate")
 ```
 
-The problem is read-in functions like, `openxlsx::read_xlsx()` and `readxl::read_excel()` can't parse the tempory files like they can normal files. And since I often find myself with a file open, for visual inspection, while trying to read the same file into R via script, I am constantly tripping over these read-in errors.
+The problem is read-in functions like, `openxlsx::read_xlsx()` and `readxl::read_excel()` can't parse the tempory files. And since I often have a file open for visual inspection, when I try to read it in to R, these errors are constantly causing problems.
 
-Using `...` I created `der()` so that it drops the dreaded temporary files before it returns the results. Because the `...` allow everything of the arguments to pass through to `dir()`, I still have access to the original arguments of `dir()` when I need them.
+So I wrote `der()`, a wrapper that drops the dreaded temporary files from the results. Because the `...` allow everything to pass through to `dir()`, I still have access to the original arguments when I need them.
 
 ```{r der_rescue}
 der <- function(...) {
@@ -91,8 +92,8 @@ der <- function(...) {
 der("~/Binfo/PA/PAD/PAD07/PAD0702/albumin/data/", "Plate", full.names = TRUE)
 ```
 
-Problem solved, temporary Excel files are no longer returned! No more errors from my read-in functions and now I can happily open an Excel file and read it in as a data frame at the same time, talk about living the life.
+Problem solved, temporary Excel files are no longer returned! No more errors from the read-in functions and now I can happily open an Excel file and read it in to R at the same time, talk about living the life.
 
 ## Conclusion
 
-I really like using `...` whenever I wrap another function. I think using `...` in wrapper functions is a great idea because not only does it save typing and it also keeps all of the original function available for the end-user. There is a reason you see `...` all over the place in exported R functions, because it's super useful. So next time you want to write a custom wrapper, try using `...`, you'll like it!
+Using `...` are an argument in wrapper functions is a great idea because it keeps all of the original arguments available for the end-user. There is a reason you see `...` all over the place in exported R functions, because it's super useful.
