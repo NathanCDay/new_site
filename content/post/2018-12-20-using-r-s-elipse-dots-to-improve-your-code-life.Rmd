@@ -10,7 +10,7 @@ tags:
   - baseR
 ---
 
-![Use the dots Luke!](/post/2018-12-20-using-r-s-elipse-dots-to-improve-your-code-life_files/dots_post_pic.jpg)
+<img src= "/post/2018-12-20-using-r-s-elipse-dots-to-improve-your-code-life_files/dots_post_pic.jpg"", alt="Use the dots Luke!", style="display:block; margin-left:auto; margin-right:auto;"/>
 
 ## Intro
 
