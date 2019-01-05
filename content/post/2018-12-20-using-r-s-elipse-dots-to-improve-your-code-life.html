@@ -12,6 +12,10 @@ tags:
 
 
 
+<div class="figure">
+<img src="/post/2018-12-20-using-r-s-elipse-dots-to-improve-your-code-life_files/dots_post_pic.jpg" alt="Use the dots Luke!" />
+<p class="caption">Use the dots Luke!</p>
+</div>
 <div id="intro" class="section level2">
 <h2>Intro</h2>
 <p>Writing wrapper functions can be a nice way to improve your coding experience. Wrappers let you customize function behavior, maybe with by providing non-default arguments automatically or tidying up the results before they get returned, either way wrappers are making your code more efficient. This post is how to use R’s <code>...</code> (I read it as “dots”, but the formal definition is “ellipse”) to build custom versions <code>table()</code> and <code>dir()</code>.</p>
@@ -32,11 +36,11 @@ tags:
 table(data_with_NAs$species)</code></pre>
 <pre><code>## 
 ## cat dog 
-##   9  11</code></pre>
+##   9   6</code></pre>
 <pre class="r"><code>table(data_with_NAs$species, useNA = &quot;ifany&quot;)</code></pre>
 <pre><code>## 
-## cat dog 
-##   9  11</code></pre>
+##  cat  dog &lt;NA&gt; 
+##    9    6    5</code></pre>
 <p>The authors of <code>table()</code> thoughfully included the option to control the counting of <code>NA</code> values, even if they did set the default to hide them. If this was a function I only used once in a while, I’d just suck it up and type the extra agrument each time. But since I use <code>table()</code> repeatedly during data input/clean-up, it gets old real fast adding <code>useNA = &quot;ifany&quot;</code> each time. So I wrote <code>tabla()</code>, a wrapper with alternate defaults.</p>
 <pre class="r"><code>tabla &lt;- function(...) {
   table(..., useNA = &#39;ifany&#39;)
@@ -44,28 +48,29 @@ table(data_with_NAs$species)</code></pre>
 
 tabla(data_with_NAs$species)</code></pre>
 <pre><code>## 
-## cat dog 
-##   9  11</code></pre>
+##  cat  dog &lt;NA&gt; 
+##    9    6    5</code></pre>
 <p>That was super simple and now I have a version that treats <code>NA</code> values like first class citezens! It is a little jankey though because if you try to re-assign the <code>useNA =</code> argument you will meet an error about mutliple matches.</p>
 <pre class="r"><code>tabla(data_with_NAs$species, useNA = &quot;no&quot;)</code></pre>
 <pre><code>## Error in table(..., useNA = &quot;ifany&quot;): formal argument &quot;useNA&quot; matched by multiple actual arguments</code></pre>
 <p>Don’t worry, we can fix it. By using <code>match.call()</code> to get all of the arguments passed in, we can handle conflicts as they come up and leave that error message behind.</p>
 <pre class="r"><code>tabla &lt;- function(...) {
-  call &lt;- as.list(match.call())[-1] # first position if function_name
+  call &lt;- as.list(match.call())[-1] # first position is the function_name
   
   custom_args &lt;- list(useNA = &quot;ifany&quot;) # could extend this list for more customization
   
   overlap_args &lt;-  names(call) %in% names(custom_args) # handle overlapping args
   if (!any(overlap_args)) call &lt;- c(call, custom_args)
   
-  do.call(table, call) # execture table() with custom settings
+  do.call(table, call) # exectue table() with the custom settings
 }
 
 tabla(data_with_NAs$species, useNA = &quot;no&quot;)</code></pre>
 <pre><code>## 
 ## cat dog 
-##   9  11</code></pre>
+##   9   6</code></pre>
 <p>Now we have a <em>high-quality</em> wrapper around <code>table()</code> that you could confidently share with anyone interested in a better <code>NA</code> counting experience!</p>
+<p><strong>Edit</strong> I might have jumped the gun on refering to this strategy using <code>match.call()</code> as ‘high-quality’. When I shared this post on Twitter, <a href="https://twitter.com/hadleywickham/status/1079882424308383745">Hadley dropped a comment</a>, encouraging me NOT to use <code>match.call()</code> due to unforeseen bugs that might crop up. I haven’t had the time to explore it further, but he recommended the <a href="https://adv-r.hadley.nz/evaluation.html#base-evaluation">Base Evaluation section of Advanced R</a>. Once I have a better handle on why this strategy can get you into trouble I’ll make a follow up post, but for now incase anyone stumbles upon this post, you have been warned!</p>
 </div>
 <div id="der-an-excel-friendly-dir" class="section level2">
 <h2><code>der()</code>: an Excel friendly <code>dir()</code></h2>

@@ -10,6 +10,8 @@ tags:
   - baseR
 ---
 
+![Use the dots Luke!](/post/2018-12-20-using-r-s-elipse-dots-to-improve-your-code-life_files/dots_post_pic.jpg)
+
 ## Intro
 
 Writing wrapper functions can be a nice way to improve your coding experience. Wrappers let you customize function behavior, maybe with by providing non-default arguments automatically or tidying up the results before they get returned, either way wrappers are making your code more efficient. This post is how to use R's `...` (I read it as "dots", but the formal definition is "ellipse") to build custom versions `table()` and `dir()`.
@@ -56,20 +58,22 @@ Don't worry, we can fix it. By using `match.call()` to get all of the arguments 
 
 ```{r tabla_better}
 tabla <- function(...) {
-  call <- as.list(match.call())[-1] # first position if function_name
+  call <- as.list(match.call())[-1] # first position is the function_name
   
   custom_args <- list(useNA = "ifany") # could extend this list for more customization
   
   overlap_args <-  names(call) %in% names(custom_args) # handle overlapping args
   if (!any(overlap_args)) call <- c(call, custom_args)
   
-  do.call(table, call) # execture table() with custom settings
+  do.call(table, call) # exectue table() with the custom settings
 }
 
 tabla(data_with_NAs$species, useNA = "no")
 ```
 
 Now we have a *high-quality* wrapper around `table()` that you could confidently share with anyone interested in a better `NA` counting experience!
+
+**Edit** I might have jumped the gun on refering to this strategy using `match.call()` as 'high-quality'. When I shared this post on Twitter, [Hadley dropped a comment](https://twitter.com/hadleywickham/status/1079882424308383745), encouraging me NOT to use `match.call()` due to unforeseen bugs that might crop up.  I haven't had the time to explore it further, but he recommended the [Base Evaluation section of Advanced R](https://adv-r.hadley.nz/evaluation.html#base-evaluation). Once I have a better handle on why this strategy can get you into trouble I'll make a follow up post, but for now incase anyone stumbles upon this post, you have been warned!
 
 ## `der()`: an Excel friendly `dir()`
 
