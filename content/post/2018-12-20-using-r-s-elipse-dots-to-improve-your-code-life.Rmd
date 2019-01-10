@@ -1,6 +1,6 @@
 ---
 title: Writing better wrappers with R’s ... (aka dots/ellipse)
-author: Nate Day
+author: Nate
 date: '2018-12-31'
 slug: using-r-s-elipse-dots-to-write better wrappers
 twitter_img: "post/2018-12-20-using-r-s-elipse-dots-to-improve-your-code-life_files/dots_post_pic.jpg"

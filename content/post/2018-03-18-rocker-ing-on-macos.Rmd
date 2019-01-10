@@ -1,27 +1,29 @@
 ---
 title: Rocker-ing on MacOS
-author: Nate Day
+author: Nate
 date: '2018-03-18'
 slug: rocker-ing-on-macos
 categories:
-  - Cville Open Data
+  - Open Data
 tags:
   - docker
   - rstudio_server
   - bash
 ---
 
-## Rocker rocks!
+<img src = "https://www.docker.com/sites/default/files/Whale%20Logo332_5.png", alt = "Docker whales are friends!", style="display:block; margin-left:auto; margin-right:auto;"/>
 
-[TLDR](#TLDR)
+## Intro
 
-If you don't know about [Rocker](https://github.com/rocker-org/rocker) yet, you are in for a treat. It is slick collection of Docker images built specifically for the R community. They run RStudio Server out of the box and allow novice Docker users, like myself, to quickly spin up and share reproducible analysis.
+[TLDR](##TLDR)
+
+If you don't know about [Rocker](https://github.com/rocker-org/rocker) yet, you should. It is slick collection of Docker images built specifically for the R community. They run RStudio Server out of the box and allow anyone to quickly spin up and share reproducible analysis environments.
 
 The main motivation for this post is the [Astrea Open Data Challenge](https://www.astraea.earth/open-data-challenge), which requires a container as part of the result submission. Initially the challenge only had one option, a Python focused Anaconda image, so I reached out to the organizers and convinced them to add a comparable option for R users, the [rocker/rstudio](https://hub.docker.com/r/rocker/rstudio/) image.
 
 Since I asked for the alternative R environment! I wanted to markdown the step by step instructions for getting rocker set up on `macOS`. This walk through assumes you have done the first two parts of tutorial [Getting Started with Docker](https://docs.docker.com/get-started/) and have a working knowledge of `git` (nothing fancy).
 
-### Recomeneded: A GitHub repo for files
+#### **Recomeneded: A GitHub repo for files **
 
 This part is separate but parallel to the Docker container set up. Docker is meant to contain all things computing environment but not really scripts and data. So it's good practive to keep these in a separate folder system. That could be locally, but in name of version control and open-source, we are using GitHub to track and publish our code.
 
@@ -35,9 +37,9 @@ This will create a cloned copy of the new repository as a new directory "haunche
 
 ## Get the image/container
 
-Images are the recipes that build out containers. Containers are the actual system process that runs stuff.
+Images are the recipes that build out containers. Containers are the actual system process that runs the code stuff.
 
-I highly recommend using the `rocker/ropensci` image over the base `RStudio` image because it has a bunch of the required system level libraries and common R packages pre-installed, which will make your life easier.
+I highly recommend using the `rocker/ropensci` image over the base `RStudio` image because it has a bunch of the required system level libraries and common R packages pre-installed, which makes life a lot easier.
 
 ```{r docker pull, engine = 'bash', eval = F}
 docker pull rocker/ropensci
@@ -45,15 +47,17 @@ docker pull rocker/ropensci
 
 This takes a minute the first time you `pull` so go get a cup of coffee or something.
 
-If you really want to start from scratch and use the basic `rocker/RStudio`, you can install external dependencies in your container with the [intructions here](https://github.com/rocker-org/rocker/wiki/Using-the-RStudio-image), but full warning its a PIA.
+If you really want to start from scratch and use the base image `rocker/RStudio`, you can install external dependencies in your container with the [intructions here](https://github.com/rocker-org/rocker/wiki/Using-the-RStudio-image), but full warning its a PIA.
 
 ## Run that image as a container 
 
-Copy and replace the repo/path into your terminal:
+Copy and replace the `-v /local/path:/container/path` section and run the following in your terminal:
 
 ```{r docker run, engine = 'bash', eval = F}
 docker run -d -p 8787:8787 -v /Users/nathanday/Desktop/hauncher/:/home/rstudio/hauncher rocker/rstudio
 ```
+
+Docker requires absolute paths, so you can abbreviate your home directed with `~/`, it's gotta be `/Users/your_name/`.
 
 Now head to [localhost:8787](localhost:8787) in your favorite browser to see your new container in action.
 
@@ -61,35 +65,29 @@ You should be greeted with a login screen, enter "rstudio" for both the username
 
 ## Install packages / mod your container
 
-Let's make a new R script to install some extra packages we want and save it into our directory `hauncher`. My script is called `install.R` and is just this:
+Let's make a new R script to install an extra packages we want and save it into our directory `hauncher`. My script is called `install.R` and is just this:
 
 ```{r install, eval = FALSE}
 install.packages("pacman")
-
-library(pacman)
-
-p_load(caret, forecast, forcats)
 ```
-
-I really like using `library(pacman)` to do installs, because it's a smooth wrapper around `install.packages()` and `devtools::install_github()`. So we download and load `pacman` the conventional way. Then use one of its helper functions `pacman::p_load()` to install and load three more essential in one line. 
 
 ## Save your container
 
-Before we close our container we want to make sure we save it, so all all of our newly installed packages are there next time we run it. To do this go back to the terminal and check which containers are running:
+Before you close the running container go back to the terminal and list which containers are running with:
 
 ```{r docker running, engine = 'bash', eval = F}
 docker ps
 ```
 
-Find the container ID you want to save and copy the whole thing or remember the first few character (two is usually good enough for me) and run this line substituting your full or partial id for "54".
-
-Note: The container ID will change each time you run the same image, because its really a process ID not permanent attribute.
+Find the container ID you want to save and copy the whole thing or remember the first few characters (two is usually good enough for me) and run this line, substituting your full or partial id for "54".
 
 ```{r commit, engine = 'bash', eval = F}
 docker commit -m "first commit; install.R" 54 nathancday/hauncher:latest
 ```
 
-Using `latest` as the tag name is nice because it's the default, meaning you won't need to type it out for `pull` or `push` commands.
+Note: The container ID will change each time you run an image, because its really a process ID not permanent attribute.
+
+Using `latest` as the tag name is nice because, you won't need to type out the `:$TAG` suffix for `pull` or `push` commands. But use other tag names for more desciptive saves.
 
 Now run:
 
@@ -97,7 +95,7 @@ Now run:
 docker images
 ```
 
-To check your available local images and you will see your new image saved.
+To check the available local images and you should see the new image you just saved.
 
 ## Publish to Docker Hub
 

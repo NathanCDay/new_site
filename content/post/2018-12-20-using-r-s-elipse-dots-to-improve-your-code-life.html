@@ -1,6 +1,6 @@
 ---
 title: Writing better wrappers with R’s ... (aka dots/ellipse)
-author: Nate Day
+author: Nate
 date: '2018-12-31'
 slug: using-r-s-elipse-dots-to-write better wrappers
 twitter_img: "post/2018-12-20-using-r-s-elipse-dots-to-improve-your-code-life_files/dots_post_pic.jpg"
@@ -33,11 +33,11 @@ tags:
 table(data_with_NAs$species)</code></pre>
 <pre><code>## 
 ## cat dog 
-##   4  12</code></pre>
+##   5  10</code></pre>
 <pre class="r"><code>table(data_with_NAs$species, useNA = &quot;ifany&quot;)</code></pre>
 <pre><code>## 
 ##  cat  dog &lt;NA&gt; 
-##    4   12    4</code></pre>
+##    5   10    5</code></pre>
 <p>The authors of <code>table()</code> thoughfully included the option to control the counting of <code>NA</code> values, even if they did set the default to hide them. If this was a function I only used once in a while, I’d just suck it up and type the extra agrument each time. But since I use <code>table()</code> repeatedly during data input/clean-up, it gets old real fast adding <code>useNA = &quot;ifany&quot;</code> each time. So I wrote <code>tabla()</code>, a wrapper with alternate defaults.</p>
 <pre class="r"><code>tabla &lt;- function(...) {
   table(..., useNA = &#39;ifany&#39;)
@@ -46,7 +46,7 @@ table(data_with_NAs$species)</code></pre>
 tabla(data_with_NAs$species)</code></pre>
 <pre><code>## 
 ##  cat  dog &lt;NA&gt; 
-##    4   12    4</code></pre>
+##    5   10    5</code></pre>
 <p>That was super simple and now I have a version that treats <code>NA</code> values like first class citezens! It is a little jankey though because if you try to re-assign the <code>useNA =</code> argument you will meet an error about mutliple matches.</p>
 <pre class="r"><code>tabla(data_with_NAs$species, useNA = &quot;no&quot;)</code></pre>
 <pre><code>## Error in table(..., useNA = &quot;ifany&quot;): formal argument &quot;useNA&quot; matched by multiple actual arguments</code></pre>
@@ -65,7 +65,7 @@ tabla(data_with_NAs$species)</code></pre>
 tabla(data_with_NAs$species, useNA = &quot;no&quot;)</code></pre>
 <pre><code>## 
 ## cat dog 
-##   4  12</code></pre>
+##   5  10</code></pre>
 <p>Now we have a <em>high-quality</em> wrapper around <code>table()</code> that you could confidently share with anyone interested in a better <code>NA</code> counting experience!</p>
 <p><strong>Edit</strong> I might have jumped the gun on refering to this strategy using <code>match.call()</code> as ‘high-quality’. When I shared this post on Twitter, <a href="https://twitter.com/hadleywickham/status/1079882424308383745">Hadley dropped a comment</a>, encouraging me NOT to use <code>match.call()</code> due to unforeseen bugs that might crop up. I haven’t had the time to explore it further, but he recommended the <a href="https://adv-r.hadley.nz/evaluation.html#base-evaluation">Base Evaluation section of Advanced R</a>. Once I have a better handle on why this strategy can get you into trouble I’ll make a follow up post, but for now incase anyone stumbles upon this post, you have been warned!</p>
 </div>

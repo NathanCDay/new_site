@@ -1,10 +1,10 @@
 ---
 title: Rocker-ing on MacOS
-author: Nate Day
+author: Nate
 date: '2018-03-18'
 slug: rocker-ing-on-macos
 categories:
-  - Cville Open Data
+  - Open Data
 tags:
   - docker
   - rstudio_server
@@ -13,14 +13,15 @@ tags:
 
 
 
-<div id="rocker-rocks" class="section level2">
-<h2>Rocker rocks!</h2>
-<p><a href="#TLDR">TLDR</a></p>
-<p>If you don’t know about <a href="https://github.com/rocker-org/rocker">Rocker</a> yet, you are in for a treat. It is slick collection of Docker images built specifically for the R community. They run RStudio Server out of the box and allow novice Docker users, like myself, to quickly spin up and share reproducible analysis.</p>
+<p><img src = "https://www.docker.com/sites/default/files/Whale%20Logo332_5.png", alt = "Docker whales are friends!", style="display:block; margin-left:auto; margin-right:auto;"/></p>
+<div id="intro" class="section level2">
+<h2>Intro</h2>
+<p><a href="##TLDR">TLDR</a></p>
+<p>If you don’t know about <a href="https://github.com/rocker-org/rocker">Rocker</a> yet, you should. It is slick collection of Docker images built specifically for the R community. They run RStudio Server out of the box and allow anyone to quickly spin up and share reproducible analysis environments.</p>
 <p>The main motivation for this post is the <a href="https://www.astraea.earth/open-data-challenge">Astrea Open Data Challenge</a>, which requires a container as part of the result submission. Initially the challenge only had one option, a Python focused Anaconda image, so I reached out to the organizers and convinced them to add a comparable option for R users, the <a href="https://hub.docker.com/r/rocker/rstudio/">rocker/rstudio</a> image.</p>
 <p>Since I asked for the alternative R environment! I wanted to markdown the step by step instructions for getting rocker set up on <code>macOS</code>. This walk through assumes you have done the first two parts of tutorial <a href="https://docs.docker.com/get-started/">Getting Started with Docker</a> and have a working knowledge of <code>git</code> (nothing fancy).</p>
-<div id="recomeneded-a-github-repo-for-files" class="section level3">
-<h3>Recomeneded: A GitHub repo for files</h3>
+<div id="recomeneded-a-github-repo-for-files" class="section level4">
+<h4><strong>Recomeneded: A GitHub repo for files </strong></h4>
 <p>This part is separate but parallel to the Docker container set up. Docker is meant to contain all things computing environment but not really scripts and data. So it’s good practive to keep these in a separate folder system. That could be locally, but in name of version control and open-source, we are using GitHub to track and publish our code.</p>
 <p>So if you want to do this part go to <a href="github.com">Github.com</a> and make a new repository, I called mine “Hauncher”. Then get the <code>Clone with HTTPS</code> link and run the following line on your computer in a new Terminal:</p>
 <pre class="bash"><code>git clone https://github.com/nathancday/hauncher.git ~/Desktop/hauncher</code></pre>
@@ -29,40 +30,36 @@ tags:
 </div>
 <div id="get-the-imagecontainer" class="section level2">
 <h2>Get the image/container</h2>
-<p>Images are the recipes that build out containers. Containers are the actual system process that runs stuff.</p>
-<p>I highly recommend using the <code>rocker/ropensci</code> image over the base <code>RStudio</code> image because it has a bunch of the required system level libraries and common R packages pre-installed, which will make your life easier.</p>
+<p>Images are the recipes that build out containers. Containers are the actual system process that runs the code stuff.</p>
+<p>I highly recommend using the <code>rocker/ropensci</code> image over the base <code>RStudio</code> image because it has a bunch of the required system level libraries and common R packages pre-installed, which makes life a lot easier.</p>
 <pre class="bash"><code>docker pull rocker/ropensci</code></pre>
 <p>This takes a minute the first time you <code>pull</code> so go get a cup of coffee or something.</p>
-<p>If you really want to start from scratch and use the basic <code>rocker/RStudio</code>, you can install external dependencies in your container with the <a href="https://github.com/rocker-org/rocker/wiki/Using-the-RStudio-image">intructions here</a>, but full warning its a PIA.</p>
+<p>If you really want to start from scratch and use the base image <code>rocker/RStudio</code>, you can install external dependencies in your container with the <a href="https://github.com/rocker-org/rocker/wiki/Using-the-RStudio-image">intructions here</a>, but full warning its a PIA.</p>
 </div>
 <div id="run-that-image-as-a-container" class="section level2">
 <h2>Run that image as a container</h2>
-<p>Copy and replace the repo/path into your terminal:</p>
+<p>Copy and replace the <code>-v /local/path:/container/path</code> section and run the following in your terminal:</p>
 <pre class="bash"><code>docker run -d -p 8787:8787 -v /Users/nathanday/Desktop/hauncher/:/home/rstudio/hauncher rocker/rstudio</code></pre>
+<p>Docker requires absolute paths, so you can abbreviate your home directed with <code>~/</code>, it’s gotta be <code>/Users/your_name/</code>.</p>
 <p>Now head to <a href="localhost:8787" class="uri">localhost:8787</a> in your favorite browser to see your new container in action.</p>
 <p>You should be greeted with a login screen, enter “rstudio” for both the username and password. And wallah you in R Studio. And you should see two folders <code>kitematic</code> and <code>hauncher</code> in your file explorer pane.</p>
 </div>
 <div id="install-packages-mod-your-container" class="section level2">
 <h2>Install packages / mod your container</h2>
-<p>Let’s make a new R script to install some extra packages we want and save it into our directory <code>hauncher</code>. My script is called <code>install.R</code> and is just this:</p>
-<pre class="r"><code>install.packages(&quot;pacman&quot;)
-
-library(pacman)
-
-p_load(caret, forecast, forcats)</code></pre>
-<p>I really like using <code>library(pacman)</code> to do installs, because it’s a smooth wrapper around <code>install.packages()</code> and <code>devtools::install_github()</code>. So we download and load <code>pacman</code> the conventional way. Then use one of its helper functions <code>pacman::p_load()</code> to install and load three more essential in one line.</p>
+<p>Let’s make a new R script to install an extra packages we want and save it into our directory <code>hauncher</code>. My script is called <code>install.R</code> and is just this:</p>
+<pre class="r"><code>install.packages(&quot;pacman&quot;)</code></pre>
 </div>
 <div id="save-your-container" class="section level2">
 <h2>Save your container</h2>
-<p>Before we close our container we want to make sure we save it, so all all of our newly installed packages are there next time we run it. To do this go back to the terminal and check which containers are running:</p>
+<p>Before you close the running container go back to the terminal and list which containers are running with:</p>
 <pre class="bash"><code>docker ps</code></pre>
-<p>Find the container ID you want to save and copy the whole thing or remember the first few character (two is usually good enough for me) and run this line substituting your full or partial id for “54”.</p>
-<p>Note: The container ID will change each time you run the same image, because its really a process ID not permanent attribute.</p>
+<p>Find the container ID you want to save and copy the whole thing or remember the first few characters (two is usually good enough for me) and run this line, substituting your full or partial id for “54”.</p>
 <pre class="bash"><code>docker commit -m &quot;first commit; install.R&quot; 54 nathancday/hauncher:latest</code></pre>
-<p>Using <code>latest</code> as the tag name is nice because it’s the default, meaning you won’t need to type it out for <code>pull</code> or <code>push</code> commands.</p>
+<p>Note: The container ID will change each time you run an image, because its really a process ID not permanent attribute.</p>
+<p>Using <code>latest</code> as the tag name is nice because, you won’t need to type out the <code>:$TAG</code> suffix for <code>pull</code> or <code>push</code> commands. But use other tag names for more desciptive saves.</p>
 <p>Now run:</p>
 <pre class="bash"><code>docker images</code></pre>
-<p>To check your available local images and you will see your new image saved.</p>
+<p>To check the available local images and you should see the new image you just saved.</p>
 </div>
 <div id="publish-to-docker-hub" class="section level2">
 <h2>Publish to Docker Hub</h2>
