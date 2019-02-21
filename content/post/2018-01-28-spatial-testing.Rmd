@@ -38,7 +38,7 @@ scale_fill_continuous <- function(...) { viridis::scale_fill_viridis(option = "A
 
 This is block of code is aggregated from my other posts revolving around the the city's crime data. It handles a lot of the weirdness in the original data set that needs cleaning attention. For this I'm leaving little comments as bread crumbs, if you need the whole loaf check out the earlier posts or send me an email.
 
-```{r data_in, cache = TRUE, warning = FALSE, message = FALSE}
+```{r data_in, warning = FALSE, message = FALSE}
 # get geo-coded crime data from my GitHub
 crime <- read.csv("https://raw.githubusercontent.com/NathanCDay/cville_crime/master/crime_geocode.csv")
 crime %<>% filter(complete.cases(crime)) # not all raw address could be geo_coded

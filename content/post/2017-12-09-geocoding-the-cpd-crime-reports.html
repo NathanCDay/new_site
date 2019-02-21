@@ -45,50 +45,12 @@ crime_df %&lt;&gt;% mutate_at(vars(BlockNumber, StreetName), funs(trimws(.)))
 # convert to numeric for sorting
 crime_df$BlockNumber %&lt;&gt;% as.numeric()
 table(crime_df$BlockNumber, useNA = &quot;always&quot;) %&gt;% sort()</code></pre>
-<pre><code>## 
-##  2800  3100  3400  3800  4400  6200  6300  6500  8000  8200 10000 10800 
-##     1     1     1     1     1     1     1     1     1     1     1     1 
-## 11000 11100 12000 12200 14500 15000 15600 28000  2900  3300  5300  7200 
-##     1     1     1     1     1     1     1     1     2     2     2     2 
-##  9100  3000  &lt;NA&gt;  2600  4000  2700  2400  2500  2300  2200  2000  1700 
-##     2     4    19    22    26    42   122   123   228   276   357   418 
-##  2100     0  1800  1900  1300  1200  1600  1500  1000  1400  1100   900 
-##   435   498   618   632   906   950   955  1047  1252  1460  1570  1685 
-##   300   800   500   700   400   600   200   100 
-##  1713  1722  1937  1951  1967  2265  2962  3693</code></pre>
 <p>From my personal expeirence, I know that addresses for the “0” block, like “0 Avon St”, geocode poorly. To combat this I am recoding all reports from a zero hundred block to a one hundred block. This is small shift geographically, and since it often results in a more accurate location we are likely improving subsequent spatial analysis compared to the zero hundred block call, which is usally called somewhere near the middle of the street’s length. Also I am recoding the NA values as one hundred block values as well.</p>
 <pre class="r"><code>crime_df$BlockNumber %&lt;&gt;% ifelse(is.na(.), 100, .) %&gt;% ifelse(. == 0, 100, .)
 table(crime_df$BlockNumber, useNA = &quot;always&quot;) # better</code></pre>
-<pre><code>## 
-##   100   200   300   400   500   600   700   800   900  1000  1100  1200 
-##  4210  2962  1713  1967  1937  2265  1951  1722  1685  1252  1570   950 
-##  1300  1400  1500  1600  1700  1800  1900  2000  2100  2200  2300  2400 
-##   906  1460  1047   955   418   618   632   357   435   276   228   122 
-##  2500  2600  2700  2800  2900  3000  3100  3300  3400  3800  4000  4400 
-##   123    22    42     1     2     4     1     2     1     1    26     1 
-##  5300  6200  6300  6500  7200  8000  8200  9100 10000 10800 11000 11100 
-##     2     1     1     1     2     1     1     2     1     1     1     1 
-## 12000 12200 14500 15000 15600 28000  &lt;NA&gt; 
-##     1     1     1     1     1     1     0</code></pre>
 <p>Next lets look at the <code>StreetName</code> values. Here we can expect a lot more unique values and a lot more typing mistakes.</p>
-<pre class="r"><code>table(crime_df$StreetName) %&gt;% sort(decreasing = TRUE) %&gt;% head(20) # don&#39;t print too much</code></pre>
-<pre><code>## 
-##        E MARKET ST          W MAIN ST         EMMET ST N 
-##               1786               1332               1127 
-##          E MAIN ST JEFFERSON PARK AVE          5TH ST SW 
-##                756                714                563 
-##        PRESTON AVE           RIDGE ST         CHERRY AVE 
-##                560                547                527 
-##       PROSPECT AVE         GARRETT ST         14TH ST NW 
-##                502                480                479 
-##     UNIVERSITY AVE            PARK ST        WERTLAND ST 
-##                469                383                363 
-##        CARLTON AVE         E WATER ST           1ST ST S 
-##                352                338                336 
-##           HARDY DR         W WATER ST 
-##                328                309</code></pre>
-<pre class="r"><code>length(table(crime_df$StreetName)) # 1704</code></pre>
-<pre><code>## [1] 1691</code></pre>
+<pre class="r"><code>table(crime_df$StreetName) %&gt;% sort(decreasing = TRUE) %&gt;% head(20) # don&#39;t print too much
+length(table(crime_df$StreetName)) # 1704</code></pre>
 <p>We see the most popular streets for crime reports are “E MARKET ST”, “MAIN ST” (both W and E) and “N EMMET ST”. This is not suprising since Market St and Main St are the two major East-West roads through downtown, and Emmet St is the major North-South route.</p>
 <p>Since there are almost 1700 unique street names, of course we see things like “W MAINS T” and “WEST MAIN”, that are obvious typos, but because manually adjusting all of these would be tedious work and these mistaken street names represent a small fraction of the total cases, we will leave them for now. Plus leaving them in also will make it easy to merge the geocoded data back in later on.</p>
 <p>The final step in our geocode prep is to append the correct “City, State”. Since almost every American town has a Main St, we need to be specific that we only care about the Main St in Charlottesville Virginia. So now all that’s left to do is <code>paste</code> everything together and let Google handle the heavy lifting.</p>
@@ -100,7 +62,6 @@ table(crime_df$BlockNumber, useNA = &quot;always&quot;) # better</code></pre>
 <pre class="r"><code># check for unique addresses
 address_df &lt;- data.frame(address = unique(crime_df$address))
 nrow(address_df) # 3144</code></pre>
-<pre><code>## [1] 3159</code></pre>
 <p>Now we are down to more palatable number of 3,144 unique location, that we can break up into just two days worth of API querying and still keep it free. There is a free alternative to using Google Maps, called the Data Science Toolkit (DSK). The DSK does not impose query limit restrictions, but I think that Google does a better job. You can specify which source to use when running <code>ggmap::geocode</code> with the <code>source</code> argument, Google is the default and the one I will be using here.</p>
 <pre class="r"><code>address_list &lt;- split(address_df,
                       rep(c(T,F), length.out = nrow(address_df)))

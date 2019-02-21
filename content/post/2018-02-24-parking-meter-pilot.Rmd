@@ -45,8 +45,8 @@ library(tidyverse) # yep
 
 There are two "Parking Meter" data links on the ODP, ["Pilot Data" (everything)](http://opendata.charlottesville.org/datasets/parking-meter-pilot-data) and "Pilot Locations" (subset with only lat/lon cordinates). So we need "Pilot Data" to explore revenue trends and patterns, which is ~27,000 rows (5.1 MB). I like [using the GeoJSON API with `geojsonio`](/2017/10/01/codp-api/) to pull data from the portal, but you could just as easily download the CSV file and use `read.table()` instead.
 
-```{r data_in, cache = T}
-dat <- geojson_read("https://opendata.arcgis.com/datasets/d68e620e74e74ec1bd0184971e82ffaa_15.geojson",
+```{r data_in}
+dat <- geojson_read("https://opendata.arcgis.com/datasets/d68e620e74e74ec1bd0184971e82ffaa_14.geojson",
                     parse = TRUE) %>%
     .[["features"]] %>%
     .[[2]]
@@ -60,7 +60,7 @@ Just from the column names we can see the data has everything we need to investi
 
 In order to really explore this data set properly, we need to build some `POSIXct` class columns for date and time. Since there are multiple columns describing time and date, I choose to just use "ParkingEndTime" as the starting material for consistancy.
 
-```{r tmp_parse, cache = T}
+```{r tmp_parse}
 # split column into date, clock:time, AM/PM parts
 tmp <- strsplit(dat$parkingendtime, " ")
 

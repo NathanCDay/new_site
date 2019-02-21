@@ -1,0 +1,140 @@
+---
+title: Is the weather getting wetter?
+author: Nate Day
+date: '2019-02-20'
+categories:
+  - weather
+tags:
+  - lm
+  - sf
+  - tidyverse
+description: Exploring historical data from 1905 to 2015 from the World Bank
+twitter_img: "post/2019-01-21-is-the-weather-getting-wetter_files/its_gon_rain.jpg"
+slug: is-the-weather-getting-wetter
+---
+
+<img src= "/post/2019-01-21-is-the-weather-getting-wetter_files/its_gon_rain.jpg", alt="It's gon rain", style="display:block; margin-left:auto; margin-right:auto;"/>
+
+```{r setup, include = F}
+knitr::opts_chunk$set(warning = F, message = F)
+```
+
+# Intro
+
+Is the weather really getting wetter? It sure does feel like it from where I live. This post is about testing my feelings with linear models. 
+
+# Data
+
+The first step was to find historical data, which I found on the [World Bank's Climate Change Knowledge Portal](http://sdwebx.worldbank.org/climateportal/). This dataset has country level precipitation records from 1905 to 2015. You are allowed to select up to [30 countries](http://sdwebx.worldbank.org/climateportal/index.cfm?page=downscaled_data_download&menu=historical) data, so I focused focus on the Western Hemisphere, where I live.
+
+```{r data_in, message = F}
+library(tidyverse)
+
+rain <- read_csv("~/Documents/pr_1901_2015.csv") %>% # download available as Excel or CSV
+  rename_all(tolower) %>% 
+  select(iso_alpha = country, year, month, rainfall = pr)
+```
+
+The data comes labeled with ISO country codes, so I used data from the `gapminder` pacakges to add in the full country name.
+
+```{r country_codes, message = F}
+library(magrittr) # viva la %<>%
+
+data("country_codes", package = "gapminder")
+
+rain %<>%
+  inner_join(country_codes) %>% 
+  mutate(country = gsub("United States", "USA", country)) # wasn't auto-matching
+```
+
+# Trend over time
+
+This dataset includes month level records for each country since 1905, but to look at the overall trend for the last century, I aggregated the data into yearly totals by country. The units for rainfall are millimeters (mm).
+
+```{r yearly}
+yearly <- rain %>%
+  group_by(year, country) %>%
+  summarise(rainfall = sum(rainfall))
+```
+
+Then plot them all out in a big facet panel.
+
+```{r static_plot, fig.height = 11}
+ggplot(yearly, aes(year, rainfall, color = country, group = country)) +
+  geom_path(alpha = .5) +
+  stat_smooth(method = "lm", aes(fill = country)) +
+  scale_x_continuous(breaks = c(1900, 1950, 2000)) +
+  facet_wrap(~country, scales = "free", nrow = 6) +
+  theme(legend.position = "none") +
+  labs("Yearly rainfall by country",
+       y = "precipitation (mm)",
+       x = NULL)
+```
+
+Annual volumes do vary a lot, but we can still see several clear upward trends, like Argentinia and Canada, where rainfall has increased over the last century.
+
+# Quanitfy trends with LMs
+
+Seeing might be beleiving but statistical inference is a better way to sanity check yourself, so to complement the plot above, I built linear models for each country.
+
+```{r time_models, message = F}
+time_model <- yearly %>%
+  group_by(country) %>%
+  nest() %>%
+  mutate(modl = map(data, ~ lm(rainfall ~ year, .)))
+```
+
+To highlight the key components of the models I'm using `formattable` [by Kun Ren](https://github.com/renkun-ken), to deliver a table summary. This 📦 offers a lot of scale options, which I think add a lot of impact value to over traditional tables.
+
+Here I'm extracting the coefficient estimate for `year` and the `p-value` associated with it from the F-test, and using conditional-color and background-color-gradient for styling.
+
+```{r}
+library(formattable)
+
+time_table <- time_model %>%
+  mutate(slope_coef = map(modl,
+                      ~ broom::tidy(.) %>%
+                        filter(term == "year"))) %>%
+  unnest(slope_coef) %>%
+  arrange(p.value) %>% 
+  select(country, estimate, p.value)
+
+time_table %>%
+  mutate_if(is.numeric, ~signif(., 2)) %>% 
+  formattable::format_table(
+    list(estimate = formatter("span",
+                              style = x ~ ifelse(x > 0,
+                                                 style(color = "#A0615F", font.weight = "bold"),
+                                                 "")),
+         p.value = color_tile("cadetblue", "grey"))
+  )
+```
+
+Most countries have positive estimates for the `year` coefficient, only Chile, Guatemala and Honduras don't. Of the countries with p-values less than .05 **ALL** have positive estimates for the `year` coefficient.
+
+# A map for geographic effect
+
+Finally to see the model data geographically, I made a map with `geom_sf()`.
+
+```{r}
+library(sf)
+
+world <- maps::map('world', plot = FALSE, fill = TRUE) %>%
+  st_as_sf() %>%
+  rename(country = ID)
+
+inner_join(world, time_table) %>%
+  ggplot() +
+  geom_sf(aes(fill = estimate, color = p.value < .05)) +
+  scale_fill_gradient2(name = "yearly change (mm)") +
+  scale_color_manual(values = c("grey", "black")) +
+  coord_sf(xlim = c(-180, 0)) +
+  theme_void() +
+  labs(title = "Yearly change in precipication from 1901-2015")
+```
+
+So most of the countries with ambigous trends are close to the equator, Chile being the exception. It also looks like the countries closest to the south Atlantic see the largest yearly increases.
+
+# Conclusion
+
+I'm finishing this post on a day where it is snowing/raining yet again. So next time I have that small-talk conversation about how wet its been lately, I'll be ready with statistics from the past century, to show that it really is getting wetter.

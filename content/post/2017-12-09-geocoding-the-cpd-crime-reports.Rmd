@@ -22,7 +22,7 @@ slug: geocoding-the-cpd-crime-reports
 Unfortunately the Crime Data from the [Charllottesville Open Data Portal](http://opendata.charlottesville.org/) (OPD) doesn't come currated with latitude and longitude coordinates. So it is up to us to geocode it, by accessing the Google Maps API via the great R 📦 [ggmap](https://github.com/dkahle/ggmap).
 
 
-```{r setup, include=TRUE, warning = FALSE, message = FALSE}
+```{r setup, include=TRUE, warning = FALSE, message = FALSE, eval = F}
 # Load Out -----------------------------------------------
 library(geojsonio)
 library(ggmap)
@@ -34,7 +34,7 @@ library(magrittr) # %<>% life
 
 Using the OPD's API is easy with `library(geojsonio)` and I made a separate [API post here](./api.html), if you want more details. I like to use `geojsonio::geojson_read` to import any data from the ODP. By default the return value will be a `list` object, in the "geoJSON" format. Becasue the crime data has no geometry/shape components, we can parse the original `list` down to just a `tibble`.
 
-```{r api_input, cache=TRUE}
+```{r api_input, eval = F}
 crime_json <- geojson_read("https://opendata.arcgis.com/datasets/d1877e350fad45d192d233d2b2600156_7.geojson",
                            parse = TRUE) # ~ 1-5 minutes...for a 2 element list
 
@@ -51,7 +51,7 @@ Since geocoding is based exclusivley on the address of a location, we need to ma
 
 First lets look at `BlockNumber`. This dataset does not include specific addresses by design, in an effort to balance privacy and public safety, so all values are rounded to the nearest hundred.
 
-```{r block_number}
+```{r block_number, eval = F}
 # first step always trim white space
 crime_df %<>% mutate_at(vars(BlockNumber, StreetName), funs(trimws(.)))
 
@@ -62,14 +62,14 @@ table(crime_df$BlockNumber, useNA = "always") %>% sort()
 
 From my personal expeirence, I know that addresses for the "0" block, like "0 Avon St", geocode poorly. To combat this I am recoding all reports from a zero hundred block to a one hundred block. This is small shift geographically, and since it often results in a more accurate location we are likely improving subsequent spatial analysis compared to the zero hundred block call, which is usally called somewhere near the middle of the street's length. Also I am recoding the NA values as one hundred block values as well.
 
-```{r}
+```{r eval = F}
 crime_df$BlockNumber %<>% ifelse(is.na(.), 100, .) %>% ifelse(. == 0, 100, .)
 table(crime_df$BlockNumber, useNA = "always") # better
 ```
 
 Next lets look at the `StreetName` values. Here we can expect a lot more unique values and a lot more typing mistakes.
 
-```{r}
+```{r eval = F}
 table(crime_df$StreetName) %>% sort(decreasing = TRUE) %>% head(20) # don't print too much
 length(table(crime_df$StreetName)) # 1704
 ```
@@ -80,7 +80,7 @@ Since there are almost 1700 unique street names, of course we see things like "W
 
 The final step in our geocode prep is to append the correct "City, State". Since almost every American town has a Main St, we need to be specific that we only care about the Main St in Charlottesville Virginia. So now all that's left to do is `paste` everything together and let Google handle the heavy lifting.
 
-```{r address_build}
+```{r address_build, eval = F}
 crime_df %<>% mutate(address = paste(BlockNumber, StreetName, "Charlottesville VA"))
 ```
 
@@ -88,7 +88,7 @@ crime_df %<>% mutate(address = paste(BlockNumber, StreetName, "Charlottesville V
 
 Google Maps are the best and of course Google offers some really nice APIs to work with them. This makes using Google Maps attractive to companies and because of this Google has established tiered (read \$\$\$) access levels to these utilities. Any individual can submit 2,500 request to the API per day, for free, which is really nice. Beyond that a billing account is required and the nominal fee of \$0.50 per 1,000 requests is charged. That means if we wanted to run a query for every report in the dataset we would have to wait 13 days or pay ~ \$15 dollars. The fifteen dollars doesn't sound too bad, but if we filter down to unique addresses only we can cut our costs drastically.
 
-```{r unique_addresses}
+```{r unique_addresses, eval = F}
 # check for unique addresses
 address_df <- data.frame(address = unique(crime_df$address))
 nrow(address_df) # 3144

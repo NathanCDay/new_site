@@ -8,15 +8,15 @@ output:
     smaller: yes
 ---
 
-```{r setup, include=FALSE}
+```{r, include = F}
 knitr::opts_chunk$set(echo = FALSE)
-library(magrittr)
-library(tidyverse)
-library(broom)
-library(viridis)
-library(sf)
-library(tidycensus)
 ```
+
+## Crime Data Dive
+
+Nathan Day
+
+natedayta.com
 
 ## Why drug crime? {.build}
 
@@ -43,11 +43,11 @@ library(tidycensus)
 
 ```{r libs, echo = TRUE, message = FALSE, warning = FALSE}
 library(geojsonio) # get ODP data
-library(tidyverse) # duh
+library(sf) # the new spatial kid
+library(spdep) # the spatial grandaddy
+library(broom) # extract model info easy
 library(magrittr) # %<>% life
-library(viridis) # it's pretty
-library(sf) # the new kid
-library(spdep) # the grandaddy
+library(tidyverse) # duh
 ```
 
 ## Where is crime happening? {.build}
@@ -60,7 +60,7 @@ census <- readRDS(gzcon(url(paste0(my_github,"census_sf.RDS"))))
 ggplot(crime_counts) +
     geom_sf(data = census) +
     geom_sf(aes(size = n, color = n, alpha = n)) +
-    scale_color_viridis() +
+    scale_color_viridis_c() +
     facet_wrap(~drug_flag) 
 
 crime_counts %<>% st_set_geometry(NULL)
@@ -87,7 +87,7 @@ The police station's address is 606 E Market Street....
 ```{r police_station_proportions, echo = TRUE}
 station_props <- arrange(crime_counts, -n) %>%
     group_by(drug_flag) %>%
-    add_count(wt = n) %>%
+    add_count(wt = n, name = "nn") %>%
     slice(1)
 
 with(station_props, prop.test(n, nn)) %>% tidy
@@ -111,8 +111,9 @@ long_url <- "https://opendata.arcgis.com/datasets/e60c072dbb734454a849d21d3814cc
 census <- geojsonio::geojson_read(long_url, what = "sp") %>%
     st_as_sf()
 
-ggplot(census, aes(fill = HU_Vacant / Housing_Units)) +
-    geom_sf() + scale_fill_viridis()
+ggplot(census, aes(fill = HU_Vacant / Housing_Units)) + # fill with whatever you want
+  geom_sf() +
+  scale_fill_viridis_c() # aww yess
 ```
 
 ## Keep doing it {.smaller .build}
@@ -165,7 +166,7 @@ census %<>% inner_join(crime_block, by = c("OBJECTID" = "within"))
 
 ```{r, echo = TRUE}
 ggplot(census, aes(fill = frac_drugs)) +
-    geom_sf() + scale_fill_viridis()
+    geom_sf() + scale_fill_viridis_c()
 ```
 
 ## Is it random? {.smaller}
