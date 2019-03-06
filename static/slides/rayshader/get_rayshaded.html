@@ -153,13 +153,14 @@ mat %&gt;%
 
 ---
 
-# 5b) 😎   😎    😎 
+# 5b) 😎  🌊    🌓�🌓
 
 
 ```r
 mat %&gt;%
   sphere_shade() %&gt;% 
-  add_water(detect_water(mat), color = "desert") %&gt;% 
+  add_water(detect_water(mat)) %&gt;%
+  add_shadow(ray_shade(mat)) %&gt;% 
   plot_map()
 ```
 
@@ -167,7 +168,7 @@ mat %&gt;%
 
 ---
 
-# 5c) 😎  😎  🦄
+# 5c) 😎 🦄  
 
 
 ```r

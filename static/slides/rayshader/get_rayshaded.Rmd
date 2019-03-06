@@ -15,6 +15,7 @@ output:
 
 ```{r setup, include=FALSE}
 options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(fig.height = 5)
 ```
 class: center
 
@@ -114,18 +115,19 @@ mat %>%
 
 ---
 
-# 5b) 😎   😎    😎 
+# 5b) 😎  🌊    🌓�🌓
 
 ```{r ray2}
 mat %>%
   sphere_shade() %>% 
-  add_water(detect_water(mat), color = "desert") %>% 
+  add_water(detect_water(mat)) %>%
+  add_shadow(ray_shade(mat)) %>% 
   plot_map()
 ```
 
 ---
 
-# 5c) 😎  😎  🦄
+# 5c) 😎 🦄  
 
 ```{r ray3}
 mat %>%
