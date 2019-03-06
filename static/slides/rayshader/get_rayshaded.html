@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>How to get rayshaded</title>
+    <meta charset="utf-8">
+    <meta name="author" content="Nathan ‘Nate’ Day" />
+    <meta name="date" content="2019-03-06" />
+    <link href="libs/remark-css/robot.css" rel="stylesheet" />
+    <link href="libs/remark-css/robot-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# How to get rayshaded
+## 😎
+### Nathan ‘Nate’ Day
+### 2019-03-06
+
+---
+
+
+
+class: center
+
+# Rayshade yourself
+
+[@rayshaderbot](https://twitter.com/rayshaderbot)
+
+&lt;iframe width="560" height="315" src="https://www.youtube.com/embed/7_YrB4FljsQ" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen&gt;&lt;/iframe&gt;
+
+---
+
+# 5 Steps to Shade
+
+.large[
+1. Find a elevation map
+2. Read that map into R
+3. Convert it to raster
+4. Convert it to matrix
+5. 😎
+]
+
+---
+
+# 1) Find an elevation map
+
+The US government has got you (at least on this)
+
+[National Map App](https://viewer.nationalmap.gov/basic/)
+
+Download the elevation as IMG format
+
+
+```r
+img_file &lt;- "~/Downloads/USGS_NED_13_n38w080_IMG/USGS_NED_13_n38w080_IMG.img"
+```
+
+---
+
+# 2) Read that map into R
+
+Be careful, they're big fellas
+
+
+```r
+library(rgdal)
+GDALinfo(img_file)
+```
+
+```
+## rows        10812 
+## columns     10812 
+## bands       1 
+## lower left origin.x        -80.00056 
+## lower left origin.y        36.99944 
+## res.x       9.259259e-05 
+## res.y       9.259259e-05 
+## ysign       -1 
+## oblique.x   0 
+## oblique.y   0 
+## driver      HFA 
+## projection  +proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs 
+## file        ~/Downloads/USGS_NED_13_n38w080_IMG/USGS_NED_13_n38w080_IMG.img 
+## apparent band summary:
+##    GDType hasNoDataValue   NoDataValue blockSize1 blockSize2
+## 1 Float32           TRUE -3.402823e+38         64         64
+## apparent band statistics:
+##      Bmin    Bmax    Bmean      Bsd
+## 1 118.096 1293.38 394.8112 190.6556
+## Metadata:
+## BandDefinitionKeyword=NONE 
+## ConfigKeyword= 
+## DataType=Elevation
+```
+
+---
+
+# 2b) Read *a small chunk of* that map into R
+
+Use `offset` and `region.dim` to subset
+
+
+```r
+gdal &lt;- readGDAL(img_file,
+                 region.dim = c(1000,1000)
+                 )
+```
+
+---
+
+# 3) Convert to raster
+
+
+```r
+library(raster)
+
+rastr &lt;- raster(gdal)
+```
+
+---
+
+# 4) Convert to matrix
+
+
+```r
+dat &lt;- extract(rastr,
+               extent(rastr),
+               buffer = 1000
+               )
+
+mat &lt;- matrix(dat,
+              nrow(rastr),
+              ncol(rastr)
+              )
+```
+
+---
+
+# 5) 😎
+
+
+```r
+library(magrittr)
+library(rayshader)
+
+mat %&gt;%
+  sphere_shade() %&gt;% 
+  plot_map()
+```
+
+![](get_rayshaded_files/figure-html/ray1-1.png)&lt;!-- --&gt;
+
+---
+
+# 5b) 😎   😎    😎 
+
+
+```r
+mat %&gt;%
+  sphere_shade() %&gt;% 
+  add_water(detect_water(mat), color = "desert") %&gt;% 
+  plot_map()
+```
+
+![](get_rayshaded_files/figure-html/ray2-1.png)&lt;!-- --&gt;
+
+---
+
+# 5c) 😎  😎  🦄
+
+
+```r
+mat %&gt;%
+  sphere_shade(texture = "bw") %&gt;% 
+  add_water(detect_water(mat), color = "unicorn") %&gt;% 
+  plot_map()
+```
+
+![](get_rayshaded_files/figure-html/ray3-1.png)&lt;!-- --&gt;
+
+---
+
+# Learn more
+
+Watch the best talk from rstudio::conf 2019
+&lt;p&gt;&lt;a href="https://resources.rstudio.com/rstudio-conf-2019/3d-mapping-plotting-and-printing-with-rayshader?wvideo=rqe461mc6z"&gt;&lt;img src="https://embedwistia-a.akamaihd.net/deliveries/6ae49f2cf01491080771ae662a4ec8c6.jpg?image_play_button_size=2x&amp;amp;image_crop_resized=960x540&amp;amp;image_play_button=1&amp;amp;image_play_button_color=4287c7e0" width="400" height="225" style="width: 400px; height: 225px;"&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://resources.rstudio.com/rstudio-conf-2019/3d-mapping-plotting-and-printing-with-rayshader?wvideo=rqe461mc6z"&gt;3D mapping, plotting, and printing with rayshader - Tyler Morgan-Wall&lt;/a&gt;&lt;/p&gt;
+
+[Rayshader on GitHub](https://github.com/tylermorganwall/rayshader)
+    </textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function() {
+  var d = document, s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})();</script>
+
+<script>
+(function() {
+  var i, text, code, codes = document.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+})();
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

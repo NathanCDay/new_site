@@ -1,0 +1,145 @@
+---
+title: "How to get rayshaded"
+subtitle: "😎"
+author: "Nathan 'Nate' Day"
+date: "2019-03-06"
+output:
+  xaringan::moon_reader:
+    css: ["robot", "robot-fonts"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+```
+class: center
+
+# Rayshade yourself
+
+[@rayshaderbot](https://twitter.com/rayshaderbot)
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/7_YrB4FljsQ" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+---
+
+# 5 Steps to Shade
+
+.large[
+1. Find a elevation map
+2. Read that map into R
+3. Convert it to raster
+4. Convert it to matrix
+5. 😎
+]
+
+---
+
+# 1) Find an elevation map
+
+The US government has got you (at least on this)
+
+[National Map App](https://viewer.nationalmap.gov/basic/)
+
+Download the elevation as IMG format
+
+```{r download}
+img_file <- "~/Downloads/USGS_NED_13_n38w080_IMG/USGS_NED_13_n38w080_IMG.img"
+```
+
+---
+
+# 2) Read that map into R
+
+Be careful, they're big fellas
+
+```{r info, message = F, warning=F,}
+library(rgdal)
+GDALinfo(img_file)
+```
+
+---
+
+# 2b) Read *a small chunk of* that map into R
+
+Use `offset` and `region.dim` to subset
+
+```{r gdal, results='hide'}
+gdal <- readGDAL(img_file,
+                 region.dim = c(1000,1000)
+                 )
+```
+
+---
+
+# 3) Convert to raster
+
+```{r raster}
+library(raster)
+
+rastr <- raster(gdal)
+```
+
+---
+
+# 4) Convert to matrix
+
+```{r matrix}
+dat <- extract(rastr,
+               extent(rastr),
+               buffer = 1000
+               )
+
+mat <- matrix(dat,
+              nrow(rastr),
+              ncol(rastr)
+              )
+```
+
+---
+
+# 5) 😎
+
+```{r ray1, message = F}
+library(magrittr)
+library(rayshader)
+
+mat %>%
+  sphere_shade() %>% 
+  plot_map()
+```
+
+---
+
+# 5b) 😎   😎    😎 
+
+```{r ray2}
+mat %>%
+  sphere_shade() %>% 
+  add_water(detect_water(mat), color = "desert") %>% 
+  plot_map()
+```
+
+---
+
+# 5c) 😎  😎  🦄
+
+```{r ray3}
+mat %>%
+  sphere_shade(texture = "bw") %>% 
+  add_water(detect_water(mat), color = "unicorn") %>% 
+  plot_map()
+```
+
+---
+
+# Learn more
+
+Watch the best talk from rstudio::conf 2019
+<p><a href="https://resources.rstudio.com/rstudio-conf-2019/3d-mapping-plotting-and-printing-with-rayshader?wvideo=rqe461mc6z"><img src="https://embedwistia-a.akamaihd.net/deliveries/6ae49f2cf01491080771ae662a4ec8c6.jpg?image_play_button_size=2x&amp;image_crop_resized=960x540&amp;image_play_button=1&amp;image_play_button_color=4287c7e0" width="400" height="225" style="width: 400px; height: 225px;"></a></p><p><a href="https://resources.rstudio.com/rstudio-conf-2019/3d-mapping-plotting-and-printing-with-rayshader?wvideo=rqe461mc6z">3D mapping, plotting, and printing with rayshader - Tyler Morgan-Wall</a></p>
+
+[Rayshader on GitHub](https://github.com/tylermorganwall/rayshader)
+
