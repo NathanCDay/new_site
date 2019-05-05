@@ -5,10 +5,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{{ .Title }}</title>
         {{ partial "css" . }} {{ partial "js" . }} {{ .Hugo.Generator }}
-        {{ if .RSSLink }}
-        <link href="{{ .RSSLink }}" rel="alternate" type="application/rss+xml" title="{{ .Site.Title }}" />
-        <link href="{{ .RSSLink }}" rel="feed" type="application/rss+xml" title="{{ .Site.Title }}" />
-        {{ end }}
         {{ if .Site.GoogleAnalytics }}
         
         <!-- Global Site Tag (gtag.js) - Google Analytics -->
@@ -87,7 +83,7 @@
                     {{ if .Site.Menus.icon }}
                         <ul class="nav navbar-nav navbar-right">
                             {{ range sort .Site.Menus.icon }}
-                                <li class="navbar-icon"><a href="{{ .URL }}"><i class="fa fa-{{ .Name }}"></i></a></li>
+                                <li class="navbar-icon"><a href="{{ .URL }}"><i class="{{ .Name }}"></i></a></li>
                             {{ end }}
                             {{ partial "toggle"}}
                         </ul>
