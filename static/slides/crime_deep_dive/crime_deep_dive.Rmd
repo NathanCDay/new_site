@@ -186,8 +186,11 @@ Are there other community metrics that are correlated?
 Median `income` data comes from the American Community Survey via `library(tidycensus)` to supplement housing and demographics from the original Census data from ODP.
 
 ```{r model_vars, echo=F, fig.height = 4, warning =F, message = F}
-cvl <- tidycensus::get_acs(geography = "block group", county = "Charlottesville", state = "VA",
-               variables = c("B19013_001") )
+cvl <- tidycensus::get_acs(
+  geography = "block group",
+  county = "Charlottesville",
+  state = "VA",
+  variables = c("B19013_001") )
 
 decode <- c("income") %>% set_names(c("B19013_001"))
 cvl$variable %<>% decode[.]

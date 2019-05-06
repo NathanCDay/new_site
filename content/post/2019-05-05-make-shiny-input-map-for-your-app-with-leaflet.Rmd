@@ -11,11 +11,11 @@ tags:
 
 ## inputMap()
 
-Spatial vizualizations and especially interactive ones, are great tools to communicate physical location data. Building interactive maps in R is realivelty straight forward via the `leaflet` library. And constructing data apps is also pretty simple with the `shiny` package. This post combines these two, to make a map input widget for Shiny, that uses click events to filter a data set.
+Spatial vizualizations and especially interactive ones, are great tools to communicate physical location data. Building interactive maps in R is realivelty straight forward via the `leaflet` library. And constructing data apps is also pretty simple with the `shiny` package.
 
-## 3 steps
+This post combines these, to make a map input widget for Shiny. In this example I'll build a map that listens for click event and filters a data set based on the selected region.
 
-1) Make the map
+### 1: Make the map
 
 I'm using R's library `sf` to handle the spatial data here but there are alternatives. `leaflet` maps will work with a [variaty of other formats](https://rstudio.github.io/leaflet/map_widget.html), including `matrix`/`data.frame`, `sp` objects, and `map` objects.
 
@@ -40,14 +40,14 @@ map <- leaflet(nc,
       bringToFront = TRUE)
   )
 
-map
+widgetframe::frameWidget(map, height = '400')
 ```
 
-The `leafletOptions()` arguments are important because I don't want the input map moving. If you want this "style", you will have to adjust the `minZoom`/`maxZoom` values, depending on the size of the map your select. The `highlightOptions()` and `label` help make the map better as a selection tool.
+The `leafletOptions()` arguments here are important because I don't want the input map moving. If you want this "style", you will have to adjust the `minZoom`/`maxZoom` values, depending on the size of the map your select. The `highlightOptions()` and `label` args make the map better as a selection tool, IMO.
 
-2) Add map to your shiny app
+### 2: Add map to app
 
-Build a `leaflet` map output somewhere in your `server`. Remember `nc` must be available, but should probably be read in outside of the `server`.
+Using the standard `leaflet` patterns, we add a `renderLeaflet()`, to build the map somewhere in your `server`. Remember the `nc` data must be available, but should probably be read in outside of the `server`.
 
 ```{r add_to_app, eval = FALSE}
 output$inputMap <- renderLeaflet({
@@ -68,17 +68,17 @@ output$inputMap <- renderLeaflet({
 })
 ```
 
-Note the `layerID` argument is essential for next step. I reccomend making this the same variable you want to filter the data set with.
+Note the `layerID` argument, it is essential for next step. I reccomend making this the same variable you want to filter the data set with.
 
-Now somewhere in `ui` make the container to hold the map.
+Now somewhere in `ui` use `leafletOutput()` to make the container to hold the map. This would be located with the other input widgets, maybe in a sidebar or fluid row.
 
-```{r}
+```{r, eval = F}
 leafletOutput("inputMap", height = 200)
 ```
 
 3) Listen for clicks
 
-Set up observer in `server`. To access `leaflet` events there is a special syntax `input$MAPID_OBJECT_EVENT`. Because of this pattern you should not use "_"s in your `MAPID`.
+Set up observer in `server`. To access `leaflet` events there is a special syntax `input$MAPID_OBJECT_EVENT`. Because of this, you shouldn't use "_"s in your `MAPID`.
 
 ```{r listener, eval = F}
   observe({
@@ -94,6 +94,6 @@ Set up observer in `server`. To access `leaflet` events there is a special synta
 That's it. Now you have a map you can use as an input widget.
 
 ## Working app
-
+<iframe>
 <script src="https://gist.github.com/nathancday/18f570dd89e71f4f88b11ef79cdd94ca.js"></script>
-
+</iframe>
