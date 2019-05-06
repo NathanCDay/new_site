@@ -7,17 +7,18 @@ categories:
 tags:
   - leaflet
   - shiny
+  - sf
 ---
 
 ## inputMap()
 
-Spatial vizualizations and especially interactive ones, are great tools to communicate physical location data. Building interactive maps in R is realivelty straight forward via the `leaflet` library. And constructing data apps is also pretty simple with the `shiny` package.
+Spatial vizualizations and especially interactive ones, are great tools to communicate physical location data. Building tools like this with R is  possible via the `leaflet` and `shiny` packages. This post shows how to combine these libraries, to create a map **input widget** for a Shiny app.
 
-This post combines these, to make a map input widget for Shiny. In this example I'll build a map that listens for click event and filters a data set based on the selected region.
+In this example I'll build a map of counties in North Carolina (using the data that comes in the `sf` library) that listens for click events and filters the data set based on the selected county.
 
 ### 1: Make the map
 
-I'm using R's library `sf` to handle the spatial data here but there are alternatives. `leaflet` maps will work with a [variaty of other formats](https://rstudio.github.io/leaflet/map_widget.html), including `matrix`/`data.frame`, `sp` objects, and `map` objects.
+I'm using R's library `sf` to handle the spatial data here, but there are alternatives. `leaflet` maps will work with a [variaty of other formats](https://rstudio.github.io/leaflet/map_widget.html), including `matrix`/`data.frame`, `sp` objects, and `map` objects.
 
 ```{r make_map}
 library(sf)
@@ -47,7 +48,7 @@ The `leafletOptions()` arguments here are important because I don't want the inp
 
 ### 2: Add map to app
 
-Using the standard `leaflet` patterns, we add a `renderLeaflet()`, to build the map somewhere in your `server`. Remember the `nc` data must be available, but should probably be read in outside of the `server`.
+Using the standard `leaflet` patterns, we add a `renderLeaflet()`, to contruct the map inside the `server`. Remember that `nc` must be available for map to be built, but should probably be read in outside of the `server`.
 
 ```{r add_to_app, eval = FALSE}
 output$inputMap <- renderLeaflet({
@@ -68,32 +69,42 @@ output$inputMap <- renderLeaflet({
 })
 ```
 
-Note the `layerID` argument, it is essential for next step. I reccomend making this the same variable you want to filter the data set with.
+Note the `layerID` argument is essential for next step and I reccomend making this the same variable you want to filter the data set with.
 
-Now somewhere in `ui` use `leafletOutput()` to make the container to hold the map. This would be located with the other input widgets, maybe in a sidebar or fluid row.
+Now in `ui` use `leafletOutput()` to create the container to display the map. This would be located with the other input widgets, maybe in a sidebar or fluid row.
 
 ```{r, eval = F}
 leafletOutput("inputMap", height = 200)
 ```
 
-3) Listen for clicks
+### 3: Respond to clicks
 
-Set up observer in `server`. To access `leaflet` events there is a special syntax `input$MAPID_OBJECT_EVENT`. Because of this, you shouldn't use "_"s in your `MAPID`.
+To access `leaflet` events there is a special syntax `input$MAPID_OBJECT_EVENT`, because of this, you shouldn't use "_"s in your `MAPID`.
+
+Following the Shiny pattern to watch for changes, we set up observer in `server` to listen for the leaflet click event.
 
 ```{r listener, eval = F}
-  observe({
+observeEvent(input$inputMap_shape_click, {
     click <- input$inputMap_shape_click
-    if (is.null(click)) return()
+    req(click)
     
-    output$filteredResults <- renderDataTable({
-      nc %>% filter(NAME == click$id)
-    })
-  })
+    rv$nc <- filter(nc, NAME == click$id)
+    
+    leafletProxy("inputMap", session, data = rv$nc) %>% 
+        removeShape("selected") %>% 
+        addPolygons(layerId = "selectecd",
+                    fillColor = "red",
+                    fillOpacity = 1)
+    
+})
 ```
 
-That's it. Now you have a map you can use as an input widget.
+In this observer we are doing two separte things, filtering the display data and updating the input map. I'm using `rv`, which is a `reactiveValues()` object, to hold the filtered data, but you can use any type of reactive object. Updating the input map is just visual sugar, not necessary for the filtering to occur, but adds a nice touch. Using a `layerId` is critical for the removal step to work properly.
+
+And that's it, now you have a map you can use as an input widget.
 
 ## Working app
+
 <iframe>
 <script src="https://gist.github.com/nathancday/18f570dd89e71f4f88b11ef79cdd94ca.js"></script>
 </iframe>
