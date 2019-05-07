@@ -7,6 +7,7 @@ categories:
 tags:
   - leaflet
   - shiny
+  - sf
 ---
 
 <script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
@@ -16,11 +17,11 @@ tags:
 
 <div id="inputmap" class="section level2">
 <h2>inputMap()</h2>
-<p>Spatial vizualizations and especially interactive ones, are great tools to communicate physical location data. Building interactive maps in R is realivelty straight forward via the <code>leaflet</code> library. And constructing data apps is also pretty simple with the <code>shiny</code> package.</p>
-<p>This post combines these, to make a map input widget for Shiny. In this example I’ll build a map that listens for click event and filters a data set based on the selected region.</p>
+<p>Spatial vizualizations and especially interactive ones, are great tools to communicate physical location data. Building tools like this with R is possible via the <code>leaflet</code> and <code>shiny</code> packages. This post shows how to combine these libraries, to create a map <strong>input widget</strong> for a Shiny app.</p>
+<p>In this example I’ll build a map of counties in North Carolina (using the data that comes in the <code>sf</code> library) that listens for click events and filters the data set based on the selected county.</p>
 <div id="make-the-map" class="section level3">
 <h3>1: Make the map</h3>
-<p>I’m using R’s library <code>sf</code> to handle the spatial data here but there are alternatives. <code>leaflet</code> maps will work with a <a href="https://rstudio.github.io/leaflet/map_widget.html">variaty of other formats</a>, including <code>matrix</code>/<code>data.frame</code>, <code>sp</code> objects, and <code>map</code> objects.</p>
+<p>I’m using R’s library <code>sf</code> to handle the spatial data here, but there are alternatives. <code>leaflet</code> maps will work with a <a href="https://rstudio.github.io/leaflet/map_widget.html">variaty of other formats</a>, including <code>matrix</code>/<code>data.frame</code>, <code>sp</code> objects, and <code>map</code> objects.</p>
 <pre class="r"><code>library(sf)</code></pre>
 <pre><code>## Linking to GEOS 3.7.1, GDAL 2.4.0, PROJ 5.2.0</code></pre>
 <pre class="r"><code>nc &lt;- st_read(system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;))</code></pre>
@@ -55,7 +56,7 @@ map &lt;- leaflet(nc,
 </div>
 <div id="add-map-to-app" class="section level3">
 <h3>2: Add map to app</h3>
-<p>Using the standard <code>leaflet</code> patterns, we add a <code>renderLeaflet()</code>, to build the map somewhere in your <code>server</code>. Remember the <code>nc</code> data must be available, but should probably be read in outside of the <code>server</code>.</p>
+<p>Using the standard <code>leaflet</code> patterns, we add a <code>renderLeaflet()</code>, to contruct the map inside the <code>server</code>. Remember that <code>nc</code> must be available for map to be built, but should probably be read in outside of the <code>server</code>.</p>
 <pre class="r"><code>output$inputMap &lt;- renderLeaflet({
   leaflet(nc,
            options = leafletOptions(
@@ -72,27 +73,32 @@ map &lt;- leaflet(nc,
       bringToFront = TRUE)
   )
 })</code></pre>
-<p>Note the <code>layerID</code> argument, it is essential for next step. I reccomend making this the same variable you want to filter the data set with.</p>
-<p>Now somewhere in <code>ui</code> use <code>leafletOutput()</code> to make the container to hold the map. This would be located with the other input widgets, maybe in a sidebar or fluid row.</p>
+<p>Note the <code>layerID</code> argument is essential for next step and I reccomend making this the same variable you want to filter the data set with.</p>
+<p>Now in <code>ui</code> use <code>leafletOutput()</code> to create the container to display the map. This would be located with the other input widgets, maybe in a sidebar or fluid row.</p>
 <pre class="r"><code>leafletOutput(&quot;inputMap&quot;, height = 200)</code></pre>
-<ol start="3" style="list-style-type: decimal">
-<li>Listen for clicks</li>
-</ol>
-<p>Set up observer in <code>server</code>. To access <code>leaflet</code> events there is a special syntax <code>input$MAPID_OBJECT_EVENT</code>. Because of this, you shouldn’t use "_"s in your <code>MAPID</code>.</p>
-<pre class="r"><code>  observe({
+</div>
+<div id="respond-to-clicks" class="section level3">
+<h3>3: Respond to clicks</h3>
+<p>To access <code>leaflet</code> events there is a special syntax <code>input$MAPID_OBJECT_EVENT</code>, because of this, you shouldn’t use "_"s in your <code>MAPID</code>.</p>
+<p>Following the Shiny pattern to watch for changes, we set up observer in <code>server</code> to listen for the leaflet click event.</p>
+<pre class="r"><code>observeEvent(input$inputMap_shape_click, {
     click &lt;- input$inputMap_shape_click
-    if (is.null(click)) return()
+    req(click)
     
-    output$filteredResults &lt;- renderDataTable({
-      nc %&gt;% filter(NAME == click$id)
-    })
-  })</code></pre>
-<p>That’s it. Now you have a map you can use as an input widget.</p>
+    rv$nc &lt;- filter(nc, NAME == click$id)
+    
+    leafletProxy(&quot;inputMap&quot;, session, data = rv$nc) %&gt;% 
+        removeShape(&quot;selected&quot;) %&gt;% 
+        addPolygons(layerId = &quot;selectecd&quot;,
+                    fillColor = &quot;red&quot;,
+                    fillOpacity = 1)
+    
+})</code></pre>
+<p>In this observer we are doing two separte things, filtering the display data and updating the input map. I’m using <code>rv</code>, which is a <code>reactiveValues()</code> object, to hold the filtered data, but you can use any type of reactive object. Updating the input map is just visual sugar, not necessary for the filtering to occur, but adds a nice touch. Using a <code>layerId</code> is critical for the removal step to work properly.</p>
+<p>And that’s it, now you have a map you can use as an input widget.</p>
 </div>
 </div>
 <div id="working-app" class="section level2">
 <h2>Working app</h2>
-<iframe>
 <script src="https://gist.github.com/nathancday/18f570dd89e71f4f88b11ef79cdd94ca.js"></script>
-</iframe>
 </div>

@@ -105,6 +105,4 @@ And that's it, now you have a map you can use as an input widget.
 
 ## Working app
 
-<iframe>
 <script src="https://gist.github.com/nathancday/18f570dd89e71f4f88b11ef79cdd94ca.js"></script>
-</iframe>
