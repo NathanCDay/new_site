@@ -9,9 +9,9 @@ tags:
   - keyboad-shortcuts
 ---
 
-I spent last week working in train cars, coffee shops, and libraries. My job is mostly data analysis with RStudio, so I was a little worried about shrinking my workstation workflow down to just my 13" laptop. The reduced screen real-estate and lack of a mouse, motivated me to experiment a lot with RStudio's keyboard shortcuts. These are the six that I found myself using the most.
+I spent last week working in train cars, coffee shops, and libraries. My to-do list was mostly data analysis, so I was a little worried about shrinking my workstation workflow to just my 13" laptop. The reduced screen real-estate and lack of a mouse, motivated me to experiment a lot with RStudio's keyboard shortcuts. These are the six that I found myself using the most.
 
-### Zoom Plot tab
+### Zoom Plots
 
 <kbd class="item-cat">Control</kbd> + <kbd class="item-cat">Shift</kbd> + <kbd class="item-cat">6</kbd>
 
@@ -73,8 +73,8 @@ I found this most useful after I'd hit the wrong Zoom shortcut by mistake, it wa
 
 ### Conclusion
 
-Now that I'm back to normal workstation, I'm still using all of these shortcuts. It did require a lot of conscious effort at the begining to use the shortcuts and not bail out to the trackpad. But it's worth it, even after just one focused week I can feel the muscle memory is improving.
+Now that I'm back to my normal workstation, I'm still using all of these shortcuts. It does require a lot of conscious effort at the begining to use the shortcuts and not bail out to the trackpad. But it's worth it, even after just one focused week I can feel the muscle memory is improving.
 
-You can see all of RStudios available shortcuts for yourself with the keyboard shortcut <kbd class="item-cat">Option</kbd> + <kbd class="item-cat">Shift</kbd> + <kbd class="item-cat">K</kbd>.
+You can see all of RStudios available shortcuts for yourself with yet another keyboard shortcut <kbd class="item-cat">Option</kbd> + <kbd class="item-cat">Shift</kbd> + <kbd class="item-cat">K</kbd>.
 
 The screen screen recordings in this post are made with [KeyCastr](https://github.com/keycastr/keycastr/blob/master/README.md) which is also a great tool for teaching code. Thanks to Jeff Boichuk for showing me this!
