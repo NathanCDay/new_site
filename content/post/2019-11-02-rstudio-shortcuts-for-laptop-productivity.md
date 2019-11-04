@@ -23,7 +23,7 @@ I spent last week working in train cars, coffee shops, and libraries. My to-do l
 
 By far the *biggest* pane of working on a small screen for me is plotting. Trying to inspect even midly complex plots on 1/4 of of 13" is a bad time. And if you use any `plot()` based graphics, you will be seeing the "figure margins too large" error message a lot.
 
-Repeating this shorcut shrinks panels back to their prior sizes. Also worth mentioning, this *does not* move your cursor. So if you just ran into a fatal `plot` margin error in the Console, you just zoom then <kbd class="item-cat">u-arrow</kbd). + <kbd class="item-cat">Return to rerun and dodge the fatal margin error.</kbd>
+Repeating this shorcut shrinks panels back to their prior sizes. Also worth mentioning, this *does not* move your cursor. So if you just ran into a fatal `plot` margin error in the Console, you just zoom then <kbd class="item-cat">u-arrow</kbd>. + <kbd class="item-cat">Return to rerun and dodge the fatal margin error.</kbd>
 
 ### Focus to:
 
