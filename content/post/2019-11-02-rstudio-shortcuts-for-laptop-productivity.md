@@ -23,11 +23,11 @@ I spent last week working in train cars, coffee shops, and libraries. My to-do l
 
 By far the *biggest* pane of working on a small screen for me is plotting. Trying to inspect even midly complex plots on 1/4 of of 13" is a bad time. And if you use any `plot()` based graphics, you will be seeing the "figure margins too large" error message a lot.
 
-Repeating this shorcut shrinks panels back to their prior sizes. Also worth mentioning, this *does not* move your cursor. So if you just ran into a fatal `plot` margin error in the Console, you just zoom then <kbd class="item-cat">u-arrow</kbd>. + <kbd class="item-cat">Return to rerun and dodge the fatal margin error.</kbd>
+Repeating this shorcut shrinks panels back to their prior sizes. Also worth mentioning, this *does not* move your cursor. So if you just ran into a fatal `plot` margin error in the Console, you just zoom then <kbd class="item-cat">u-arrow</kbd>. + <kbd class="item-cat">Return</kbd> to rerun and dodge the fatal margin error.</kbd>
 
 ### Focus to:
 
-Learning to navitage RStudio with less mouse helps even at a desk workstation, and I felt it become even more valuable when all I had was the trackpad. These are the "Big 3", that I use all the time.
+Learning to navitage RStudio with less mouse helps even at a desk workstation, and I felt it become even more valuable when all I had was the trackpad. These are the "Big 3" re-focusers, that I use all the time.
 
 <video height = "320" width = "100%" autoplay loop name = "Switch editor tabs"
   src =/post/2019-11-02-rstudio-shortcuts-for-laptop-productivity_files/blog_big3.mov>
@@ -37,21 +37,21 @@ Learning to navitage RStudio with less mouse helps even at a desk workstation, a
 
 <kbd class="item-cat">Control</kbd> + <kbd class="item-cat">2</kbd>
 
-Moving the active cursor to the Console is great all things interactive.
+Moving the active cursor to the Console is great for all things interactive.
 
 #### Editor
 
 <kbd class="item-cat">Control</kbd> + <kbd class="item-cat">1</kbd>
 
-Of course you eventualy have to move back. Remembering "one, two" pattern for back and forth was helpful.
+Of course you'll have to move back. Remembering the "one, two" pattern for was helpful.
 
 #### Terminal
 
 <kbd class="item-cat">Option</kbd> + <kbd class="item-cat">Shift</kbd> + <kbd class="item-cat">T</kbd>
 
-This one was harder for me to remember becasue it wasn't in the <kbd class="item-cat">Control,</kbd> + <kbd class="item-cat">#</kbd> pattern.  But I use the `git` CLI a lot, so I had to learn it.
+This one was harder for me to remember becasue it wasn't in the <kbd class="item-cat">Control</kbd> + <kbd class="item-cat">#</kbd> pattern.  But I use the `git` CLI a lot, so I had to learn it.
 
-### Switch between tabs
+### Switch between Editor tabs
 
 <kbd class="item-cat">Control</kbd> + <kbd class="item-cat">Option</kbd> + <kbd class="item-cat">l/r arrows</kbd>
 
