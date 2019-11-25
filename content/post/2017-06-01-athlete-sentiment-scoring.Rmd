@@ -2,13 +2,12 @@
 title: Athlete Sentiment Scoring
 author: Nate Day
 date: '2017-06-01'
-slug: athlete-sentiment-scoring
 categories:
-  - Text Analysis
+  - NLP
 tags:
-  - tidytext
-  - sentimentr
-  - sports
+  - tidyverse
+  - web-scraping
+slug: athlete-sentiment-scoring
 ---
 
 <!-- ####![Sports fan baby](/images/ass/sports.gif) -->

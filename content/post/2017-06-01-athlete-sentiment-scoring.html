@@ -2,13 +2,12 @@
 title: Athlete Sentiment Scoring
 author: Nate Day
 date: '2017-06-01'
-slug: athlete-sentiment-scoring
 categories:
-  - Text Analysis
+  - NLP
 tags:
-  - tidytext
-  - sentimentr
-  - sports
+  - tidyverse
+  - web-scraping
+slug: athlete-sentiment-scoring
 ---
 
 
@@ -90,28 +89,22 @@ sports &lt;- map_df(pages, asap_scraper, .id = &quot;sport&quot;)
 <p>Let’s enjoy all of our hard work.</p>
 <pre class="r"><code>table(sports$speaker, useNA = &quot;always&quot;)</code></pre>
 <pre><code>## 
-##         ALEX NOREN      AUSTIN DILLON      AVERY BRADLEY 
-##                 25                 32                  6 
-##       BRAD STEVENS     BRIONY CARLYON     COLTON SISSONS 
-##                 18                  3                  3 
-##     DEAN BURMESTER     FILIP FORSBERG FRANCESCO MOLINARI 
-##                  4                  3                  4 
-## FREDERICK GAUDREAU     HENRIK STENSON         J.R. SMITH 
-##                  2                 10                  1 
-##   JUSTIN ALEXANDER         KEVIN LOVE        KRIS LETANG 
-##                 11                  5                  9 
-##         KYLE BUSCH       KYRIE IRVING       LeBRON JAMES 
-##                  1                  8                 11 
-##   MARTIN TRUEX JR.        MATT MURRAY      MIKE SULLIVAN 
-##                  8                 13                 13 
-##  NICOLAS COLSAERTS        P.K. SUBBAN   PETER LAVIOLETTE 
-##                  3                  7                 10 
-##  RICHARD CHILDRESS         RYAN ELLIS        SHANE LOWRY 
-##                 17                  8                  3 
-##      SIDNEY CROSBY      THE MODERATOR         TYRONN LUE 
-##                 15                 15                 14 
-##               &lt;NA&gt; 
-##                  0</code></pre>
+##         ALEX NOREN      AUSTIN DILLON      AVERY BRADLEY       BRAD STEVENS 
+##                 25                 32                  6                 18 
+##     BRIONY CARLYON     COLTON SISSONS     DEAN BURMESTER     FILIP FORSBERG 
+##                  3                  3                  4                  3 
+## FRANCESCO MOLINARI FREDERICK GAUDREAU     HENRIK STENSON         J.R. SMITH 
+##                  4                  2                 10                  1 
+##   JUSTIN ALEXANDER         KEVIN LOVE        KRIS LETANG         KYLE BUSCH 
+##                 11                  5                  9                  1 
+##       KYRIE IRVING       LeBRON JAMES   MARTIN TRUEX JR.        MATT MURRAY 
+##                  8                 11                  8                 13 
+##      MIKE SULLIVAN  NICOLAS COLSAERTS        P.K. SUBBAN   PETER LAVIOLETTE 
+##                 13                  3                  7                 10 
+##  RICHARD CHILDRESS         RYAN ELLIS        SHANE LOWRY      SIDNEY CROSBY 
+##                 17                  8                  3                 15 
+##      THE MODERATOR         TYRONN LUE               &lt;NA&gt; 
+##                 15                 14                  0</code></pre>
 <pre class="r"><code># get that non-athlete outa&#39; here
 sports %&lt;&gt;% filter(speaker != &quot;THE MODERATOR&quot;)</code></pre>
 </div>
