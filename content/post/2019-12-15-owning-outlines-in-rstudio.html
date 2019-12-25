@@ -1,0 +1,82 @@
+---
+title: Owning Outlines in RStudio
+author: Nate
+date: '2019-12-25'
+slug: owning-outlines-in-rstudio
+categories:
+  - RStudio
+tags:
+  - productivity
+description: Take advantage of organizing your R scripts in RStudio with these outline tips and tricks.
+twitter_img: /post/2019-12-15-owning-outlines-in-rstudio_files/outline-thumb.png
+---
+
+
+
+<p>I find myself using <a href="https://support.rstudio.com/hc/en-us/articles/200484568-Code-Folding-and-Sections">RStudio’s outline tool</a> a lot. It’s a great way to keep your code organized and literate, plus it makes navigating larger scripts so much easier! This post is everything <a href="/2019/11/02/rstudio-shortcuts-for-laptop-productivity/">I do to get the most out of</a> the outline format.</p>
+<div id="see-the-outline" class="section level2">
+<h2>See the outline</h2>
+<p>Be the outline. RStudio doens’t start with the outline shown by default (I really wish it did) so you have to open it each time, but it’s easy.</p>
+<p>Press the grey button in the upper right of the editor pan with 5 offset dark-grey lines to show/hide the outline. You can also toggle the outline with the keyboard shortcut:</p>
+<p><kbd class="item-cat">Control</kbd>+
+<kbd class="item-cat">Shift</kbd>+
+<kbd class="item-cat">O</kbd></p>
+</div>
+<div id="label-sections" class="section level2">
+<h2>Label sections</h2>
+<p>Like really, just do it. RStudio makes adding section labels super simple, so you don’t have a good excuse not too. To insert a new label you can use helper via the keyboard short cut:</p>
+<p><kbd class="item-cat">Control</kbd>+<kbd class="item-cat">Shift</kbd>+<kbd class="item-cat">R</kbd></p>
+<p>Alternatively, you can type 4 (or more) hypens or pounds at the end of a comment to make it a section label.</p>
+<pre class="r"><code># 1 Import ----------------------------------------------------------------
+# ^^^ Rstudio&#39;s helper pads with hyphens to col 76
+
+# 2 Clean ----
+# ^^^ Or you can type 4-hyphens yourself
+
+# Plot ####
+# ^^^ Or 4-pounds, but please don&#39;t</code></pre>
+</div>
+<div id="label-sub-sections" class="section level2">
+<h2>Label sub-sections</h2>
+<p>This part is not natively supported by RStudio’s outline, but I think it’s a super useful hack and easy enough to do that I still reccomend it.</p>
+<p>I’ll denote a sub-section by prepending a section label with <code>*</code> (note there should be a trailing space). This works well for extending further into sub-sub-sections and I think it renders cleanly in the outline pane too.</p>
+<pre class="r"><code># 1 Import ----------------------------------------------------------------
+
+# * 1.1 Databases ---------------------------------------------------------
+
+# * * 1.1.1 Postgres ------------------------------------------------------</code></pre>
+</div>
+<div id="label-functions" class="section level2">
+<h2>Label functions</h2>
+<p>Functions self-label, so you just consider the section you want to define them in. Whenever you write a new function, it will add itself as a child to the section label above it in the outline. If a function has internal functions, those will added as children of the top-level function.</p>
+</div>
+<div id="navigate-labels" class="section level2">
+<h2>Navigate labels</h2>
+<p><a href="https://support.rstudio.com/hc/en-us/articles/200710523-Navigating-Code">Rstudio has multiple ways to do this</a> part. The “easiest” is to click on any label in the outline sidebar and the editor whisks you away!</p>
+<p>If for some reason you closed the outline, you can use the selector at the lower left of the editor pane. It will be displaying the current section label or function name. You can also use a keyboard shortcut to open this selector without the mouse-click:</p>
+<p><kbd class="item-cat">Cmd</kbd>+
+<kbd class="item-cat">Alt</kbd>+
+<kbd class="item-cat">Shift</kbd>+
+<kbd class="item-cat">J</kbd></p>
+<p>Then uses up/down arrows to select a section and <kbd class="item-cat">Enter</kbd> to jump there.</p>
+</div>
+<div id="fold-labels" class="section level2">
+<h2>Fold labels</h2>
+<p>Sometimes it can be helpful to <a href="https://support.rstudio.com/hc/en-us/articles/200484568-Code-Folding-and-Sections">fold or hide code</a> while you work on another section. Any section that appears in the ouline can be collapsed by clicking the dark-grey down arrow at the starting line in the row index area on the right of the editor pane.</p>
+<p>And of course there is a keyboard shortcut to accomplish the same:</p>
+<p><kbd class="item-cat">Cmd</kbd>+
+<kbd class="item-cat">Alt</kbd>+
+<kbd class="item-cat">L</kbd></p>
+</div>
+<div id="unfold-labels" class="section level2">
+<h2>Unfold labels</h2>
+<p>Clicking the now horizontal arrow in the row index area with unfurl folded sections. The keyboard short is the same as above but with <code>Shift</code> added:</p>
+<p><kbd class="item-cat">Cmd</kbd>+
+<kbd class="item-cat">Alt</kbd>+
+<kbd class="item-cat">Shift</kbd>+
+<kbd class="item-cat">L</kbd></p>
+</div>
+<div id="example-outline" class="section level2">
+<h2>Example outline</h2>
+<p>I mocked up <a href="https://gist.github.com/nathancday/b7308a40bc7173be6e4191675092f84d">a small example .r file to show all of these together</a>. Just open in RStudio to explore and I hope you enjoy the perks of outlining your Rscripts!</p>
+</div>
