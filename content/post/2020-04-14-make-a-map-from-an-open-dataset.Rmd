@@ -1,0 +1,66 @@
+---
+title: Make maps with Rstats
+author: Nate
+date: '2020-04-14'
+slug: make-a-map-from-an-open-dataset
+categories:
+  - Open Data
+  - Maps
+tags: []
+description: Three steps 
+twitter_img: post/2019-01-21-is-the-weather-getting-wetter_files/its_gon_rain.jpg
+---
+
+## Making maps
+
+Maps are cool and maps are useful, but I always here people say that making maps is hard. I think making maps is simpler today than ever before. So to show you what I mean, this post is how to map an open spatial dataset.
+
+## Get it
+
+Geojson formatted data is available in your local data portal, I promise.
+
+I'm using Census tract data hosted on Charlottesville's OpenData portal.
+
+```{r import}
+library(sf)
+
+tracts <- read_sf("https://opendata.arcgis.com/datasets/63f965c73ddf46429befe1132f7f06e2_15.geojson")
+```
+
+## Wrangle it
+
+This step is the most variable depending on what you have to do. But this data set comes formatted pretty well, so I don't really have to do much.
+
+I set up a numeric column with the fraction of residents who are black for my fill scale and a character column with text for a tooltip.
+
+```{r}
+library(tidyverse)
+
+tracts <- tracts %>% 
+  mutate(frac_black = round(Black / Population, 2),
+         tooltip_text = glue::glue("{frac_black * 100} % of residents are black"))
+```
+
+
+## Map it
+
+Leaflet has been around forever and is used everywhere on the web. There are lots of new mapping packages coming out for R, but I always go back to Leaflet becasue I think the easiest to use.
+
+Leaflet requires scales be defined indendependly so I create a scale to fill with first. Then I pass in column names to polygon arguments, with the `~` syntax, which is very simlar to the `aes` syntax of `ggplot2`. 
+
+```{r map}
+library(leaflet)
+
+black_pal <- colorNumeric("Greys", tracts$frac_black)
+
+leaflet(tracts) %>% 
+  addPolygons(fillColor = ~black_pal(frac_black),
+              label = ~tooltip_text,
+              color = "black", fillOpacity = 1) %>% 
+  widgetframe::frameWidget(height = '400') # to fix blog CSS conflicts; you probably don't need this line
+```
+
+## Wrap up
+
+Maps are super powerful for sharing info about communities. I hope after reading this you feel like you can make a map with Rstats.
+
