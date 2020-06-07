@@ -1,0 +1,70 @@
+---
+title: Make maps with Rstats
+author: Nate
+date: '2020-04-14'
+slug: make-a-map-from-an-open-dataset
+categories:
+  - Open Data
+  - Maps
+tags: []
+description: Three simple steps to go from open data set to interactive map with sf, dplyr, and leaflet.
+twitter_img: post/2020-04-14_make-a-map.png
+---
+
+<script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
+<script src="/rmarkdown-libs/pymjs/pym.v1.js"></script>
+<script src="/rmarkdown-libs/widgetframe-binding/widgetframe.js"></script>
+
+
+<div id="making-maps" class="section level2">
+<h2>Making maps</h2>
+<p>Maps are cool and maps are useful, but I always here people say that making maps is hard. I think making maps is simpler today than ever before. So to show you what I mean, this post is how to map an open spatial dataset.</p>
+</div>
+<div id="get-it" class="section level2">
+<h2>Get it</h2>
+<p>Geojson formatted data is available in your local data portal, I promise.</p>
+<p>I’m using Census tract data hosted on <a href="https://opendata.charlottesville.org/">Charlottesville’s OpenData portal</a>.</p>
+<pre class="r"><code>library(sf)</code></pre>
+<pre><code>## Linking to GEOS 3.7.2, GDAL 2.4.2, PROJ 5.2.0</code></pre>
+<pre class="r"><code>tracts &lt;- read_sf(&quot;https://opendata.arcgis.com/datasets/63f965c73ddf46429befe1132f7f06e2_15.geojson&quot;)</code></pre>
+</div>
+<div id="wrangle-it" class="section level2">
+<h2>Wrangle it</h2>
+<p>This step is the most variable depending on what you have to do. But this data set comes formatted pretty well, so I don’t really have to do much.</p>
+<p>I set up a numeric column with the fraction of residents who are black for my fill scale and a character column with text for a tooltip.</p>
+<pre class="r"><code>library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>tracts &lt;- tracts %&gt;% 
+  mutate(frac_black = round(Black / Population, 2),
+         tooltip_text = glue::glue(&quot;{frac_black * 100} % of residents are black&quot;))</code></pre>
+</div>
+<div id="map-it" class="section level2">
+<h2>Map it</h2>
+<p>Leaflet has been around forever and is used everywhere on the web. There are lots of new mapping packages coming out for R, but I always go back to Leaflet becasue I think the easiest to use.</p>
+<p>Leaflet requires scales be defined indendependly so I create a scale to fill with first. Then I pass in column names to polygon arguments, with the <code>~</code> syntax, which is very simlar to the <code>aes</code> syntax of <code>ggplot2</code>.</p>
+<pre class="r"><code>library(leaflet)
+
+black_pal &lt;- colorNumeric(&quot;Greys&quot;, tracts$frac_black)
+
+leaflet(tracts) %&gt;% 
+  addPolygons(fillColor = ~black_pal(frac_black),
+              label = ~tooltip_text,
+              color = &quot;black&quot;, fillOpacity = 1) %&gt;% 
+  addLegend(pal = black_pal, values = ~frac_black,
+            title = &quot;Proportion black (2010):&quot;,
+            opacity = 1) %&gt;% 
+  widgetframe::frameWidget(height = &#39;400&#39;) # to fix blog CSS conflicts; you probably don&#39;t need this line</code></pre>
+<div id="htmlwidget-1" style="width:100%;height:400px;" class="widgetframe html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"url":"/post/2020-04-14-make-a-map-from-an-open-dataset_files/figure-html//widgets/widget_map.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
+</div>
+<div id="wrap-up" class="section level2">
+<h2>Wrap up</h2>
+<p>Maps are super powerful for sharing info about communities. I hope after reading this you feel like you can make a map with Rstats. And I hope you use it visualize some data about where you live.</p>
+</div>

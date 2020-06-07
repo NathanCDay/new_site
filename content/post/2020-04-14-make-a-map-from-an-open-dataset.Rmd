@@ -7,8 +7,8 @@ categories:
   - Open Data
   - Maps
 tags: []
-description: Three steps 
-twitter_img: post/2019-01-21-is-the-weather-getting-wetter_files/its_gon_rain.jpg
+description: Three simple steps to go from open data set to interactive map with sf, dplyr, and leaflet.
+twitter_img: post/2020-04-14_make-a-map.png
 ---
 
 ## Making maps
@@ -19,7 +19,7 @@ Maps are cool and maps are useful, but I always here people say that making maps
 
 Geojson formatted data is available in your local data portal, I promise.
 
-I'm using Census tract data hosted on Charlottesville's OpenData portal.
+I'm using Census tract data hosted on [Charlottesville's OpenData portal](https://opendata.charlottesville.org/).
 
 ```{r import}
 library(sf)
@@ -34,7 +34,7 @@ This step is the most variable depending on what you have to do. But this data s
 I set up a numeric column with the fraction of residents who are black for my fill scale and a character column with text for a tooltip.
 
 ```{r}
-library(tidyverse)
+library(dplyr)
 
 tracts <- tracts %>% 
   mutate(frac_black = round(Black / Population, 2),
@@ -57,10 +57,13 @@ leaflet(tracts) %>%
   addPolygons(fillColor = ~black_pal(frac_black),
               label = ~tooltip_text,
               color = "black", fillOpacity = 1) %>% 
+  addLegend(pal = black_pal, values = ~frac_black,
+            title = "Proportion black (2010):",
+            opacity = 1) %>% 
   widgetframe::frameWidget(height = '400') # to fix blog CSS conflicts; you probably don't need this line
 ```
 
 ## Wrap up
 
-Maps are super powerful for sharing info about communities. I hope after reading this you feel like you can make a map with Rstats.
+Maps are super powerful for sharing info about communities. I hope after reading this you feel like you can make a map with Rstats. And I hope you use it visualize some data about where you live.
 
