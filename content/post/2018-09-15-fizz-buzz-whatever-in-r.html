@@ -53,7 +53,7 @@ integers</code></pre>
 <li>if evenly divisible by 7, replace with “whatever”.</li>
 </ol>
 <div class="figure">
-<img src="https://media.giphy.com/media/ZjjZKJSY4vO5W/giphy.gif" alt="meangirls-whatever-gif" />
+<img src="https://media.giphy.com/media/ZjjZKJSY4vO5W/giphy.gif" alt="" />
 <p class="caption">meangirls-whatever-gif</p>
 </div>
 <p>My stressed brain said, “Just keep adding conditionals”. Because that will work right?</p>
@@ -188,7 +188,7 @@ results</code></pre>
 </div>
 <div id="polishing-things-up" class="section level2">
 <h2>Polishing things up</h2>
-<p>So, to go all the way here and write some <a href="https://xkcd.com/844/">real “good”&quot; code</a>, I’m re-packaging the rules as key-value pairs. The function <code>replace_with_rules()</code> will handle the string-mashing and iteration, so we can replace the previously repetitious code with a loop.</p>
+<p>So, to go all the way here and write some <a href="https://xkcd.com/844/">real “good”" code</a>, I’m re-packaging the rules as key-value pairs. The function <code>replace_with_rules()</code> will handle the string-mashing and iteration, so we can replace the previously repetitious code with a loop.</p>
 <pre class="r"><code>rules &lt;- c(&quot;fizz&quot; = 3, &quot;buzz&quot; = 5, &quot;whatever&quot; = 7)
 
 replace_with_rules &lt;- function(values, rules) {

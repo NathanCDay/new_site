@@ -204,9 +204,9 @@ words &lt;- unnest_tokens( select(sents, sport:speaker, initials), word, text) %
 <pre class="r"><code># collapse to sport level and use proportions
 sport_words &lt;- group_by(words, sport, sentiment) %&gt;%
     summarise(n = sum(n)) %&gt;%
-    mutate(prop = n / sum(n))
-
-ggplot(sport_words, aes(sentiment, prop, fill = sentiment)) +
+    mutate(prop = n / sum(n))</code></pre>
+<pre><code>## `summarise()` regrouping output by &#39;sport&#39; (override with `.groups` argument)</code></pre>
+<pre class="r"><code>ggplot(sport_words, aes(sentiment, prop, fill = sentiment)) +
     geom_col() +
     facet_grid(~ sport) +
     coord_flip() +

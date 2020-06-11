@@ -61,26 +61,28 @@ library(tidyverse)
 path <- "~/future/cid/" # overhead to reproduce/knit
 
 # CAT stop coordinates
-cat_sf <- read.table(file=paste0(path, "data/CAT_2017_08_GTFS/stops.txt"), 
+cat_sf <- read.table(file="https://raw.githubusercontent.com/Smart-Cville/CID-2018-Regional-Transit-Challenge/master/data/CAT_2017_08_GTFS/stops.txt", 
                      sep=",", header = T) %>%
     select(stop_lon, stop_lat) %>%
     st_as_sf(coords = c("stop_lon", "stop_lat"))
 
 # JAUNT polygons arranged largest >>> smallest
-jaunt_sf <- st_read(paste0(path, "data/doc.kml")) %>%
-    select(-Description) %>%
-    mutate(aread = st_area(.) %>% unclass) %>%
+# jaunt_sf <- st_read("https://raw.githubusercontent.com/Smart-Cville/CID-2018-Regional-Transit-Challenge/master/data/doc.kml") %>%
+#     select(-Description) %>%
+#     mutate(aread = st_area(.) %>% unclass) %>%
+#     arrange(desc(aread))
+
+jaunt_sf <- readRDS("~/Downloads/app_data.RDS") %>% 
+  mutate(aread = st_area(.) %>% unclass) %>%
     arrange(desc(aread))
 ```
 
 ```{r map, warning=FALSE}
-## R's easy leaflet connect --------------------------------------------------
-library(mapview)
-
-widgetframe::frameWidget( # only needed for web
-    (mapview(jaunt_sf, zcol = "aread") +
-        mapview(cat_sf, col.region = "green"))@map
-    ) 
+library(leaflet)
+leaflet(jaunt_sf) %>% 
+  addTiles() %>% 
+  addPolygons(fillColor = "red", color = "red") %>% 
+  addCircleMarkers(data = cat_sf)
 ```
 
 ## Outro

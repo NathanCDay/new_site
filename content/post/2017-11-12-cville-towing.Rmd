@@ -54,12 +54,8 @@ nicely <- function(breaks) {
 I decided to start my OPD journey exploring the [Public Safety > Crime Data](http://opendata.charlottesville.org/datasets/crime-data), mainly because I've worked with crime data in the [past](./dc_crime.html). So I manually downloaded the csv from the link above and started a GitHub repository. I have yet to use the API, perhaps another day.
 
 ```{r read_in, warning = FALSE, message = FALSE}
-tib <- read_csv("~/future/CvilleTowing/Crime_Data.csv")
+tib <- read_csv("https://raw.githubusercontent.com/nathancday/CvilleTowing/master/Crime_Data.csv")
 names(tib) %<>% tolower()
-
-# these don't jive well with markdown
-# head(tib)
-str(tib, max.level = 1)
 ```
 
 The function `read_csv` imputes the column types from the first 1000 rows and never coherces `chr`s as `fct`s, both are nice upgrades from the base R `read.csv`. We can see in this case it correctly guessed `datereported` as `POSIXct`, but it didn't call `hourreported` as `POSIXct`, so it's not magic but the `read_file` family of functions definitely save some tidying time.

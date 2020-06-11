@@ -19,9 +19,7 @@ tags:
 <p>I attended my first <a href="%22https://www.meetup.com/CharlottesvilleDataScience/events/242006576/%22">Charlottesville Data Science Meetup</a> last month, for the launch of the city’s <a href="%22http://opendata.charlottesville.org/%22">Open Data Portal</a>. The meeting unveiled the new ODP, which consolidates a bunch of Charlottesville city records in one place, including Census, assessment, development, traffic and public safety data. The meetup featured a nice introduction to the portal and <a href="http://opensourceconnections.com/">OpenSource Connections</a> provided free craft beer and free Papa Johns!!!</p>
 <p>I love the OPD concept and believe that data can help drive better decisions for Charlottesville. So I used my long Labor day weekend to write up an analysis, using the ODP to do some time-series forecasting with <code>R</code>.</p>
 <p>The portal had a good layout and all of the data I have touched has been well formatted (thank you so much). So let’s dive into the analysis and I apologize for the typos, but not for the bad puns.</p>
-<div id="open-up-already" class="section level4">
-<h4><img src="/images/codp_towing/open_up.gif" alt="Open up already!" /></h4>
-</div>
+<p>####<img src="/images/codp_towing/open_up.gif" alt="Open up already!" /></p>
 </div>
 <div id="import" class="section level1">
 <h1>Import</h1>
@@ -48,24 +46,8 @@ nicely &lt;- function(breaks) {
     labels &lt;- map2(m, y, ~ paste0(., &quot;\n&quot;, ifelse(. == &quot;Jan&quot;, .y, &quot;&quot;)))
     return(labels) }</code></pre>
 <p>I decided to start my OPD journey exploring the <a href="http://opendata.charlottesville.org/datasets/crime-data">Public Safety &gt; Crime Data</a>, mainly because I’ve worked with crime data in the <a href="./dc_crime.html">past</a>. So I manually downloaded the csv from the link above and started a GitHub repository. I have yet to use the API, perhaps another day.</p>
-<pre class="r"><code>tib &lt;- read_csv(&quot;~/future/CvilleTowing/Crime_Data.csv&quot;)
-names(tib) %&lt;&gt;% tolower()
-
-# these don&#39;t jive well with markdown
-# head(tib)
-str(tib, max.level = 1)</code></pre>
-<pre><code>## Classes &#39;tbl_df&#39;, &#39;tbl&#39; and &#39;data.frame&#39;:    32128 obs. of  8 variables:
-##  $ recordid    : int  1001 1002 1003 1004 1005 1006 1007 1008 1009 1010 ...
-##  $ offense     : chr  &quot;LARCENY-ALL OTHER LARCENY&quot; &quot;FAMILY OFFENSE-NON-VIOLENT&quot; &quot;LARCENY-THEFT OF MOTOR VEHICLE PARTS/ACCESSORIES&quot; &quot;PROPERTY-LOST&quot; ...
-##  $ incidentid  : int  201206429 201206430 201206431 201206432 201206433 201206434 201206435 201206436 201206437 201206438 ...
-##  $ blocknumber : int  100 2000 900 1500 1000 700 100 600 100 100 ...
-##  $ streetname  : chr  &quot;14TH ST NW&quot; &quot;STADIUM RD&quot; &quot;HENRY AVE&quot; &quot;UNIVERSITY AVE&quot; ...
-##  $ agency      : chr  &quot;CPD&quot; &quot;CPD&quot; &quot;CPD&quot; &quot;CPD&quot; ...
-##  $ datereported: POSIXct, format: &quot;2012-10-14 00:00:00&quot; &quot;2012-10-14 00:00:00&quot; ...
-##  $ hourreported: chr  &quot;1042&quot; &quot;1350&quot; &quot;1203&quot; &quot;1348&quot; ...
-##  - attr(*, &quot;problems&quot;)=Classes &#39;tbl_df&#39;, &#39;tbl&#39; and &#39;data.frame&#39;: 1 obs. of  5 variables:
-##  - attr(*, &quot;spec&quot;)=List of 2
-##   ..- attr(*, &quot;class&quot;)= chr &quot;col_spec&quot;</code></pre>
+<pre class="r"><code>tib &lt;- read_csv(&quot;https://raw.githubusercontent.com/nathancday/CvilleTowing/master/Crime_Data.csv&quot;)
+names(tib) %&lt;&gt;% tolower()</code></pre>
 <p>The function <code>read_csv</code> imputes the column types from the first 1000 rows and never coherces <code>chr</code>s as <code>fct</code>s, both are nice upgrades from the base R <code>read.csv</code>. We can see in this case it correctly guessed <code>datereported</code> as <code>POSIXct</code>, but it didn’t call <code>hourreported</code> as <code>POSIXct</code>, so it’s not magic but the <code>read_file</code> family of functions definitely save some tidying time.</p>
 <p>While the data comes off the shelf nicely formatted I still wanted to make some minor adjustments before I got into exploring.</p>
 <pre class="r"><code>tib %&lt;&gt;% select(-recordid) %&gt;%
@@ -215,7 +197,7 @@ ggplot(tow, aes(as.numeric(month), fill = as.factor(year))) +
          caption = &quot;Data[2013-01-01:2016-12-31]&quot;) +
     theme(legend.position = c(.95, .9))</code></pre>
 <p><img src="/post/2017-11-12-cville-towing_files/figure-html/tow-1.png" width="672" /></p>
-<p>We can see that the big annual spike is peaking in Sept-Oct. There also is a small bump in March and April, which also coincides with students returning for semester. Perhaps there is something else lurking to better explain our towing report spikes? Football maybe?</p>
+<p>We can see that the big annual spike is peaking in Sept-Oct. There also is a small bump in March and April, which also coincides with students returning for semester. Perhaps there is something else lurking to better explain our towing report spikes? Football maybe?</p>
 <p>Regardless it’s clear that this data set has repeated annual patterns. So if we want to model it, a simple <code>lm()</code> won’t do for accurately projecting future monthly towing totals.</p>
 <p>This ia where the <code>library(forecast)</code> comes in to define a syntax for time series modeling. This wonderful package, built by <a href="https://github.com/robjhyndman">Rob Hyndman</a>, is on version 8.1 as of this typing and has long been the standard tool for time-series analysis with <code>R</code>. It comes loaded with a bunch of customization functions for smoothing and decomposing, but for now let’s stick to the basics to get going.</p>
 <p>The first step to working with <code>forecast()</code> is to create a <code>time.series</code> object, which is just the response variable values grouped by time series period. Don’t worry they are easy to create and print very well in the console :)</p>

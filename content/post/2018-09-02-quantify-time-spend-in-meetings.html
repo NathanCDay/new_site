@@ -39,26 +39,19 @@ library(magrittr) # for the %&lt;&gt;%</code></pre>
 <div id="importing" class="section level3">
 <h3>Importing</h3>
 <p><a href="https://github.com/jennybc/googlesheets"><code>library(googlesheets)</code></a> is a great package by <a href="https://github.com/jennybc">Jenny Bryan</a> and it makes getting data out of your Google Sheets and into data frames simple. I like Google Sheets with R because it gives you an access point to get data from other Google Apps and makes sharing data easy without requiring Git skills.</p>
-<pre class="r"><code>library(googlesheets) # gs_verb()
+<pre class="r"><code>library(googlesheets4) # gs_verb()
 
-gs_auth()
+gs4_auth(&quot;nathan.day@hemoshear.com&quot;)
 # oAuth2, so browser confirmation req&#39;d
 
-events &lt;- gs_ls() %&gt;%
-  select(sheet_title) %&gt;%
-  unlist() %&gt;%
-  keep(~ grepl(&quot;Calendar&quot;, .)) %&gt;%
-  set_names(., .) %&gt;%
-  map_df(~ gs_title(.) %&gt;% gs_read(), .id = &quot;cal&quot;)
+events &lt;- gs4_find() %&gt;%
+  select(name, id) %&gt;%
+  filter(grepl(&quot;Calendar&quot;, name)) %&gt;%
+  deframe() %&gt;% 
+  map_df(read_sheet, .id = &quot;cal&quot;)
 
 names(events) %&lt;&gt;% tolower() %&gt;% gsub(&quot; &quot;, &quot;_&quot;, .)
 names(events)</code></pre>
-<pre><code>##  [1] &quot;cal&quot;                 &quot;calendar_address&quot;    &quot;event_title&quot;        
-##  [4] &quot;event_description&quot;   &quot;event_location&quot;      &quot;event_start&quot;        
-##  [7] &quot;event_end&quot;           &quot;calculated_duration&quot; &quot;visibility&quot;         
-## [10] &quot;date_created&quot;        &quot;last_updated&quot;        &quot;mystatus&quot;           
-## [13] &quot;created_by&quot;          &quot;guest_email&quot;         &quot;all_day_event&quot;      
-## [16] &quot;recurring_event&quot;</code></pre>
 <p>Remember <code>guest_email</code> is the field I hacked together in Google Apps Script with <code>my_array.join()</code> and it looks like this, “myname@mail.com,yourname@mail.com”</p>
 </div>
 <div id="exploring" class="section level3">
@@ -67,7 +60,6 @@ names(events)</code></pre>
 <pre class="r"><code>ggplot(events, aes(calculated_duration)) +
   geom_histogram(bins = 10) +
   labs(y = &quot;# Meetings&quot;, x = &quot;Meeting length (hours)&quot;)</code></pre>
-<p><img src="/post/2018-09-02-quantify-time-spend-in-meetings_files/figure-html/unnamed-chunk-2-1.png" width="576" style="display: block; margin: auto;" /></p>
 <p>Tells us most meetings are about an hour or less and that’s good to see that we are keeping things short. But we did have some meeting marathons, that were over 4 hours long.</p>
 <p>I was also currious if there was a difference between the two confernce rooms.</p>
 <pre class="r"><code>events %&gt;%
@@ -76,7 +68,6 @@ names(events)</code></pre>
     geom_histogram(bins = 10) +
     facet_wrap(~cal) +
     labs(y = &quot;# Meetings&quot;, x = &quot;Meeting length (hours)&quot;)</code></pre>
-<p><img src="/post/2018-09-02-quantify-time-spend-in-meetings_files/figure-html/unnamed-chunk-3-1.png" width="480" style="display: block; margin: auto;" /></p>
 <p>I see a lot more meetings used the big conference room, which might mean most of our meetings have a lot of attendees.</p>
 <p>To answer that we need to extract the individual emails that are currently packed as csvs in <code>guest_email</code>.</p>
 <pre class="r"><code>events %&lt;&gt;% separate_rows(guest_email, sep = &quot;,&quot;)</code></pre>
@@ -92,14 +83,13 @@ names(events)</code></pre>
     geom_histogram(bins = 5) +
     facet_wrap(~cal) +
     labs(x = &quot;Attendees&quot;, y = &quot;# Meetings&quot;)</code></pre>
-<p><img src="/post/2018-09-02-quantify-time-spend-in-meetings_files/figure-html/unnamed-chunk-6-1.png" width="480" style="display: block; margin: auto;" /></p>
 <p>Sure enough the meetings in the big conference room do tend to be larger. But its good to see most of our meeting have less than 10 people.</p>
 <p><em>Note: that these guest lists included people calling in for meetings too. Just in case anyone is thinking we are breaking fire code by cramming 30+ people into a room for 14</em></p>
 <p>I think meetings work best with 4-5 peole, because at that size everyone is contributing to the discussion. Smaller groups also makes hearing quieter voices easier. I think people would be amazed at a what they get done with smaller meetings and larger email recaps.</p>
 <p>Finally let’s look at individual employees and see how many hours each spent in meetings for August. For reference August had 23 work-day for a total of 184 work-hours.</p>
 <p>This is what the company org chart looks like.</p>
 <div class="figure">
-<img src="/post/2018-09-02-quantify-time-spend-in-meetings_files/hs_org_chart.png" alt="org-chart" />
+<img src="/post/2018-09-02-quantify-time-spend-in-meetings_files/hs_org_chart.png" alt="" />
 <p class="caption">org-chart</p>
 </div>
 <p>And this bar chart shows each individual’s cumulative meeting hours for August.</p>
@@ -119,7 +109,6 @@ events %&gt;%
     scale_fill_manual(values = cust_colors) +
     labs(y = &quot;Hours in meetings&quot;, x = &quot;Employee&quot;) +
     theme(axis.text.x = element_blank())</code></pre>
-<p><img src="/post/2018-09-02-quantify-time-spend-in-meetings_files/figure-html/unnamed-chunk-7-1.png" width="480" style="display: block; margin: auto;" /></p>
 <p>We can see 6 employees that spent over one full work week (40 hours) in meetings. One of the external consultants also logged 20 hours, which seemed like a lot for a part-time consulting position The relativly low hours for our CEO was suprising to see.</p>
 </div>
 </div>

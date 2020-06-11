@@ -19,8 +19,7 @@ Is a R data package, with a geocoded version of the [Charlottesville Police Depa
 To install the package from [GitHub](https://github.com/nathancday/cpdcrimedata):
 
 ```{r install, message = F}
-devtools::install_github("nathancday/cpdcrimedata")
-
+# remotes::install_github("nathancday/cpdcrimedata")
 library(cpdcrimedata)
 
 library(tidyverse) # for manipulation tools
@@ -64,7 +63,7 @@ topn <- cpd_crime %>%
   filter(Offense %in% levels(Offense)[1:6])
 ```
 
-By design this dataset contains all of the records in the original, including records were not able to be geocoded. Several addresses were geocoded as outside of the city limits and some are very far away! 
+By design this dataset contains all of the records in the original, including records that were not able to be geocoded. Several addresses were geocoded as outside of the city limits and some are very far away! 
 
 To see the spatial distribution of police reports in the city, these "bad" records need to go. Here I'm using [US Census maps from the CODP](), as the geographic mask to keep only the locations in the city.
 

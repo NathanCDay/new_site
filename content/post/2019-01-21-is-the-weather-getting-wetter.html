@@ -15,7 +15,7 @@ slug: is-the-weather-getting-wetter
 
 
 
-<p><img src= "/post/2019-01-21-is-the-weather-getting-wetter_files/its_gon_rain.jpg", alt="It's gon rain", style="display:block; margin-left:auto; margin-right:auto;"/></p>
+<p>&lt;img src= “/post/2019-01-21-is-the-weather-getting-wetter_files/its_gon_rain.jpg”, alt=“It’s gon rain”, style=“display:block; margin-left:auto; margin-right:auto;”/&gt;</p>
 <div id="intro" class="section level1">
 <h1>Intro</h1>
 <p>Is the weather really getting wetter? It sure does feel like it from where I live. This post is about testing my feelings with linear models.</p>
@@ -53,7 +53,6 @@ rain %&lt;&gt;%
   labs(&quot;Yearly rainfall by country&quot;,
        y = &quot;precipitation (mm)&quot;,
        x = NULL)</code></pre>
-<p><img src="/post/2019-01-21-is-the-weather-getting-wetter_files/figure-html/static_plot-1.png" width="672" /></p>
 <p>Annual volumes do vary a lot, but we can still see several clear upward trends, like Argentinia and Canada, where rainfall has increased over the last century.</p>
 </div>
 <div id="quanitfy-trends-with-lms" class="section level1">
@@ -84,221 +83,6 @@ time_table %&gt;%
                                                  &quot;&quot;)),
          p.value = color_tile(&quot;cadetblue&quot;, &quot;grey&quot;))
   )</code></pre>
-<table class="table table-condensed">
-<thead>
-<tr>
-<th style="text-align:right;">
-country
-</th>
-<th style="text-align:right;">
-estimate
-</th>
-<th style="text-align:right;">
-p.value
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:right;">
-Canada
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">0.340</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #5f9ea0">3.3e-14</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Argentina
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">1.100</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #5f9ea0">4.0e-08</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Uruguay
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">2.700</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #5f9ea0">4.2e-06</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-USA
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">0.460</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #5f9ea0">5.0e-05</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Mexico
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">0.660</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #5f9ea0">5.9e-04</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Brazil
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">0.670</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #5f9ea0">2.8e-03</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Paraguay
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">1.100</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #5f9ea0">8.9e-03</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Panama
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">1.400</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #6ba2a4">1.3e-01</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Chile
-</td>
-<td style="text-align:right;">
-<span>-0.280</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #6ea3a5">1.6e-01</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Bolivia
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">0.370</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #70a4a5">1.8e-01</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Costa Rica
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">1.300</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #74a5a6">2.2e-01</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Guatemala
-</td>
-<td style="text-align:right;">
-<span>-0.900</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #7ba7a9">2.9e-01</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Venezuela
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">0.410</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #8cadae">4.6e-01</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Peru
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">0.150</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #a1b4b5">6.7e-01</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Honduras
-</td>
-<td style="text-align:right;">
-<span>-0.200</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #abb7b8">7.7e-01</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Colombia
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">0.150</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #b1b9ba">8.3e-01</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Ecuador
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">0.140</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #b4babb">8.6e-01</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-Nicaragua
-</td>
-<td style="text-align:right;">
-<span style="color: #A0615F; font-weight: bold">0.051</span>
-</td>
-<td style="text-align:right;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #bebebe">9.5e-01</span>
-</td>
-</tr>
-</tbody>
-</table>
 <p>Most countries have positive estimates for the <code>year</code> coefficient, only Chile, Guatemala and Honduras don’t. Of the countries with p-values less than .05 <strong>ALL</strong> have positive estimates for the <code>year</code> coefficient.</p>
 </div>
 <div id="a-map-for-geographic-effect" class="section level1">
@@ -318,7 +102,6 @@ inner_join(world, time_table) %&gt;%
   coord_sf(xlim = c(-180, 0)) +
   theme_void() +
   labs(title = &quot;Yearly change in precipication from 1901-2015&quot;)</code></pre>
-<p><img src="/post/2019-01-21-is-the-weather-getting-wetter_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <p>So most of the countries with ambigous trends are close to the equator, Chile being the exception. It also looks like the countries closest to the south Atlantic see the largest yearly increases.</p>
 </div>
 <div id="conclusion" class="section level1">

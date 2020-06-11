@@ -53,13 +53,13 @@ with(pvc, interaction.plot(resin, operator, psize))</code></pre>
 p &lt;- ggplot(pvc, aes(x = operator, y = psize, shape = resin)) +
     geom_point(size = 3) +
     scale_shape_manual(values = 49:56) + # need extra shapes
-    stat_summary(fun.y = &quot;mean&quot;, geom = &quot;line&quot;, aes(group = resin))
-
-p2 &lt;- ggplot(pvc, aes(x = resin, y = psize, shape = operator)) +
+    stat_summary(fun.y = &quot;mean&quot;, geom = &quot;line&quot;, aes(group = resin))</code></pre>
+<pre><code>## Warning: `fun.y` is deprecated. Use `fun` instead.</code></pre>
+<pre class="r"><code>p2 &lt;- ggplot(pvc, aes(x = resin, y = psize, shape = operator)) +
     geom_point() +
-    stat_summary(fun.y = &quot;mean&quot;, geom = &quot;line&quot;, aes(group = operator))
-
-cowplot::plot_grid(p, p2, align = &quot;hv&quot;) # my adlib package for combining</code></pre>
+    stat_summary(fun.y = &quot;mean&quot;, geom = &quot;line&quot;, aes(group = operator))</code></pre>
+<pre><code>## Warning: `fun.y` is deprecated. Use `fun` instead.</code></pre>
+<pre class="r"><code>cowplot::plot_grid(p, p2, align = &quot;hv&quot;) # my adlib package for combining</code></pre>
 <p><img src="/post/2018-04-30-gg-interaction-plot_files/figure-html/better-1.png" width="672" /></p>
 <p>While it is a lot nicer to see both factors simultaneously. I don’t like that I’m still are stuck manually flipping variables, typing a bunch of custom code each time and combining the plots after the fact.</p>
 <p>So, hello to our newest function friend <code>gg_interaction_plot</code>!</p>
@@ -83,6 +83,9 @@ gg_interaction_plot(pvc, psize ~ operator + resin)</code></pre>
 <pre class="r"><code>data(warpbreaks)
 warpbreaks %&gt;%
     gg_interaction_plot(breaks ~ wool + tension)</code></pre>
+<pre><code>## Warning: `fun.y` is deprecated. Use `fun` instead.
+
+## Warning: `fun.y` is deprecated. Use `fun` instead.</code></pre>
 <p><img src="/post/2018-04-30-gg-interaction-plot_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
 </div>
 <div id="src" class="section level2">

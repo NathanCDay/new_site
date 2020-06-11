@@ -1,0 +1,207 @@
+---
+title: Getting Arrested in Charlottesville
+author: Nate
+date: '2020-06-07'
+slug: getting-arrested-in-charlottesville
+categories:
+  - Cville Open Data
+tags: [racism]
+description: How different are Black and White people treated by our police?
+twitter_img: post/2020-06-07-getting-arrested-in-charlottesville_files/getting-arrested.png
+---
+
+```{r setup, include=F, message=F, warning=F}
+knitr::opts_chunk$set(message=F, warning=F, echo=F)
+library(sf)
+library(janitor)
+library(DT)
+library(magrittr)
+library(tidyverse)
+
+theme_set(theme_minimal(base_size = 16) +
+            theme(legend.position = "bottom", legend.direction = "horizontal"))
+```
+
+## Intro
+
+Its' been inspiring to see the world unite in protest against systemic police racism. It's depressing because our country claims to stand for something better. To make this massive issue feel closer, I analyzed the arrest records from my city's police department here in Charlottesville, Virginia.
+
+## The city's stats
+
+Using population data from the US Census and arrest data reported by the police, I filtered down to only consider individuals identified as Black or White.
+
+```{r}
+arrests <- read_sf("https://opendata.arcgis.com/datasets/d558ab0e09fe4f509280bedf6f8793ed_22.geojson") %>%
+  clean_names() %>% 
+  as.data.frame() %>% 
+  select(matches("name"), race, sex, statute, descrip_long = statute_description, date = arrest_datetime) %>% 
+  filter(race %in% c("Black", "White"))
+
+census <- read_sf("https://opendata.arcgis.com/datasets/63f965c73ddf46429befe1132f7f06e2_15.geojson") %>%
+  clean_names() %>% 
+  as.data.frame() %>% 
+  summarise_if(is.numeric, sum) %>% 
+  select(Black = black, White = white) %>% 
+  gather("race")
+```
+
+```{r}
+
+arrest_sumry <- arrests %>% 
+  count(race, name = "value") %>% 
+  mutate(grp = "Charges")
+
+dat <- census %>% 
+  mutate(grp = "Population") %>% 
+  bind_rows(arrest_sumry)
+
+dat_lbls <- dat %>% 
+  group_by(grp) %>% 
+  summarise(
+    n = sum(value),
+    lbl = scales::percent(value[race == "Black"] / n)
+  )
+
+ggplot(dat, aes(grp, value, fill = race)) +
+  geom_col(color = "black") +
+    geom_text(data = dat_lbls, aes(y = n, label = lbl, fill = NULL),
+            vjust = 1.5, size = 6, color = "white") +
+  scale_fill_manual(values = c("Black" = "black", "White" = "white")) +
+  scale_y_continuous(labels = scales::comma_format()) +
+  labs(y = NULL, x = NULL,
+       title = "Charlottesville, Virginia",
+       caption = "sources:
+       CPD arrest records (2015-2020)
+       US Census (2010)")
+
+```
+
+The volume of charges is shocking and the disparity is stark. There have been more arrest charges against Black people (`r scales::comma(sum(arrests$race == "Black"))`) in the last five years, than there are Black citizens (`r scales::comma(census$value[census$race == "Black"])`)!!! I am floored by these numbers, maybe I shouldn't be because the [Buerea of Justic Statistics](https://www.sentencingproject.org/wp-content/uploads/2015/10/lifetime-likelihood-of-imprisonment-by-race.png) estimates 1 out of 3 Black men born in America in 2001 will be incarcerated at some point in their lives.
+
+```{r}
+dat %>% 
+  spread(grp, value) %>% 
+  mutate(`% of Pop.`  = scales::percent(Charges / Population))
+```
+
+### Over time
+
+This split in the number of charges between Black and White people is constant since the data begins in 2015. Even as total charges seem to be trending down (the most recent data points as outliers attributed to COVID-19) the disparity remains.
+
+```{r}
+ggplot(arrests, aes(date, fill = race)) +
+  geom_histogram(color = "black") +
+  scale_fill_manual(values = c("Black" = "black", "White" = "white")) +
+  scale_y_continuous(labels = scales::comma_format()) +
+  labs(y = NULL, x = NULL, color = "Race")
+```
+
+## Types of charges
+
+There are `r length(unique(arrests$statute))` unique statutes ("laws") represented in these records. So to summarise the general type of charge, I created a new column capturing the first lowercased word of sttutes's long form description.
+
+```{r}
+arrests %<>% 
+  mutate(descrip_short = gsub(" .*", "", descrip_long) %>% 
+           gsub(":", "", .) %>%
+           tolower() %>%
+           fct_infreq())
+```
+
+Looking at the top 20 most frequent charges.
+
+```{r}
+top20 <- arrests %>% 
+  filter(descrip_short %in% levels(descrip_short)[1:20])
+
+charge_grps <- top20 %>%
+  group_by(descrip_short) %>%
+  summarise(longs = list(unique(descrip_long)))
+
+top20_labels <- top20 %>%
+  group_by(descrip_short, race) %>% 
+  count() %>% 
+  spread(race, n) %>% 
+  transmute(lbl = scales::percent(Black / (Black + White)),
+            n = Black + White)
+
+ggplot(top20, aes(descrip_short, fill = race)) +
+  geom_bar(color = "black") +
+  geom_text(data = top20_labels, aes(y = n, label = lbl, fill = NULL),
+            color = "white", vjust = 1.1, size = 3) +
+  scale_fill_manual(values = c("Black" = "black", "White" = "white")) +
+  scale_y_continuous(labels = scales::comma_format()) +
+  labs(y = NULL, x = "Statute grouping") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1.1))
+```
+
+Stark differences between races exists and vary dramatically depending on the statute group. The "firearm" (86%), "credit" (76%), and "lic" (75%) groups are the most biased towards Black people. The "generic" (28%), "illegal" (29%) and "profane" (35%) statues have the smallest fractions of Black people, but all are still biased, remember only 22% of Charlottsville population is Black.
+
+Noteable desciptions that were not immediately apparent to me:
+
+* profane ~ public intoxication
+* fta/capias ~ failute to appear in courts / arrest on site
+* lic - liscense susupended/revoked
+
+I think it's insane that "monument" makes the list, considering the [neo-nazi rally](https://en.wikipedia.org/wiki/Unite_the_Right_rally) here 2 years on a12. Most of the "historical" statues in the South were [erected during the peak of Jim Crow](https://en.wikipedia.org/wiki/Removal_of_Confederate_monuments_and_memorials#/media/File:Confedarate_monuments_(2).png), they were and are 100% racially motivated symbols.
+
+If you want to explore the long form of the statute names for each of the groups use the table's filters below to explore.
+
+```{r}
+charge_grps %>% 
+  unnest(longs) %>%
+  datatable(filter = "top") %>% 
+  widgetframe::frameWidget()
+```
+
+## Catching multiple cases
+
+```{r}
+individuals <- arrests %>%
+  mutate_at(vars(matches("name")), tolower) %>% 
+  group_by(first_name, middle_name, last_name, race) %>% 
+  summarise(n = n(),
+            charges = list(descrip_long),
+            arrests = length(unique(date))) %>% 
+  ungroup() %>% 
+  arrange(desc(n)) %>% 
+  mutate(., ord = 1:nrow(.)) %>% 
+  select(-matches("name"))
+```
+
+The `r scales::comma(nrow(arrests))` charges in this dataset are attributed to `r scales::comma(nrow(individuals))` people, so a lot of individuals have received multiple charges.
+
+```{r}
+pct_black <- scales::percent(slice(individuals, 1:100) %>% tabyl(race) %>% .[1,3])
+
+individuals %>% 
+  slice(1:100) %>% 
+  ggplot(aes(ord, n, fill = race)) + 
+  geom_col(color = "black") +
+  scale_fill_manual(values = c("Black" = "black", "White" = "white")) +
+  labs(x = NULL, y = "Charges",
+       title = "Of the 100 people with the most charges",
+       subtitle = glue::glue("{pct_black} of them are Black")) +
+  theme(axis.text.x = element_blank())
+```
+
+We are fail all of our citizens when recidivism is high, but we especially fail our Black citizens. We need broaded and better funed rehabilitation and education efforts, instead of repeat arrests. Jail is not a place to heal mental illnesses or learn a trade, we should think repeat offenders as failure of the community because we have not enabled them to succeed.
+
+To make it even worse most of the charges against these people are non-violent. So we are keeping a lot of people cycling through the system for minor issues that don't directly hurt anyone else.
+
+```{r}
+individuals %>% 
+  slice(1:100) %>% 
+  unnest(charges) %>% 
+  count(charges) %>% 
+  arrange(desc(n)) %>% 
+  datatable(filter = "top") %>% 
+  widgetframe::frameableWidget()
+```
+
+## Learn more
+
+The [Sentencing Project](If you want national resources in this topic) is a great resource to learn more. They currate national and state level statistics on arrests and prison populations in America.
+
+If you have access to similar data for your city, I hope you do something similar. Seeing how lopsided the system is can help people understand how big the problem *really is* and why people are so frustrated when it rears it's ugly head again.
+

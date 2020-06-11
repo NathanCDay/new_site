@@ -16,7 +16,7 @@ slug: is-the-weather-getting-wetter
 <img src= "/post/2019-01-21-is-the-weather-getting-wetter_files/its_gon_rain.jpg", alt="It's gon rain", style="display:block; margin-left:auto; margin-right:auto;"/>
 
 ```{r setup, include = F}
-knitr::opts_chunk$set(warning = F, message = F)
+knitr::opts_chunk$set(warning = F, message = F, eval=F)
 ```
 
 # Intro

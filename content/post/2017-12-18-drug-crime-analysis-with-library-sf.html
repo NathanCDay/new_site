@@ -18,9 +18,7 @@ slug: drug-crime-analysis-with-library-sf
 <script src="/rmarkdown-libs/widgetframe-binding/widgetframe.js"></script>
 
 
-<div id="cocaine" class="section level4">
-<h4><img src="/images/sf_drugs/coke.gif" alt="cocaine" /></h4>
-</div>
+<p>####<img src="/images/sf_drugs/coke.gif" alt="cocaine" /></p>
 <div id="intro" class="section level2">
 <h2>Intro</h2>
 <p>Using data originally sourced from the <a href="http://opendata.charlottesville.org/">Charlottesville Open Data Portal</a>, I made a geocoded version of the Police Reports dataset (available as a csv on <a href="https://github.com/NathanCDay/cville_crime">my Github repo here</a>) to look for spatial patterns. In this post I’m using the very tidy <code>library(sf)</code> to do some filtering and viridis visualizations to search for locations with highl drug crime.</p>
@@ -70,7 +68,7 @@ crime %&lt;&gt;% st_as_sf(coords = c(&quot;lon&quot;, &quot;lat&quot;), # define
 # install_github(&quot;tidyverse/ggplot2&quot;)
 
 ggplot(census) +
-    geom_sf(data = group_by(crime, address) %&gt;% slice(1), # only unique addresses
+    geom_sf(data = group_by(crime, address) %&gt;% slice(1) %&gt;% ungroup(), # only unique addresses
             alpha = .1, color = viridis_pal()(3)[1], size = 1) +
     geom_sf(color = NA, fill = viridis_pal()(3)[3], alpha = .75) +
     coord_sf(crs = st_crs(census), datum = NA) # remove grid lines</code></pre>
@@ -90,7 +88,7 @@ nrow(crime) # 31034</code></pre>
 <pre><code>## [1] 31034</code></pre>
 <pre class="r"><code>ggplot(census) +
     geom_sf(color = NA, fill = viridis_pal()(3)[1]) +
-    geom_sf(data = group_by(crime, address) %&gt;% slice(1),
+    geom_sf(data = group_by(crime, address) %&gt;% slice(1) %&gt;% ungroup(),
             alpha = .1, color = viridis_pal()(3)[3]) +
     coord_sf(crs = st_crs(census), datum = NA)</code></pre>
 <p><img src="/post/2017-12-18-drug-crime-analysis-with-library-sf_files/figure-html/filter_crime-1.png" width="672" /></p>
@@ -136,15 +134,14 @@ ggplot(census) +
 <pre><code>## Simple feature collection with 2 features and 3 fields
 ## geometry type:  POINT
 ## dimension:      XY
-## bbox:           xmin: -78.5225 ymin: 38.01184 xmax: -78.45128 ymax: 38.06941
-## epsg (SRID):    4326
-## proj4string:    +proj=longlat +datum=WGS84 +no_defs
+## bbox:           xmin: -78.47746 ymin: 38.03041 xmax: -78.47746 ymax: 38.03041
+## CRS:            EPSG:4326
 ## # A tibble: 2 x 4
 ## # Groups:   type [2]
-##   address                           type       number             geometry
-##   &lt;chr&gt;                             &lt;chr&gt;       &lt;int&gt;          &lt;POINT [°]&gt;
-## 1 600 E MARKET ST Charlottesville … drug_crime    410 (-78.47746 38.03041)
-## 2 600 E MARKET ST Charlottesville … other_cri…    635 (-78.47746 38.03041)</code></pre>
+##   address                                        geometry type        number
+##   &lt;chr&gt;                                       &lt;POINT [°]&gt; &lt;chr&gt;        &lt;int&gt;
+## 1 600 E MARKET ST Charlottesville VA (-78.47746 38.03041) drug_crime     410
+## 2 600 E MARKET ST Charlottesville VA (-78.47746 38.03041) other_crime    635</code></pre>
 <p>Something is going on in the 600 block of East Market, could it be the police station that’s located at 606 E Market St? Originally I wondered if this had something to do with the departments reporting practices, so SmartCville reached out to police department and they provided this response:</p>
 <blockquote>
 <p>“…when individuals walk in to the police department to file a report the physical address of the department (606 E Market Street) is often used in that initial report if no other known address is available at the time. This is especially true for incidents of found or lost property near the downtown mall where there is no true known incident location. The same is true for any warrant services that result in a police report occurring at the police department.”</p>
@@ -156,6 +153,7 @@ ggplot(census) +
     slice(1)
 
 summarise(station_props, prop_total = number / n)</code></pre>
+<pre><code>## `summarise()` ungrouping output (override with `.groups` argument)</code></pre>
 <pre><code>## # A tibble: 2 x 2
 ##   type        prop_total
 ##   &lt;chr&gt;            &lt;dbl&gt;
@@ -163,8 +161,7 @@ summarise(station_props, prop_total = number / n)</code></pre>
 ## 2 other_crime     0.0218</code></pre>
 <pre class="r"><code>with(station_props, prop.test(number, n))</code></pre>
 <pre><code>## 
-##  2-sample test for equality of proportions with continuity
-##  correction
+##  2-sample test for equality of proportions with continuity correction
 ## 
 ## data:  number out of n
 ## X-squared = 2135.5, df = 1, p-value &lt; 2.2e-16
@@ -244,9 +241,9 @@ leaflet(census, options = leafletOptions(minZoom = 12, max_zoom = 16)) %&gt;%
 <div id="hot-grid" class="section level2">
 <h2>Hot grid</h2>
 <p>Suppose we want to get an idea of hot spots on a smaller scale. Instead of using the census block areas, we can construct a grid of our own, with <code>st_make_grid()</code>. This means we would lose normalization factors like population or income that are calculated by Census areas. Since counts normalized to total crime was a better metric, that doesn’t hurt us here but is worth noting.</p>
-<pre class="r"><code>grd &lt;- st_make_grid(census, n = 20) %&gt;% st_sf() # 20x20 evenly sized squares
-
-ggplot(census) +
+<pre class="r"><code>grd &lt;- st_make_grid(census, n = 20) %&gt;% st_sf() # 20x20 evenly sized squares</code></pre>
+<pre><code>## although coordinates are longitude/latitude, st_relate_pattern assumes that they are planar</code></pre>
+<pre class="r"><code>ggplot(census) +
     geom_sf(fill = viridis_pal()(3)[3]) +
     geom_sf(data = grd, fill = NA, color = viridis_pal()(3)[1]) +
     coord_sf(crs = st_crs(census), datum = NA) # remove grid lines</code></pre>

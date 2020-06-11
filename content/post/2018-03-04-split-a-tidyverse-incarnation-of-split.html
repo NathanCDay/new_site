@@ -16,7 +16,8 @@ tags:
 
 <div id="introduction" class="section level3">
 <h3>Introduction</h3>
-<p>For over a year now I have wanted to learn how to use R’s non-standard evaluation and dispite reading the <a href="https://developer.r-project.org/nonstandard-eval.pdf">developer rules</a> and Hadley’s <a href="http://adv-r.had.co.nz/Computing-on-the-language.html">Adv-R section</a> multiple times, I never really made any progress understanding it. Then I saw Edwin Thoen’s <a href="https://edwinth.github.io/blog/nse/">NSE/tidyveal post</a> and it kinda (key word) started to click. Edwin’s follow up about <a href="https://edwinth.github.io/blog/dplyr-recipes/">common use cases</a> was the turning point for me and I gradually started using things like <code>!!</code> and writing functions with my favorite <code>tidyverse</code> tools.</p>
+<p>For over a year now I have wanted to learn how to use R’s non-standard evaluation and dispite reading the <a href="https://developer.r-project.org/nonstandard-eval.pdf">developer rules</a> and Hadley’s <a href="http://adv-r.had.co.nz/Computing-on-the-language.html">Adv-R section</a> multiple times, I never really made any progress understanding it. Then I saw
+Edwin Thoen’s <a href="https://edwinth.github.io/blog/nse/">NSE/tidyveal post</a> and it kinda (key word) started to click. Edwin’s follow up about <a href="https://edwinth.github.io/blog/dplyr-recipes/">common use cases</a> was the turning point for me and I gradually started using things like <code>!!</code> and writing functions with my favorite <code>tidyverse</code> tools.</p>
 <p>I still don’t feel like I have a great handle on NSE, but when I saw <span class="citation">[@coolbutuseless's tweet]</span>(<a href="https://twitter.com/coolbutuseless/status/969853912990720005" class="uri">https://twitter.com/coolbutuseless/status/969853912990720005</a>) yesteday about <code>tidyverse</code> replacements for the deprecated <code>group_by %&gt;% dplyr::do()</code> I decided to try and build a <code>tidyverse</code> incarnation of <code>split()</code>, that captured bar column names to split on, similar to how <code>dplyr::select()</code> works. The way I do split-apply-combine now is with <code>data %&gt;% split(list(.$col1, .$col2), drop = TRUE) %&gt;% map_df()</code> and I use this all the time pretty much in every script. I’ve always just thought of the <code>.$</code> syntax as neccesary overhead to use this code template, but it turns out my <code>tidyverse</code> incarnation runs faster than <code>base::split()</code>!!!</p>
 <p>In additional to the resources above, I finally watched Lionel Henry’s <a href="https://www.rstudio.com/resources/webinars/tidy-eval/">Tidy Eval</a> presentation this morning and I couldn’t have written this function without it. If you are struggling to understand the wacky world of quosure, like me, he does a great walk-through. This method is an adpation of the <code>cement()</code> example function from his presentation.</p>
 </div>
@@ -38,7 +39,9 @@ split_ &lt;- function(data, ..., .drop = TRUE) {
 <p><code>rlang::ensyms()</code> is the plural form of <code>ensym()</code>, which allows multiple values to be captured. Both of these functions are similar to <code>rlang::enexpr()</code>, which captures raw expressions and saves them for evaluation later. The only diffence with the <code>ensym</code> varieties is that they check if the captured expression is either a string or symbol and then convert any strings to symbols. This gives us some flexibilty for passing in arguments either as quoted or bare column names, even though we likely want to always use bare ones.</p>
 <p>Then <code>purrr::map()</code> is iterating over each symbol in our list using <code>tidy_eval</code> to evaluate each on within the environment of <code>data</code>. Since <code>data</code> is a <code>data.frame()</code> that means we are getting back columns, which we will just keep in the list and pass to <code>base::split()</code> as the <code>f</code> argument. This function will fail if a name passed in <code>...</code> can’t be found in <code>names(data)</code>, but that’s consistant with other functions.</p>
 <pre class="r"><code>summarise(mtcars, avg = mean(Sepal.Length))</code></pre>
-<pre><code>## Error in summarise_impl(.data, dots): Evaluation error: object &#39;Sepal.Length&#39; not found.</code></pre>
+<pre><code>## Error: Problem with `summarise()` input `avg`.
+## x object &#39;Sepal.Length&#39; not found
+## ℹ Input `avg` is `mean(Sepal.Length)`.</code></pre>
 <pre class="r"><code>split_(mtcars, Sepal.Length)</code></pre>
 <pre><code>## Error in eval_tidy(x, data): object &#39;Sepal.Length&#39; not found</code></pre>
 <p>I set the default to <code>drop = TRUE</code>, because thats how I use <code>split</code> now, but kept the option to pass through via the <code>.drop</code> argument. I could expand with <code>split_()</code>’s other arguments. but this is about the NSE exploration.</p>
@@ -51,16 +54,18 @@ mtcars %&gt;%
   split_(cyl, vs) %&gt;%
   map_df(~ broom::tidy(lm(mpg ~ wt, data = .)),
          .id = &quot;cyl&quot;)</code></pre>
-<pre><code>##   cyl        term    estimate  std.error  statistic      p.value
-## 1 4.0 (Intercept)  26.0000000        NaN        NaN          NaN
-## 2 6.0 (Intercept)  22.2020548 16.0628345  1.3822003 3.987238e-01
-## 3 6.0          wt  -0.5936073  5.8262287 -0.1018853 9.353608e-01
-## 4 8.0 (Intercept)  23.8680291  3.0054619  7.9415511 4.052705e-06
-## 5 8.0          wt  -2.1924379  0.7392393 -2.9658026 1.179281e-02
-## 6 4.1 (Intercept)  39.8900504  4.6086478  8.6554782 2.466760e-05
-## 7 4.1          wt  -5.7210148  1.9451751 -2.9411310 1.867730e-02
-## 8 6.1 (Intercept)  63.6497146 11.8654172  5.3643048 3.303888e-02
-## 9 6.1          wt -13.1389789  3.4998709 -3.7541325 6.419751e-02</code></pre>
+<pre><code>## # A tibble: 9 x 6
+##   cyl   term        estimate std.error statistic      p.value
+##   &lt;chr&gt; &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;        &lt;dbl&gt;
+## 1 4.0   (Intercept)   26       NaN       NaN     NaN         
+## 2 6.0   (Intercept)   22.2      16.1       1.38    0.399     
+## 3 6.0   wt            -0.594     5.83     -0.102   0.935     
+## 4 8.0   (Intercept)   23.9       3.01      7.94    0.00000405
+## 5 8.0   wt            -2.19      0.739    -2.97    0.0118    
+## 6 4.1   (Intercept)   39.9       4.61      8.66    0.0000247 
+## 7 4.1   wt            -5.72      1.95     -2.94    0.0187    
+## 8 6.1   (Intercept)   63.6      11.9       5.36    0.0330    
+## 9 6.1   wt           -13.1       3.50     -3.75    0.0642</code></pre>
 <p>I wonder if anyone has ever made a straight 8 engine…</p>
 </div>
 <div id="cleave_by" class="section level3">
@@ -82,7 +87,8 @@ cleave_by &lt;- function(df, ...) {
     # do the split by this single group_index variable and return it
     split(df, group_index)
 }</code></pre>
-<p>And it looks like They also ran two series of benchmarks to compare runtimes for their <code>cleave_by()</code> and <code>base::split()</code>. So I figured I would throw <code>split_()</code> into the ring and see how it did.</p>
+<p>And it looks like
+They also ran two series of benchmarks to compare runtimes for their <code>cleave_by()</code> and <code>base::split()</code>. So I figured I would throw <code>split_()</code> into the ring and see how it did.</p>
 <p>I want to point out that <span class="citation">@coolbutuseless</span>’s version has some nice features over the <code>base::split()</code> which they discuss in their blogpost and it’s a safer than my original attemp. Since these safety improvments, like class checking are extra function calls, I’m going to update my version, to match their behavior of class checking and NA retention.</p>
 <pre class="r"><code># updated v2
 split_ &lt;- function(data, ..., .drop = TRUE) {

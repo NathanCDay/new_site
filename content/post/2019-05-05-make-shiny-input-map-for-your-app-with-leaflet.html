@@ -23,15 +23,14 @@ tags:
 <h3>1: Make the map</h3>
 <p>I’m using R’s library <code>sf</code> to handle the spatial data here, but there are alternatives. <code>leaflet</code> maps will work with a <a href="https://rstudio.github.io/leaflet/map_widget.html">variaty of other formats</a>, including <code>matrix</code>/<code>data.frame</code>, <code>sp</code> objects, and <code>map</code> objects.</p>
 <pre class="r"><code>library(sf)</code></pre>
-<pre><code>## Linking to GEOS 3.7.1, GDAL 2.4.0, PROJ 5.2.0</code></pre>
+<pre><code>## Linking to GEOS 3.7.2, GDAL 2.4.2, PROJ 5.2.0</code></pre>
 <pre class="r"><code>nc &lt;- st_read(system.file(&quot;shape/nc.shp&quot;, package=&quot;sf&quot;))</code></pre>
-<pre><code>## Reading layer `nc&#39; from data source `/Users/nathanday/Library/R/3.5/library/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;
+<pre><code>## Reading layer `nc&#39; from data source `/Users/nathanday/Library/Application Support/renv/cache/v4/R-3.6/x86_64-apple-darwin15.6.0/sf/0.9-3/527e4f44640fa29d7a9174a4523d726e/sf/shape/nc.shp&#39; using driver `ESRI Shapefile&#39;
 ## Simple feature collection with 100 features and 14 fields
 ## geometry type:  MULTIPOLYGON
 ## dimension:      XY
 ## bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965
-## epsg (SRID):    4267
-## proj4string:    +proj=longlat +datum=NAD27 +no_defs</code></pre>
+## CRS:            4267</code></pre>
 <pre class="r"><code>library(leaflet)
 
 map &lt;- leaflet(nc,
@@ -47,7 +46,7 @@ map &lt;- leaflet(nc,
       fillOpacity = 1,
       bringToFront = TRUE)
   )</code></pre>
-<pre><code>## Warning: sf layer has inconsistent datum (+proj=longlat +datum=NAD27 +no_defs).
+<pre><code>## Warning: sf layer has inconsistent datum (+proj=longlat +datum=NAD27 +no_defs ).
 ## Need &#39;+proj=longlat +datum=WGS84&#39;</code></pre>
 <pre class="r"><code>widgetframe::frameWidget(map, height = &#39;400&#39;)</code></pre>
 <div id="htmlwidget-1" style="width:100%;height:400px;" class="widgetframe html-widget"></div>

@@ -44,7 +44,7 @@ And then let our our new best friend [`library(geojsonio)`](https://github.com/r
 
 ```{r fromJSON, message = FALSE}
 library(geojsonio) #v_0.4.2
-crime_json <- geojson_read("https://opendata.arcgis.com/datasets/d1877e350fad45d192d233d2b2600156_7.geojson",
+crime_json <- geojson_read("https://opendata.arcgis.com/datasets/d1877e350fad45d192d233d2b2600156_6.geojson",
                            parse = TRUE) # ~1-5 minutes
 # parse = TRUE attempts to parse to data.frame like structures; default is FALSE
 ```

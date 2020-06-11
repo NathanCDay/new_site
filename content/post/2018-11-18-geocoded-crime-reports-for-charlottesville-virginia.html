@@ -18,8 +18,7 @@ tags:
 <h2>cpdcrimedata</h2>
 <p>Is a R data package, with a geocoded version of the <a href="http://opendata.charlottesville.org/datasets/crime-data">Charlottesville Police Department’s public Assistant Reports</a> for the last five years.</p>
 <p>To install the package from <a href="https://github.com/nathancday/cpdcrimedata">GitHub</a>:</p>
-<pre class="r"><code>devtools::install_github(&quot;nathancday/cpdcrimedata&quot;)
-
+<pre class="r"><code># remotes::install_github(&quot;nathancday/cpdcrimedata&quot;)
 library(cpdcrimedata)
 
 library(tidyverse) # for manipulation tools</code></pre>
@@ -46,86 +45,82 @@ names(cpd_crime)</code></pre>
 ## 
 ## $Offense
 ## .
-##                   Towed Vehicle                  Assault Simple 
-##                            2627                            2605 
-##                     Hit and Run                       Vandalism 
-##                            2221                            1929 
+##                  Assault Simple                     Hit and Run 
+##                            2536                            2274 
+##                   Towed Vehicle                       Vandalism 
+##                            2171                            1806 
 ##             Larceny - All Other Assist Citizen - Mental/TDO/ECO 
-##                            1801                            1625 
+##                            1791                            1706 
 ## 
 ## $IncidentID
 ## .
-## 201000073238 201300002276 201300002481 201300003848 201300004323 
-##            1            1            1            1            1 
-## 201300004460 
-##            1 
+## 201000073238 201300004647 201300005270 201300007575 201400000108 201400000504 
+##            1            1            1            1            1            1 
 ## 
 ## $BlockNumber
 ## .
-##  100  200  600  700  500  400 
-## 3956 2676 2296 1895 1846 1803 
+##  100  200  600  700  500  800 
+## 3938 2467 2224 1847 1765 1749 
 ## 
 ## $StreetName
 ## .
-##        E MARKET ST          W MAIN ST         EMMET ST N 
-##               1841               1342               1143 
-##          E MAIN ST JEFFERSON PARK AVE        PRESTON AVE 
-##                685                672                557 
+##        E MARKET ST          W MAIN ST         EMMET ST N          E MAIN ST 
+##               1778               1286               1136                676 
+## JEFFERSON PARK AVE       PROSPECT AVE 
+##                594                553 
 ## 
 ## $Agency
 ##   CPD 
-## 30352 
+## 29475 
 ## 
 ## $DateReported
 ## .
-## 2016-01-22 2016-09-24 2017-10-16 2015-08-31 2015-10-31 2016-10-14 
-##         48         38         38         37         37         37 
+## 2016-01-22 2015-10-31 2016-09-24 2016-10-14 2017-10-16 2015-08-31 
+##         48         38         38         38         38         37 
 ## 
 ## $HourReported
 ## .
-## 1500 1600 1400 1700 1100 0500 
-##  264  263  219  204  176  173 
+## 1600 1500 1400 1700 1100 1300 
+##  237  231  172  172  151  136 
 ## 
 ## $address
 ## .
 ##  600 E MARKET ST Charlottesville VA 700 PROSPECT AVE Charlottesville VA 
-##                                1148                                 489 
+##                                1120                                 510 
 ##   1100 5TH ST SW Charlottesville VA     800 HARDY DR Charlottesville VA 
-##                                 351                                 328 
+##                                 362                                 347 
 ##   400 GARRETT ST Charlottesville VA  1100 EMMET ST N Charlottesville VA 
-##                                 319                                 314 
+##                                 310                                 309 
 ## 
 ## $lat
 ## .
 ## 38.0304127 38.0245896 38.0513687   38.01713 38.0334203 38.0279731 
-##       1167        489        395        352        328        319 
+##       1153        510        379        363        347        310 
 ## 
 ## $lon
 ## .
 ## -78.4774586 -78.4946679 -78.5000734  -78.497806 -78.4902161 -78.4803241 
-##        1167         489         395         352         328         319 
+##        1153         510         379         363         347         310 
 ## 
 ## $formatted_address
 ## .
 ##  600 E Market St, Charlottesville, VA 22902, USA 
-##                                             1167 
+##                                             1156 
 ## 700 Prospect Ave, Charlottesville, VA 22903, USA 
-##                                              489 
+##                                              510 
 ##  1100 Emmet St N, Charlottesville, VA 22903, USA 
-##                                              395 
+##                                              379 
 ##   1100 5th St SW, Charlottesville, VA 22902, USA 
-##                                              352 
+##                                              363 
 ##     800 Hardy Dr, Charlottesville, VA 22903, USA 
-##                                              328 
+##                                              347 
 ##   400 Garrett St, Charlottesville, VA 22902, USA 
-##                                              319 
+##                                              310 
 ## 
 ## $loc_type
 ## .
-## RANGE_INTERPOLATED            ROOFTOP   GEOMETRIC_CENTER 
-##              16495              13436                369 
-##        APPROXIMATE 
-##                  3</code></pre>
+## RANGE_INTERPOLATED            ROOFTOP   GEOMETRIC_CENTER        APPROXIMATE 
+##              16072              12897                442                 11</code></pre>
 <p>The original data is left untouched.</p>
 <p>It has all of the orignal warts and wrinkles and you will likely need to a little extra data cleaning. The <code>Offense</code> column has a lot of variants for similar labels.</p>
 <pre class="r"><code>cpd_crime$Offense %&gt;%
@@ -133,13 +128,13 @@ names(cpd_crime)</code></pre>
   table()</code></pre>
 <pre><code>## .
 ##             Larceny - All Other Larceny - From Coin Oper Device 
-##                            1801                               8 
+##                            1791                               8 
 ##    Larceny - From Motor Vehicle   Larceny - Of Veh Parts/Access 
-##                            1169                             265 
+##                            1087                             253 
 ##        Larceny - Pocket Picking       Larceny - Purse Snatching 
-##                              34                              15 
+##                              36                              15 
 ##           Larceny - Shoplifitng   Larceny - Theft from Building 
-##                             692                             815</code></pre>
+##                             684                             712</code></pre>
 <div id="making-a-plot" class="section level3">
 <h3>Making a plot</h3>
 <p>Let’s look at 6 most frequent offense labels we saw up above, with <code>ggplot2</code>.</p>
@@ -148,20 +143,19 @@ names(cpd_crime)</code></pre>
 topn &lt;- cpd_crime %&gt;%
   mutate(Offense = fct_infreq(Offense)) %&gt;%
   filter(Offense %in% levels(Offense)[1:6])</code></pre>
-<p>By design this dataset contains all of the records in the original, including records were not able to be geocoded. Several addresses were geocoded as outside of the city limits and some are very far away!</p>
+<p>By design this dataset contains all of the records in the original, including records that were not able to be geocoded. Several addresses were geocoded as outside of the city limits and some are very far away!</p>
 <p>To see the spatial distribution of police reports in the city, these “bad” records need to go. Here I’m using <a href="">US Census maps from the CODP</a>, as the geographic mask to keep only the locations in the city.</p>
 <pre class="r"><code>library(sf)
 
 # get a census map of charlottesville
 cville_census &lt;- st_read(&quot;https://opendata.arcgis.com/datasets/63f965c73ddf46429befe1132f7f06e2_15.geojson&quot;) %&gt;%
   select(Tract)</code></pre>
-<pre><code>## Reading layer `OGRGeoJSON&#39; from data source `https://opendata.arcgis.com/datasets/63f965c73ddf46429befe1132f7f06e2_15.geojson&#39; using driver `GeoJSON&#39;
+<pre><code>## Reading layer `7a85474e-f076-4514-8fb3-89d96a99ef8a202045-1-vqdn7z.lu9xc&#39; from data source `https://opendata.arcgis.com/datasets/63f965c73ddf46429befe1132f7f06e2_15.geojson&#39; using driver `GeoJSON&#39;
 ## Simple feature collection with 12 features and 353 fields
 ## geometry type:  POLYGON
 ## dimension:      XY
 ## bbox:           xmin: -78.52364 ymin: 38.00959 xmax: -78.44631 ymax: 38.0706
-## epsg (SRID):    4326
-## proj4string:    +proj=longlat +datum=WGS84 +no_defs</code></pre>
+## CRS:            4326</code></pre>
 <pre class="r"><code>topn &lt;- topn %&gt;% 
   filter_at(vars(lat, lon), all_vars(!is.na(.))) %&gt;%
   st_as_sf(coords = c(&quot;lon&quot;, &quot;lat&quot;), crs = st_crs(cville_census)) %&gt;%

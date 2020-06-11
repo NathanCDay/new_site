@@ -13,7 +13,7 @@ slug: quantify-time-in-meetings
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(fig.height=3, fig.width=5, fig.align='center')
+knitr::opts_chunk$set(fig.height=3, fig.width=5, fig.align='center', eval = F)
 ggplot2::theme_set(ggplot2::theme_minimal())
 ```
 
@@ -51,17 +51,16 @@ I needed a guest record, so I hacked on a `for` loop, to return the event's gues
 [`library(googlesheets)`](https://github.com/jennybc/googlesheets) is a great package by [Jenny Bryan](https://github.com/jennybc) and it makes getting data out of your Google Sheets and into data frames simple. I like Google Sheets with R because it gives you an access point to get data from other Google Apps and makes sharing data easy without requiring Git skills.
 
 ```{r gs, message = F, cache = T}
-library(googlesheets) # gs_verb()
+library(googlesheets4) # gs_verb()
 
-gs_auth()
+gs4_auth("nathan.day@hemoshear.com")
 # oAuth2, so browser confirmation req'd
 
-events <- gs_ls() %>%
-  select(sheet_title) %>%
-  unlist() %>%
-  keep(~ grepl("Calendar", .)) %>%
-  set_names(., .) %>%
-  map_df(~ gs_title(.) %>% gs_read(), .id = "cal")
+events <- gs4_find() %>%
+  select(name, id) %>%
+  filter(grepl("Calendar", name)) %>%
+  deframe() %>% 
+  map_df(read_sheet, .id = "cal")
 
 names(events) %<>% tolower() %>% gsub(" ", "_", .)
 names(events)

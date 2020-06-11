@@ -1,10 +1,4 @@
 base
-methods
-datasets
-utils
-grDevices
-graphics
-stats
 tidyverse
 ggplot2
 tibble
@@ -16,3 +10,4 @@ stringr
 forcats
 magrittr
 googlesheets
+googlesheets4

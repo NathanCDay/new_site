@@ -84,7 +84,7 @@ Because plotting ~31,000 points is really slow, let's look at the data a just su
 # install_github("tidyverse/ggplot2")
 
 ggplot(census) +
-    geom_sf(data = group_by(crime, address) %>% slice(1), # only unique addresses
+    geom_sf(data = group_by(crime, address) %>% slice(1) %>% ungroup(), # only unique addresses
             alpha = .1, color = viridis_pal()(3)[1], size = 1) +
     geom_sf(color = NA, fill = viridis_pal()(3)[3], alpha = .75) +
     coord_sf(crs = st_crs(census), datum = NA) # remove grid lines
@@ -106,7 +106,7 @@ nrow(crime) # 31034
 
 ggplot(census) +
     geom_sf(color = NA, fill = viridis_pal()(3)[1]) +
-    geom_sf(data = group_by(crime, address) %>% slice(1),
+    geom_sf(data = group_by(crime, address) %>% slice(1) %>% ungroup(),
             alpha = .1, color = viridis_pal()(3)[3]) +
     coord_sf(crs = st_crs(census), datum = NA)
 ```

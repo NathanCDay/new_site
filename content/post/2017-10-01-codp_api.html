@@ -40,56 +40,52 @@ tags: ["github pages", "https", "custom domains"]
 <div id="tabular-data" class="section level1">
 <h1>Tabular Data</h1>
 <p>To acccess the API, all we need to do is copy the link found in the API menu in the right side bar.</p>
-<div id="api-link-location" class="section level4">
-<h4><img src="/images/codp_api/api_link.png" alt="API link location" /></h4>
+<p>####<img src="/images/codp_api/api_link.png" alt="API link location" /></p>
 <p>And then let our our new best friend <a href="https://github.com/ropensci/geojsonio"><code>library(geojsonio)</code></a> do the heavy lifting. The <code>library(geojsonio)</code> is designed to handle geographic data in the GeoJSON and TopoJSON formats. It contains the function <code>geojson_read()</code> for accessing data via url or local file path. We will use it on the link stored in our clipboard.</p>
 <pre class="r"><code>library(geojsonio) #v_0.4.2
-crime_json &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/d1877e350fad45d192d233d2b2600156_7.geojson&quot;,
+crime_json &lt;- geojson_read(&quot;https://opendata.arcgis.com/datasets/d1877e350fad45d192d233d2b2600156_6.geojson&quot;,
                            parse = TRUE) # ~1-5 minutes
 # parse = TRUE attempts to parse to data.frame like structures; default is FALSE</code></pre>
 <p>Our read-in returned a large list (4.3 Mb) with two elements, <code>$type</code> and <code>$features</code>. If you are using RStudio the newest development version (v1.1.379) offers enhanced views for lists and other objects:</p>
 <pre class="r"><code>View(crime_json) # we could also click on the object in the &#39;Environment&#39; tab</code></pre>
-</div>
-<div id="rstudio-viewer" class="section level4">
-<h4><img src="/images/codp_api/list_view.png" alt="Rstudio Viewer" /></h4>
+<p>####<img src="/images/codp_api/list_view.png" alt="Rstudio Viewer" /></p>
 <p>There are some other nice perks in the preview, including an intergrated console and the modern dark theme! You can download the <a href="https://www.rstudio.com/products/rstudio/download/preview/">preview here</a>.</p>
 <p>The data that we are after is in the second element <code>.$features</code>, but we can see from our <code>View()</code> look-in that it is formatted slightly weird. Let’s look at the top rows:</p>
 <pre class="r"><code>crime_df &lt;- crime_json[[&quot;features&quot;]]
 head(crime_df)</code></pre>
-<pre><code>##      type properties.RecordID       properties.Offense
-## 1 Feature                2001                 Burglary
-## 2 Feature                2002 Found/Recovered Property
-## 3 Feature                2003            Towed Vehicle
-## 4 Feature                2004                Vandalism
-## 5 Feature                2005       Lost/FoundProperty
-## 6 Feature                2006                Vandalism
+<pre><code>##      type properties.RecordID              properties.Offense
+## 1 Feature                   1 Assist Citizen - Mental/TDO/ECO
+## 2 Feature                   2            Assault Intimidation
+## 3 Feature                   3             Suspicious Activity
+## 4 Feature                   4                 Warrant Service
+## 5 Feature                   5                  Assault Simple
+## 6 Feature                   6                  Assault Simple
 ##   properties.IncidentID properties.BlockNumber properties.StreetName
-## 1          201300006692                    600            LOCUST AVE
-## 2          201300006693                   1600         BRANDYWINE DR
-## 3          201300006694                   1900    JEFFERSON PARK AVE
-## 4          201300006695                   1400         CHESAPEAKE ST
-## 5          201300006696                    900           PRESTON AVE
-## 6          201300006697                    200             5TH ST SW
+## 1          202000015586                   1400            BURGESS LN
+## 2          202000015564                    800             FOREST ST
+## 3          202000015538                    700    BELMONT COTTAGE LN
+## 4          202000015490                   1900            EMMET ST N
+## 5          202000015487                    800           E MARKET ST
+## 6          202000015486                   2000            HOLIDAY DR
 ##   properties.Agency properties.DateReported properties.HourReported
-## 1               CPD  2013/11/11 09:16:00+00                    0916
-## 2               CPD  2013/11/11 08:39:00+00                    0839
-## 3               CPD  2013/11/11 09:35:00+00                    0935
-## 4               CPD  2013/11/11 10:45:00+00                    1045
-## 5               CPD  2013/11/11 12:11:00+00                    1211
-## 6               CPD  2013/11/11 11:25:00+00                    1125
-##   geometry
-## 1       NA
-## 2       NA
-## 3       NA
-## 4       NA
-## 5       NA
-## 6       NA</code></pre>
+## 1               CPD  2020/06/07 20:44:54+00                    2044
+## 2               CPD  2020/06/07 14:04:50+00                    1404
+## 3               CPD  2020/06/07 08:06:23+00                    0806
+## 4               CPD  2020/06/06 22:41:44+00                    2241
+## 5               CPD  2020/06/06 21:15:36+00                    2115
+## 6               CPD  2020/06/06 20:59:43+00                    2059
+##        geometry.type geometry.geometries
+## 1 GeometryCollection                NULL
+## 2 GeometryCollection                NULL
+## 3 GeometryCollection                NULL
+## 4 GeometryCollection                NULL
+## 5 GeometryCollection                NULL
+## 6 GeometryCollection                NULL</code></pre>
 <p>If you are really paying attention you might realize that the dimensions of <code>crime_df</code> are 32000x3, and the second column <code>properties</code> is a bunch of 8X1 dataframes. <code>head()</code> silently “unnested” <code>properties</code> and printed it as if it were a real 32000x11 dataframe. The last column <code>geometry</code> is all <code>NAs</code> for this data set because it is just a table of text information. In the next section we will see this change when accessing the API for shape files.</p>
 <p>All that’s left to do is to extract just the <code>properties</code> column and we will have a nice dataframe ready to start analyzing!</p>
 <pre class="r"><code>crime_df &lt;-  crime_df[[2]]</code></pre>
 <p>With only a couple of lines of code, we have accessed all of the Crime Data released by the Charlottesville Police Department to date on the ODP. This is exactly the same data we would have if we downloaded the ‘csv’ file by hand and read it in using <code>readr::read_csv()</code>, but now we did it all with reproducible code!</p>
 <p>If you want to keep going with this data and start cleaning it up for your analysis check out the begining of my <a href="./tow_forcast.html">towing forcast</a>.</p>
-</div>
 </div>
 <div id="spatial-data" class="section level1">
 <h1>Spatial Data</h1>
@@ -98,18 +94,17 @@ head(crime_df)</code></pre>
                                   what = &quot;sp&quot;) # skips the default &quot;list&quot; object and goes straight to spacial</code></pre>
 <p>We can see that the object we are returned is a little more complex than earlier. It is of the class ‘SpatialPolygonsDataFrame’ which is from the <a href="https://github.com/edzer/sp/"><code>library(sp)</code></a> that defines classes and methods for spatial data in R. Let’s see what that class looks like with <code>View()</code> agian:</p>
 <pre class="r"><code>View(police_areas_sp)</code></pre>
-<div id="police_view" class="section level4">
-<h4><img src="/images/codp_api/police_beats.png" alt="police_view" /></h4>
+<p>####<img src="/images/codp_api/police_beats.png" alt="police_view" /></p>
 <p>The <code>data</code> and <code>polygons</code> elements are the key components of a <code>SpatialPolygonDataFrame</code>. <code>data</code> is a list of information tables and <code>polygons</code> is list of <code>sp::Polygons</code> that contain the latitude and longitude cordinates necesary for mapping the region outlines. Indexing a <code>SpatialPolygonDataFrame</code> uses a special <code>@</code> syntax to get to specific elements by name, so we would use <code>police_areas_sp@data</code> to look at just that section.</p>
 <p>Notice both elements are the same length, Charlottesville is broken down into 33 police beats, so there is table information to accompany each map region. This means that a single <code>SpatialPolygonDataFrame</code> can be used to group the mapping information with accesory information, like population, crime rate, or real estate assesments.</p>
 <pre class="r"><code>head(police_areas_sp@data)</code></pre>
-<pre><code>##   OBJECTID AGENCY BEAT_NO                 NAME POPULATION DISTRICT
-## 0        1     CP      10              Belmont       4327        2
-## 1        2     CP      20         Woolen Mills        903        3
-## 2        3     CP      09          Little High        654        3
-## 3        4     CP      08     Martha Jefferson       1167        3
-## 4        5     CP      07       North Downtown       1634        3
-## 5        6     CP      28 Charlottesville High        998        5</code></pre>
+<pre><code>##   OBJECTID BEAT_NO                 NAME POPULATION DISTRICT
+## 1        1      10              Belmont       4327        2
+## 2        2      20         Woolen Mills        903        3
+## 3        3      09          Little High        654        3
+## 4        4      08     Martha Jefferson       1167        3
+## 5        5      07       North Downtown       1634        3
+## 6        6      28 Charlottesville High        998        5</code></pre>
 <p>We could use a variety of map tools to plot a this type of SpatialPolygonDataFrame, including <code>library(ggplot2)</code>, <code>library(lattice)</code> and <code>library(mapview)</code>. Here we use <a href="http://leafletjs.com/"><code>library(leaflet)</code></a> to plot the police beats and use the <code>POPULATION</code> data to color the regions. Leaflet is origially a JavaScript library for building interactive maps, which was <a href="https://rstudio.github.io/leaflet/">ported to <code>R</code></a> and is pretty great, even ESRI (the ODP’s commercial partner) build a package with it.</p>
 <pre class="r"><code>library(leaflet) #v1.1.0
 pal &lt;- colorNumeric(&quot;viridis&quot;, NULL)
@@ -124,7 +119,6 @@ leaflet(police_areas_sp,
 <div id="htmlwidget-1" style="width:100%;height:400px;" class="widgetframe html-widget"></div>
 <script type="application/json" data-for="htmlwidget-1">{"x":{"url":"/post/2017-10-01-codp_api_files/figure-html//widgets/widget_leaflet.html","options":{"xdomain":"*","allowfullscreen":false,"lazyload":false}},"evals":[],"jsHooks":[]}</script>
 <p>I’m not going to dive into the syntax of the leaflet code here, but the <a href="https://rstudio.github.io/leaflet/">Leaflet for R website</a> has great write ups for a variety of mapping options.</p>
-</div>
 </div>
 <div id="conclusion" class="section level1">
 <h1>Conclusion</h1>

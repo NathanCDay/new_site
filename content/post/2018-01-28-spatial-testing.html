@@ -89,7 +89,7 @@ spdep::moran.mc(census_sp$frac_drugs, census_wnb, nsim = 999) # 999+1 simulation
 ## weights: census_wnb  
 ## number of simulations + 1: 1000 
 ## 
-## statistic = 0.21778, observed rank = 983, p-value = 0.017
+## statistic = 0.21778, observed rank = 984, p-value = 0.016
 ## alternative hypothesis: greater</code></pre>
 <pre class="r"><code>ggplot(census) + geom_sf(aes(fill = frac_drugs))</code></pre>
 <p><img src="/post/2018-01-28-spatial-testing_files/figure-html/moran-1.png" width="672" /></p>
@@ -138,24 +138,24 @@ GGally::ggpairs(census, col_index)</code></pre>
 ##     family = quasibinomial(link = &quot;logit&quot;), data = census)
 ## 
 ## Deviance Residuals: 
-##      Min        1Q    Median        3Q       Max  
-## -0.16506  -0.06066  -0.01157   0.04987   0.16941  
+##       Min         1Q     Median         3Q        Max  
+## -0.195235  -0.050068  -0.000528   0.048657   0.156092  
 ## 
 ## Coefficients:
 ##               Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept) -3.049e+00  4.173e-01  -7.306 4.78e-08 ***
-## income      -6.570e-06  3.788e-06  -1.735   0.0934 .  
-## age          4.767e-03  1.028e-02   0.464   0.6463    
-## frac_black   1.109e+00  4.251e-01   2.609   0.0142 *  
-## frac_vacant -5.439e-01  2.462e+00  -0.221   0.8267    
+## (Intercept) -3.718e+00  3.771e-01  -9.859 6.37e-11 ***
+## income      -2.723e-06  3.370e-06  -0.808 0.425492    
+## age          1.221e-02  8.525e-03   1.432 0.162576    
+## frac_black   1.553e+00  3.789e-01   4.098 0.000291 ***
+## frac_vacant  2.714e-01  2.338e+00   0.116 0.908374    
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
-## (Dispersion parameter for quasibinomial family taken to be 0.006667992)
+## (Dispersion parameter for quasibinomial family taken to be 0.006664926)
 ## 
-##     Null deviance: 0.36510  on 33  degrees of freedom
-## Residual deviance: 0.19563  on 29  degrees of freedom
-##   (3 observations deleted due to missingness)
+##     Null deviance: 0.38827  on 34  degrees of freedom
+## Residual deviance: 0.21121  on 30  degrees of freedom
+##   (2 observations deleted due to missingness)
 ## AIC: NA
 ## 
 ## Number of Fisher Scoring iterations: 6</code></pre>
@@ -205,7 +205,7 @@ ggplot(census) + geom_sf(aes(fill = resid))</code></pre>
 ## weights: census_wnb  
 ## number of simulations + 1: 100 
 ## 
-## statistic = -0.064084, observed rank = 41, p-value = 0.59
+## statistic = -0.064084, observed rank = 31, p-value = 0.69
 ## alternative hypothesis: greater</code></pre>
 <p>We see a small negative test statistic and we fail to reject the null hypothesis that the residuals are random spatially.</p>
 <p>When I first started playing around with the City’s Data Portal back when it launched in August 2017, I wasn’t sure what I would find, but I wanted to focus my #rstats skills on local problems Since I got interested in the crime data, I’ve taken two spatial data courses on Data Camp: <a href="https://www.datacamp.com/courses/spatial-statistics-in-r">Spatial Statistics in R</a> with Barry Rowlingson and <a href="https://www.datacamp.com/courses/spatial-analysis-in-r-with-sf-and-raster">Spatial Analysis in R with sf and raster</a> with Zev Ross, which were great and I highly reccommend.</p>
