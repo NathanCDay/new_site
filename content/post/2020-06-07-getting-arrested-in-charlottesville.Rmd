@@ -24,7 +24,7 @@ theme_set(theme_minimal(base_size = 16) +
 
 ## Intro
 
-Its' been inspiring to see the world unite in protest against systemic police racism. It's depressing because our country claims to stand for something better. To make this massive issue feel closer, I analyzed the arrest records from my city's police department here in Charlottesville, Virginia.
+It's been inspiring to see the world unite in protest against systemic police racism. It's depressing because our country claims to stand for something better. To make this massive issue feel closer, I analyzed the arrest records from my city's police department here in Charlottesville, Virginia.
 
 ## The city's stats
 
@@ -147,11 +147,11 @@ I think it's insane that "monument" makes the list, considering the [neo-nazi ra
 
 If you want to explore the long form of the statute names for each of the groups use the table's filters below to explore.
 
-```{r}
+```{r eval=F}
 charge_grps %>% 
   unnest(longs) %>%
   datatable(filter = "top") %>% 
-  widgetframe::frameWidget()
+  widgetframe::frameWidget(height = '400')
 ```
 
 ## Catching multiple cases
@@ -189,14 +189,14 @@ We are fail all of our citizens when recidivism is high, but we especially fail 
 
 To make it even worse most of the charges against these people are non-violent. So we are keeping a lot of people cycling through the system for minor issues that don't directly hurt anyone else.
 
-```{r}
+```{r eval=F}
 individuals %>% 
   slice(1:100) %>% 
   unnest(charges) %>% 
   count(charges) %>% 
   arrange(desc(n)) %>% 
   datatable(filter = "top") %>% 
-  widgetframe::frameableWidget()
+  widgetframe::frameableWidget(height = '400')
 ```
 
 ## Learn more
