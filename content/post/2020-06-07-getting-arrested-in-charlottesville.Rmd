@@ -185,7 +185,7 @@ individuals %>%
   theme(axis.text.x = element_blank())
 ```
 
-We are fail all of our citizens when recidivism is high, but we especially fail our Black citizens. We need broaded and better funed rehabilitation and education efforts, instead of repeat arrests. Jail is not a place to heal mental illnesses or learn a trade, we should think repeat offenders as failure of the community because we have not enabled them to succeed.
+We fail all of our citizens when recidivism is high, but we especially fail our Black citizens. We need broaded and better funed rehabilitation and education efforts, instead of repeat arrests. Jail is not a place to heal mental illnesses or learn a trade, we should think repeat offenders as failure of the community because we have not enabled them to succeed.
 
 To make it even worse most of the charges against these people are non-violent. So we are keeping a lot of people cycling through the system for minor issues that don't directly hurt anyone else.
 
