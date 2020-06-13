@@ -12,31 +12,37 @@ twitter_img: post/2020-06-07-getting-arrested-in-charlottesville_files/getting-a
 
 
 
-<div id="intro" class="section level2">
-<h2>Intro</h2>
+<div id="intro" class="section level3">
+<h3>Intro</h3>
 <p>It’s been inspiring to see the world unite in protest against systemic police racism. It’s depressing because our country claims to stand for something better. To make this massive issue feel closer, I analyzed the arrest records from my city’s police department here in Charlottesville, Virginia.</p>
 </div>
-<div id="the-citys-stats" class="section level2">
-<h2>The city’s stats</h2>
+<div id="the-citys-stats" class="section level3">
+<h3>The city’s stats</h3>
 <p>Using population data from the US Census and arrest data reported by the police, I filtered down to only consider individuals identified as Black or White.</p>
-<p>The arrest record data includes all of the charges against an individual at their time of arrest. It is common for a single arrest event to have multiple charges associated with it. So for an example home burglery there would be two charges: Breaking &amp; Entering plus Petty Theft. By assessing multiple charges it increases the likelihood that one of them will lead to a conviction at trial. I’m reporting individual charges in this post and I think that is a fair metric to estimate the impact of policing, but I want to be transparent.</p>
-<p><img src="/post/2020-06-07-getting-arrested-in-charlottesville_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
-<p>The volume of charges is shocking and the disparity is stark. There have been more charges against Black people (8,888) in the last five years, than there are Black citizens (8,437)!!! I am floored by these numbers, maybe I shouldn’t be because the <a href="https://www.sentencingproject.org/wp-content/uploads/2015/10/lifetime-likelihood-of-imprisonment-by-race.png">Bureau of Justic Statistics</a> estimates 1 out of 3 Black men born in America in 2001 will be incarcerated at some point in their lives.</p>
+<p>The arrest record data includes all of the charges against an individual at their time of arrest. It is common for a single arrest event to have multiple charges associated with it. For an example home burglery there would be two charges: Breaking &amp; Entering plus Petty Theft.</p>
+<p>This table shows the average number and the maximum number of charges per arrest, broken down by race.</p>
+<pre><code>## # A tibble: 2 x 3
+##   race  `Average # charges` `Max # charges`
+##   &lt;chr&gt;               &lt;dbl&gt;           &lt;int&gt;
+## 1 Black                1.54              24
+## 2 White                1.39              20</code></pre>
+<p>By assessing multiple charges it increases the likelihood that one of them will lead to a conviction at trial. I’m reporting individual charges in this post because I think that is a fair metric to estimate the impact of policing, but I want to be transparent what these numbers represent.</p>
+<p><img src="/post/2020-06-07-getting-arrested-in-charlottesville_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>The volume of charges is shocking and the disparity is stark. There have been more charges against Black people (8,891) in the last five years, than there are Black citizens (8,437)!!! I am floored by these numbers, maybe I shouldn’t be because the <a href="https://www.sentencingproject.org/wp-content/uploads/2015/10/lifetime-likelihood-of-imprisonment-by-race.png">Bureau of Justic Statistics</a> estimates 1 out of 3 Black men born in America in 2001 will be incarcerated at some point in their lives.</p>
 <pre><code>##    race Charges Population % of Pop.
-## 1 Black    8888       8437      105%
-## 2 White    7215      30031       24%</code></pre>
+## 1 Black    8891       8437      105%
+## 2 White    7213      30031       24%</code></pre>
+</div>
 <div id="over-time" class="section level3">
 <h3>Over time</h3>
 <p>This split in the number of charges between Black and White people is constant since the data begins in 2015. Even as total charges seem to be trending down (the most recent data points as outliers attributed to COVID-19) the disparity remains.</p>
-<p><img src="/post/2020-06-07-getting-arrested-in-charlottesville_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
-<p>Using the criminal justice to keep Black people subjugated is an <a href="https://en.wikipedia.org/wiki/Penal_labor_in_the_United_States">American tradition</a>, the 13th Amendment explicitly allows slavery when it’s used as criminal punishments. Profiting from unpaid convict labor <a href="https://truthout.org/articles/unpaid-labor-in-texas-prisons-is-modern-day-slavery/">is modern day slavery</a> and it is still happening in America.</p>
-</div>
+<p><img src="/post/2020-06-07-getting-arrested-in-charlottesville_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
 </div>
 <div id="types-of-charges" class="section level2">
 <h2>Types of charges</h2>
-<p>There are 478 unique statutes (“laws”) represented in these records. So to summarize the general type of charge, I created a new column capturing the first lowercase word of statute’s long form description.</p>
+<p>There are 478 unique statutes (laws) represented in these records. So to summarize the general type of charge, I created a new column capturing the first lowercase word of statute’s long form description.</p>
 <p>Looking at the top 20 most frequent charges.</p>
-<p><img src="/post/2020-06-07-getting-arrested-in-charlottesville_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p><img src="/post/2020-06-07-getting-arrested-in-charlottesville_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
 <p>Stark differences between races exists and vary dramatically depending on the statute group. The “firearm” (86%), “credit” (76%), and “lic” (75%) groups are the most biased towards Black people. The “generic” (28%), “illegal” (29%) and “profane” (35%) statues have the smallest fractions of Black people, but all are still biased, remember only 22% of Charlottesville population is Black.</p>
 <p>I think it’s insane that “monument” makes the list, considering the <a href="https://en.wikipedia.org/wiki/Unite_the_Right_rally">neo-nazi rally</a> here 3 years on A12. Most of the “historical” statues in the South were <a href="https://en.wikipedia.org/wiki/Removal_of_Confederate_monuments_and_memorials#/media/File:Confedarate_monuments_(2).png">erected during the peak of Jim Crow</a>, they were and are 100% racially motivated symbols.</p>
 <p>Notable descriptions that were not immediately apparent for me:</p>
@@ -45,21 +51,22 @@ twitter_img: post/2020-06-07-getting-arrested-in-charlottesville_files/getting-a
 <li>fta/capias ~ failure to appear in courts / arrest on site</li>
 <li>lic - license suspended/revoked</li>
 </ul>
-<p>If you want to explore the long form of the statute names for each of the groups use the table’s filters below to explore.</p>
-</div>
-<div id="catching-multiple-cases" class="section level2">
-<h2>Catching multiple cases</h2>
-<p>The 16,103 charges in this data set are attributed to 5,782 people, so a lot of individuals have received multiple charges.</p>
-<p><img src="/post/2020-06-07-getting-arrested-in-charlottesville_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
-<p>We fail all of our citizens when recidivism is high, but this failure is disproportionately felt by Black citizens. Repeat offenders are failures of the community. We should be be empowering people new skills, instead of recycling them through a system we know is dysfunctional.</p>
+<p>If you want to explore the long form of the statute names for each of the groups use the table’s filters below.</p>
+<div id="catching-multiple-cases" class="section level3">
+<h3>Catching multiple cases</h3>
+<p>The 16,104 charges in this data set are attributed to 5,783 people, so a lot of individuals have received multiple charges.</p>
+<p><img src="/post/2020-06-07-getting-arrested-in-charlottesville_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>We fail all of our citizens when recidivism is high, but this failure is disproportionately felt by Black citizens. Repeat offenders are failures of the community. We should be be empowering people with new skills, not recycling them through a system we know is dysfunctional.</p>
 <p>To make it even worse most of the charges against these people are non-violent. So we are keeping a lot of people cycling through the system for minor issues that don’t directly hurt anyone else.</p>
+<p>Using crimnal just to keep Black people subjugated is an <a href="https://en.wikipedia.org/wiki/Penal_labor_in_the_United_States">American tradition</a>, the 13th Amendment explicitly allows slavery when it’s used as criminal punishments. Profiting from unpaid convict labor <a href="https://truthout.org/articles/unpaid-labor-in-texas-prisons-is-modern-day-slavery/">is modern day slavery</a> and it is still happening here in America.</p>
 </div>
-<div id="learn-more" class="section level2">
-<h2>Learn more</h2>
+<div id="learn-more" class="section level3">
+<h3>Learn more</h3>
 <p>The <a href="If%20you%20want%20national%20resources%20in%20this%20topic">Sentencing Project</a> is a great resource to learn more. They curate national and state level statistics on arrests and prison populations in America.</p>
-<div id="do-more" class="section level3">
-<h3>Do more</h3>
-<p>If you have access to similar data for your city, I hope you do something similar. It’s easy to ignore injustice if you never see it. But seeing how lopsided the system is can help people understand how big this problem <em>really is</em> and why people are so frustrated when it rears it’s ugly head again.</p>
+</div>
+<div id="do-something" class="section level3">
+<h3>Do something</h3>
+<p>If you have access to similar data for your city, I hope you do something similar. It’s easy to ignore injustice if you never see it. But seeing how lopsided the system is can help people understand how big this problem <em>really is</em> and why people are so frustrated when it rears it’s ugly head yet again.</p>
 <p>Also consider donating your time, money or skills to make America better for our Black citizens. A local Charlottesville organization doing good teaching under served youth about tech is <a href="https://computers4kids.net/donate/financial-donation/">Computers4Kids</a>.</p>
 </div>
 </div>

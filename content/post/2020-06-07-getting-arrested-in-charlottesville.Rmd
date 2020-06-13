@@ -22,15 +22,9 @@ theme_set(theme_minimal(base_size = 16) +
             theme(legend.position = "bottom", legend.direction = "horizontal"))
 ```
 
-## Intro
+### Intro
 
 It's been inspiring to see the world unite in protest against systemic police racism. It's depressing because our country claims to stand for something better. To make this massive issue feel closer, I analyzed the arrest records from my city's police department here in Charlottesville, Virginia.
-
-## The city's stats
-
-Using population data from the US Census and arrest data reported by the police, I filtered down to only consider individuals identified as Black or White.
-
-The arrest record data includes all of the charges against an individual at their time of arrest. It is common for a single arrest event to have multiple charges associated with it. So for an example home burglery there would be two charges: Breaking & Entering plus Petty Theft. By assessing multiple charges it increases the likelihood that one of them will lead to a conviction at trial. I'm reporting individual charges in this post and I think that is a fair metric to estimate the impact of policing, but I want to be transparent.
 
 ```{r}
 arrests <- read_sf("https://opendata.arcgis.com/datasets/d558ab0e09fe4f509280bedf6f8793ed_22.geojson") %>%
@@ -47,8 +41,26 @@ census <- read_sf("https://opendata.arcgis.com/datasets/63f965c73ddf46429befe113
   gather("race")
 ```
 
-```{r}
+### The city's stats
 
+Using population data from the US Census and arrest data reported by the police, I filtered down to only consider individuals identified as Black or White.
+
+The arrest record data includes all of the charges against an individual at their time of arrest. It is common for a single arrest event to have multiple charges associated with it. For an example home burglery there would be two charges: Breaking & Entering plus Petty Theft. 
+
+This table shows the average number and the maximum number of charges per arrest, broken down by race.
+
+```{r}
+arrests %>% 
+  group_by(race, date) %>% 
+  count() %>% 
+  group_by(race) %>% 
+  summarise(`Average # charges` = round(mean(n), 2),
+            `Max # charges` = max(n))
+```
+
+By assessing multiple charges it increases the likelihood that one of them will lead to a conviction at trial. I'm reporting individual charges in this post because I think that is a fair metric to estimate the impact of policing, but I want to be transparent what these numbers represent.
+
+```{r}
 arrest_sumry <- arrests %>% 
   count(race, name = "value") %>% 
   mutate(grp = "Charges")
@@ -98,11 +110,9 @@ ggplot(arrests, aes(date, fill = race)) +
   labs(y = NULL, x = NULL, color = "Race")
 ```
 
-Using the criminal justice to keep Black people subjugated is an [American tradition](https://en.wikipedia.org/wiki/Penal_labor_in_the_United_States), the 13th Amendment explicitly allows slavery when it's used as criminal punishments. Profiting from unpaid convict labor [is modern day slavery](https://truthout.org/articles/unpaid-labor-in-texas-prisons-is-modern-day-slavery/) and it is still happening in America.
-
 ## Types of charges
 
-There are `r length(unique(arrests$statute))` unique statutes ("laws") represented in these records. So to summarize the general type of charge, I created a new column capturing the first lowercase word of statute's long form description.
+There are `r length(unique(arrests$statute))` unique statutes (laws) represented in these records. So to summarize the general type of charge, I created a new column capturing the first lowercase word of statute's long form description.
 
 ```{r}
 arrests %<>% 
@@ -149,7 +159,7 @@ Notable descriptions that were not immediately apparent for me:
 * fta/capias ~ failure to appear in courts / arrest on site
 * lic - license suspended/revoked
 
-If you want to explore the long form of the statute names for each of the groups use the table's filters below to explore.
+If you want to explore the long form of the statute names for each of the groups use the table's filters below.
 
 ```{r eval=F}
 charge_grps %>% 
@@ -158,7 +168,7 @@ charge_grps %>%
   widgetframe::frameWidget(height = '400')
 ```
 
-## Catching multiple cases
+### Catching multiple cases
 
 ```{r}
 individuals <- arrests %>%
@@ -189,7 +199,7 @@ individuals %>%
   theme(axis.text.x = element_blank())
 ```
 
-We fail all of our citizens when recidivism is high, but this failure is disproportionately felt by Black citizens. Repeat offenders are failures of the community. We should be be empowering people new skills, instead of recycling them through a system we know is dysfunctional.
+We fail all of our citizens when recidivism is high, but this failure is disproportionately felt by Black citizens. Repeat offenders are failures of the community. We should be be empowering people with new skills, not recycling them through a system we know is dysfunctional.
 
 To make it even worse most of the charges against these people are non-violent. So we are keeping a lot of people cycling through the system for minor issues that don't directly hurt anyone else.
 
@@ -203,13 +213,15 @@ individuals %>%
   widgetframe::frameableWidget(height = '400')
 ```
 
-## Learn more
+Using crimnal just to keep Black people subjugated is an [American tradition](https://en.wikipedia.org/wiki/Penal_labor_in_the_United_States), the 13th Amendment explicitly allows slavery when it's used as criminal punishments. Profiting from unpaid convict labor [is modern day slavery](https://truthout.org/articles/unpaid-labor-in-texas-prisons-is-modern-day-slavery/) and it is still happening here in America.
+
+### Learn more
 
 The [Sentencing Project](If you want national resources in this topic) is a great resource to learn more. They curate national and state level statistics on arrests and prison populations in America.
 
-### Do more
+### Do something
 
-If you have access to similar data for your city, I hope you do something similar. It's easy to ignore injustice if you never see it. But seeing how lopsided the system is can help people understand how big this problem *really is* and why people are so frustrated when it rears it's ugly head again. 
+If you have access to similar data for your city, I hope you do something similar. It's easy to ignore injustice if you never see it. But seeing how lopsided the system is can help people understand how big this problem *really is* and why people are so frustrated when it rears it's ugly head yet again.
 
 Also consider donating your time, money or skills to make America better for our Black citizens. A local Charlottesville organization doing good teaching under served youth about tech is [Computers4Kids](https://computers4kids.net/donate/financial-donation/).
 
